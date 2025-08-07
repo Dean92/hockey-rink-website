@@ -1,2 +1,7 @@
-# hockey-rink-website
-A site for a local hockey rink business.
+# Hockey Rink Website
+
+A web application for managing a local hockey league.
+
+- **Backend**: .NET Core 9 API with Entity Framework Core and Azure SQL.
+- **Frontend**: Angular 20 with Bootstrap 5 (CSS-based styling).
+- **Features**: User registration, session management, team drafts, and admin dashboard.
