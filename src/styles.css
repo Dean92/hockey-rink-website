@@ -1,1 +1,50 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Import Bootstrap CSS without deprecated tilde syntax */
+@import "bootstrap/dist/css/bootstrap.min.css";
+
+/* Custom hockey-themed overrides */
+:root {
+  --bs-primary: #0052cc; /* Ice blue for buttons, links */
+  --bs-secondary: #4a4a4a; /* Neutral gray for headers, borders */
+  --bs-success: #28a745; /* Green for confirmations */
+  --bs-danger: #dc3545; /* Red for errors */
+  --bs-warning: #ffc107; /* Yellow for warnings */
+  --bs-info: #17a2b8; /* Light blue for info */
+  --bs-light: #f8f9fa; /* Off-white for backgrounds */
+  --bs-dark: #343a40; /* Dark gray for text */
+  --bs-body-font-family: 'Roboto', sans-serif; /* Modern font */
+  --bs-border-radius: 0.5rem; /* Softer corners */
+  --bs-spacer: 1rem; /* Consistent spacing */
+}
+
+/* Apply overrides to Bootstrap classes */
+.btn-primary {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+.btn-primary:hover {
+  background-color: #003d99; /* Darker blue for hover */
+  border-color: #003d99;
+}
+.text-primary {
+  color: var(--bs-primary) !important;
+}
+.bg-primary {
+  background-color: var(--bs-primary) !important;
+}
+.btn-secondary {
+  background-color: var(--bs-secondary);
+  border-color: var(--bs-secondary);
+}
+.btn-secondary:hover {
+  background-color: #3a3a3a;
+  border-color: #3a3a3a;
+}
+body {
+  font-family: var(--bs-body-font-family);
+}
+.rounded {
+  border-radius: var(--bs-border-radius) !important;
+}
+/* Add more overrides as needed (e.g., .nav-link, .alert) */
