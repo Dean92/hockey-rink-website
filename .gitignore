@@ -362,7 +362,8 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-HockeyRinkApi/appsettings.json
+HockeyRinkAPI/appsettings.json
+HockeyRinkAPI/appsettings.*.json
 HockeyRinkWeb/node_modules/
 HockeyRinkWeb/dist/
 *.log
