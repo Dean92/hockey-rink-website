@@ -1,4 +1,7 @@
+using HockeyRinkAPI.Data;
+using HockeyRinkAPI.Models;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -25,6 +28,13 @@ namespace HockeyRinkAPI
 
             builder.Services.AddApplicationInsightsTelemetry();
 
+            builder.Services.AddDbContext<AppDbContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+            sqlServerOptions => sqlServerOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null)));
+
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
@@ -44,6 +54,24 @@ namespace HockeyRinkAPI
 
 
             app.MapControllers();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                db.Database.Migrate();
+                if (!db.Leagues.Any())
+                {
+                    db.Leagues.AddRange(
+                        new League { Name = "Leisure", Description = "Beginner league" },
+                        new League { Name = "Bronze", Description = "Beginner/Intermediate league" },
+                        new League { Name = "Silver", Description = "Intermediate league" },
+                        new League { Name = "Gold", Description = "Advanced league" },
+                        new League { Name = "Platinum", Description = "Advanced league" },
+                        new League { Name = "Diamond", Description = "Elite league" }
+                    );
+                    db.SaveChanges();
+                }
+            }
 
             app.Run();
         }

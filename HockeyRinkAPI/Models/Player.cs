@@ -2,7 +2,8 @@
 {
     public class Player
     {
-        public string UserId { get; set; }
+        public int Id { get; set; }
+        public string? UserId { get; set; }
         public int TeamId { get; set; }
         public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
         public ApplicationUser? User { get; set; }

@@ -207,7 +207,6 @@ namespace HockeyRinkAPI.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -215,7 +214,8 @@ namespace HockeyRinkAPI.Migrations
                     b.HasIndex("TeamId");
 
                     b.HasIndex("UserId", "TeamId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("Players");
                 });
@@ -483,8 +483,7 @@ namespace HockeyRinkAPI.Migrations
                     b.HasOne("HockeyRinkAPI.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Team");
 

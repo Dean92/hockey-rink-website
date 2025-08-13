@@ -281,7 +281,7 @@ namespace HockeyRinkAPI.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     TeamId = table.Column<int>(type: "int", nullable: false),
                     AssignedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -388,7 +388,8 @@ namespace HockeyRinkAPI.Migrations
                 name: "IX_Players_UserId_TeamId",
                 table: "Players",
                 columns: new[] { "UserId", "TeamId" },
-                unique: true);
+                unique: true,
+                filter: "[UserId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SessionRegistrations_SessionId",
