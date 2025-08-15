@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HockeyRinkAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250813225352_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250815161631_UpdatePaymentAmountPrecision")]
+    partial class UpdatePaymentAmountPrecision
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -174,7 +174,8 @@ namespace HockeyRinkAPI.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -238,7 +239,8 @@ namespace HockeyRinkAPI.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("Fee")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");

@@ -6,7 +6,7 @@ namespace HockeyRinkAPI.Models
     {
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
-        public int LeagueId { get; set; }
+        public int? LeagueId { get; set; }
         public bool IsSubAvailable { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

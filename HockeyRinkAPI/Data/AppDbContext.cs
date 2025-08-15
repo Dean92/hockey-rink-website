@@ -65,6 +65,22 @@ namespace HockeyRinkAPI.Data
                 .WithMany()
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Session>()
+                .Property(s => s.Fee)
+                .HasPrecision(10, 2);
+
+            builder.Entity<Payment>()
+                .Property(p => p.Amount)
+                .HasPrecision(10, 2);
+
+            // Configure ApplicationUser LeagueId as optional
+            builder.Entity<ApplicationUser>()
+                .HasOne(u => u.League)
+                .WithMany()
+                .HasForeignKey(u => u.LeagueId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
