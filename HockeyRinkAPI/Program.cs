@@ -8,6 +8,7 @@ using HockeyRinkAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
+using HockeyRinkAPI.Services;
 
 
 namespace HockeyRinkAPI
@@ -86,6 +87,8 @@ namespace HockeyRinkAPI
                     }
                 });
             });
+
+            builder.Services.AddTransient<MockStripeService>();
 
             var app = builder.Build();
 
