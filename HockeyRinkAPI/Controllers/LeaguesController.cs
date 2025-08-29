@@ -4,35 +4,26 @@ using Microsoft.EntityFrameworkCore;
 using HockeyRinkAPI.Data;
 using HockeyRinkAPI.Models;
 
-namespace HockeyRinkAPI.Controllers
+
+namespace HockeyRinkAPI.Controllers;
+
+[ApiController]
+[Route("api/leagues")]
+[Authorize]
+public class LeaguesController : ControllerBase
 {
-    [Authorize]
-    [ApiController]
-    [Route("api/league")]
-    public class LeaguesController : ControllerBase
+    private readonly AppDbContext _db;
+
+    public LeaguesController(AppDbContext db)
     {
-        private readonly AppDbContext _db;
-        private readonly ILogger<LeaguesController> _logger;
+        _db = db;
+    }
 
-        public LeaguesController(AppDbContext db, ILogger<LeaguesController> logger)
-        {
-            _db = db;
-            _logger = logger;
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetLeagues()
-        {
-            try
-            {
-                var leagues = await _db.Leagues.ToListAsync();
-                return Ok(leagues);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in GetLeagues");
-                return StatusCode(500, new { Message = "Internal server error" });
-            }
-        }
+    [HttpGet]
+    public IActionResult GetLeagues()
+    {
+        var leagues = _db.Leagues.ToList();
+        return Ok(leagues);
     }
 }
+
