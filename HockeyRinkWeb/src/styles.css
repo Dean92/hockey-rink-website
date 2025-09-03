@@ -3,48 +3,28 @@
 /* Import Bootstrap CSS without deprecated tilde syntax */
 @import "bootstrap/dist/css/bootstrap.min.css";
 
-/* Custom hockey-themed overrides */
 :root {
-  --bs-primary: #0052cc; /* Ice blue for buttons, links */
-  --bs-secondary: #4a4a4a; /* Neutral gray for headers, borders */
-  --bs-success: #28a745; /* Green for confirmations */
-  --bs-danger: #dc3545; /* Red for errors */
-  --bs-warning: #ffc107; /* Yellow for warnings */
-  --bs-info: #17a2b8; /* Light blue for info */
-  --bs-light: #f8f9fa; /* Off-white for backgrounds */
-  --bs-dark: #343a40; /* Dark gray for text */
-  --bs-body-font-family: 'Roboto', sans-serif; /* Modern font */
+  --bs-primary: #1a73e8; /* Hockey blue */
+  --bs-font-family: 'Roboto', sans-serif; /* Google Fonts */
   --bs-border-radius: 0.5rem; /* Softer corners */
-  --bs-spacer: 1rem; /* Consistent spacing */
+  --bs-body-bg: #f8f9fa; /* Light gray background */
+  --bs-body-color: #212529; /* Dark text */
 }
 
-/* Apply overrides to Bootstrap classes */
+/* Override Bootstrap variables */
 .btn-primary {
   background-color: var(--bs-primary);
   border-color: var(--bs-primary);
 }
 .btn-primary:hover {
-  background-color: #003d99; /* Darker blue for hover */
-  border-color: #003d99;
-}
-.text-primary {
-  color: var(--bs-primary) !important;
-}
-.bg-primary {
-  background-color: var(--bs-primary) !important;
-}
-.btn-secondary {
-  background-color: var(--bs-secondary);
-  border-color: var(--bs-secondary);
-}
-.btn-secondary:hover {
-  background-color: #3a3a3a;
-  border-color: #3a3a3a;
+  background-color: #1557b0; /* Darker shade */
+  border-color: #1557b0;
 }
 body {
-  font-family: var(--bs-body-font-family);
+  font-family: var(--bs-font-family);
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
 }
-.rounded {
-  border-radius: var(--bs-border-radius) !important;
+.card, .btn, .form-control {
+  border-radius: var(--bs-border-radius);
 }
-/* Add more overrides as needed (e.g., .nav-link, .alert) */
