@@ -89,6 +89,26 @@ public class Program
             });
         });
 
+        // Add CORS configuration
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAngularDevServer", policy =>
+            {
+                policy.WithOrigins("http://localhost:4200") // Angular dev server
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .AllowCredentials(); // Required for cookies
+            });
+
+            options.AddPolicy("AllowProduction", policy =>
+            {
+                policy.WithOrigins("https://your-deployed-frontend.azurestaticapps.net") // Replace with your deployed URL
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .AllowCredentials();
+            });
+        });
+
         var app = builder.Build();
 
         if (app.Environment.IsDevelopment())
@@ -103,6 +123,7 @@ public class Program
 
         app.UseSerilogRequestLogging();
         app.UseRouting();
+        app.UseCors("AllowAngularDevServer"); // Use "AllowProduction" in production
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();

@@ -74,16 +74,28 @@ public class AuthController : ControllerBase
         }
 
         var user = users.SingleOrDefault();
-        if (user == null || !user.EmailConfirmed)
+        if (user == null)
         {
-            _logger.LogWarning("Login failed: user not found or unconfirmed for {Email}", model.Email);
-            return Unauthorized(new { Message = "Invalid email or unconfirmed account" });
+            _logger.LogWarning("Login failed: user not found for {Email}", model.Email);
+            return Unauthorized(new { Message = "Invalid email or password" });
         }
 
-        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
-        if (result.Succeeded)
+        // Skip email confirmation check for development
+        // TODO: Re-enable email confirmation for production
+        // if (!user.EmailConfirmed)
+        // {
+        //     _logger.LogWarning("Login failed: unconfirmed account for {Email}", model.Email);
+        //     return Unauthorized(new { Message = "Please confirm your email before logging in" });
+        // }
+
+        // For development: Check password directly and bypass email confirmation
+        var passwordValid = await _userManager.CheckPasswordAsync(user, model.Password);
+        
+        if (passwordValid)
         {
             _logger.LogInformation("Login successful for {Email}", model.Email);
+            // For development: Sign in the user manually without email confirmation check
+            await _signInManager.SignInAsync(user, model.RememberMe);
             return Ok(new { Message = "Login successful" });
         }
 

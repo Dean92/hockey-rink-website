@@ -1,0 +1,118 @@
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header text-center">
+          <h2>Register</h2>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+            <div class="mb-3">
+              <label for="firstName" class="form-label">First Name</label>
+              <input
+                formControlName="firstName"
+                type="text"
+                class="form-control"
+                [class.is-invalid]="
+                  hasError('firstName', 'required') ||
+                  hasError('firstName', 'minlength')
+                "
+                id="firstName"
+              />
+              <div
+                class="invalid-feedback"
+                *ngIf="getFieldErrors('firstName').length > 0"
+              >
+                <div *ngFor="let error of getFieldErrors('firstName')">
+                  {{ error }}
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="lastName" class="form-label">Last Name</label>
+              <input
+                formControlName="lastName"
+                type="text"
+                class="form-control"
+                [class.is-invalid]="
+                  hasError('lastName', 'required') ||
+                  hasError('lastName', 'minlength')
+                "
+                id="lastName"
+              />
+              <div
+                class="invalid-feedback"
+                *ngIf="getFieldErrors('lastName').length > 0"
+              >
+                <div *ngFor="let error of getFieldErrors('lastName')">
+                  {{ error }}
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input
+                formControlName="email"
+                type="email"
+                class="form-control"
+                [class.is-invalid]="
+                  hasError('email', 'required') || hasError('email', 'email')
+                "
+                id="email"
+              />
+              <div
+                class="invalid-feedback"
+                *ngIf="getFieldErrors('email').length > 0"
+              >
+                <div *ngFor="let error of getFieldErrors('email')">
+                  {{ error }}
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input
+                formControlName="password"
+                type="password"
+                class="form-control"
+                [class.is-invalid]="
+                  hasError('password', 'required') ||
+                  hasError('password', 'minlength') ||
+                  hasError('password', 'noDigit') ||
+                  hasError('password', 'noSpecialChar')
+                "
+                id="password"
+              />
+              <div
+                class="invalid-feedback"
+                *ngIf="getFieldErrors('password').length > 0"
+              >
+                <div *ngFor="let error of getFieldErrors('password')">
+                  {{ error }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Display server errors -->
+            <div class="alert alert-danger" *ngIf="errors.length > 0">
+              <ul class="mb-0">
+                <li *ngFor="let error of errors">{{ error }}</li>
+              </ul>
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary w-100"
+              [disabled]="registerForm.invalid"
+            >
+              Register
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
