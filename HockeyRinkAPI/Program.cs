@@ -57,8 +57,32 @@ public class Program
             {
                 options.LoginPath = "/api/auth/login";
                 options.AccessDeniedPath = "/api/auth/access-denied";
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP for tests
+                options.Cookie.HttpOnly = false; // Allow JavaScript access for development
+                options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP for development
+                options.Cookie.SameSite = SameSiteMode.Lax; // More compatible than None
+                options.ExpireTimeSpan = TimeSpan.FromHours(24);
+                options.SlidingExpiration = true;
+                options.Events.OnRedirectToLogin = context =>
+                {
+                    // Return 401 instead of redirecting for API calls
+                    if (context.Request.Path.StartsWithSegments("/api"))
+                    {
+                        context.Response.StatusCode = 401;
+                        context.Response.Headers["Content-Type"] = "application/json";
+                        return context.Response.WriteAsync("{\"error\": \"Unauthorized\"}");
+                    }
+                    return Task.CompletedTask;
+                };
+                options.Events.OnRedirectToAccessDenied = context =>
+                {
+                    if (context.Request.Path.StartsWithSegments("/api"))
+                    {
+                        context.Response.StatusCode = 403;
+                        context.Response.Headers["Content-Type"] = "application/json";
+                        return context.Response.WriteAsync("{\"error\": \"Forbidden\"}");
+                    }
+                    return Task.CompletedTask;
+                };
             });
 
         builder.Services.AddTransient<MockStripeService>();
