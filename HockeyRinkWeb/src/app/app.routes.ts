@@ -4,6 +4,7 @@ import { Login } from "./login/login";
 import { Register } from "./register/register";
 import { Leagues } from "./leagues/leagues";
 import { Sessions } from "./sessions/sessions";
+import { SessionRegistration } from "./session-registration/session-registration";
 
 export const routes: Routes = [
   { path: "", redirectTo: "/home", pathMatch: "full" },
@@ -12,4 +13,5 @@ export const routes: Routes = [
   { path: "register", component: Register },
   { path: "leagues", component: Leagues },
   { path: "sessions", component: Sessions },
+  { path: "session-registration", component: SessionRegistration },
 ];

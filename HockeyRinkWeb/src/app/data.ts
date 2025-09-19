@@ -26,4 +26,13 @@ export class DataService {
       withCredentials: true,
     });
   }
+
+  registerSession(sessionId: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.post(
+      `${this.apiUrl}/sessions/register`,
+      { sessionId },
+      { headers, withCredentials: true }
+    );
+  }
 }
