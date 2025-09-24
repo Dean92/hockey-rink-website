@@ -11,7 +11,12 @@
   --bs-body-color: #212529; /* Dark text */
 }
 
-/* Override Bootstrap variables */
+body {
+  font-family: var(--bs-font-family);
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
 .btn-primary {
   background-color: var(--bs-primary);
   border-color: var(--bs-primary);
@@ -20,11 +25,17 @@
   background-color: #1557b0; /* Darker shade */
   border-color: #1557b0;
 }
-body {
-  font-family: var(--bs-font-family);
-  background-color: var(--bs-body-bg);
-  color: var(--bs-body-color);
-}
+
 .card, .btn, .form-control {
   border-radius: var(--bs-border-radius);
+}
+
+.navbar {
+  background-color: var(--bs-primary);
+}
+.navbar-brand, .nav-link {
+  color: #fff !important;
+}
+.navbar-brand:hover, .nav-link:hover {
+  color: #e0e0e0 !important;
 }

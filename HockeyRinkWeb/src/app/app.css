@@ -3,3 +3,7 @@
   color: var(--bs-light);
   padding: var(--bs-spacer);
 }
+
+.clickable {
+  cursor: pointer;
+}
