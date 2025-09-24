@@ -1,1 +1,19 @@
-<p>profile works!</p>
+<div class="container mt-5">
+  <h2 class="text-primary mb-4">User Profile</h2>
+  <div *ngIf="profile; else loading" class="card">
+    <div class="card-body">
+      <h5 class="card-title">{{ profile.firstName }} {{ profile.lastName }}</h5>
+      <p class="card-text"><strong>Email:</strong> {{ profile.email }}</p>
+      <p class="card-text">
+        <strong>Email Confirmed:</strong>
+        {{ profile.emailConfirmed ? "Yes" : "No" }}
+      </p>
+    </div>
+  </div>
+  <ng-template #loading>
+    <div class="alert alert-info">Loading profile...</div>
+  </ng-template>
+  <div class="alert alert-danger" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+</div>

@@ -35,4 +35,12 @@ export class DataService {
       { headers, withCredentials: true }
     );
   }
+
+  getProfile(): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get(`${this.apiUrl}/users/profile`, {
+      headers,
+      withCredentials: true,
+    });
+  }
 }
