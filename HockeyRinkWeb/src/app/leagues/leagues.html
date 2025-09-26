@@ -1,0 +1,25 @@
+<div class="container mt-5">
+  <h2 class="text-primary mb-4">Leagues</h2>
+
+  <div class="row">
+    <div class="col-md-4 mb-3" *ngFor="let league of leagues">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">{{ league.name }}</h5>
+          <p class="card-text">{{ league.description }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="alert alert-warning"
+    *ngIf="leagues.length === 0 && !errorMessage"
+  >
+    No leagues are currently available.
+  </div>
+
+  <div class="alert alert-danger" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+</div>

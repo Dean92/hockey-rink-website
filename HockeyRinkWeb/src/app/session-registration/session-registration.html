@@ -1,0 +1,43 @@
+<div class="container mt-5">
+  <h2 class="text-primary mb-4">Register for Session</h2>
+  <div
+    *ngIf="sessions.length === 0 && !errorMessage"
+    class="alert alert-warning"
+  >
+    No sessions are currently available.
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+  <form
+    [formGroup]="registrationForm"
+    (ngSubmit)="onRegister()"
+    *ngIf="sessions.length > 0"
+  >
+    <div class="mb-3">
+      <label for="sessionId" class="form-label">Session</label>
+      <select
+        formControlName="sessionId"
+        class="form-control"
+        id="sessionId"
+        [class.is-invalid]="hasError('sessionId', 'required')"
+      >
+        <option value="">Select a session</option>
+        <option *ngFor="let session of sessions" [value]="session.id">
+          {{ session.name }} ({{ session.startDate | date }} -
+          {{ session.endDate | date }})
+        </option>
+      </select>
+      <div class="invalid-feedback" *ngIf="hasError('sessionId', 'required')">
+        Session is required.
+      </div>
+    </div>
+    <button
+      type="submit"
+      class="btn btn-primary w-100"
+      [disabled]="registrationForm.invalid"
+    >
+      Register
+    </button>
+  </form>
+</div>
