@@ -151,7 +151,7 @@ public class Program
                 policy =>
                 {
                     policy
-                        .WithOrigins("https://your-deployed-frontend.azurestaticapps.net") // Replace with your deployed URL
+                        .WithOrigins("https://lively-river-0c3237510.1.azurestaticapps.net") // Replace with your deployed URL
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials();
