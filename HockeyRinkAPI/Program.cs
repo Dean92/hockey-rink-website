@@ -152,8 +152,8 @@ public class Program
                 {
                     policy
                         .WithOrigins(
-                            "https://hockey-rink-api-bbhch3gwgzedc9e3.centralus-01.azurewebsites.net"
-                        ) // Replace with your deployed URL
+                            "https://lively-river-0c3237510.1.azurestaticapps.net" // Azure Static Web Apps frontend
+                        )
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials();
