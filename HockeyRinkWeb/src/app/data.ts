@@ -7,7 +7,8 @@ import { AuthService } from "./auth";
   providedIn: "root",
 })
 export class DataService {
-  private apiUrl = "https://localhost:7134/api";
+  private apiUrl =
+    "https://lively-river-0c3237510.eastus3-0.azurestaticapps.net/api";
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 

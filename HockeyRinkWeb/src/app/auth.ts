@@ -6,7 +6,8 @@ import { Observable, tap } from "rxjs";
   providedIn: "root",
 })
 export class AuthService {
-  private apiUrl = "https://localhost:7134/api/auth";
+  private apiUrl =
+    "https://lively-river-0c3237510.eastus3-0.azurestaticapps.net/api/auth";
   private readonly TOKEN_KEY = "auth_token";
 
   constructor(private http: HttpClient) {}
