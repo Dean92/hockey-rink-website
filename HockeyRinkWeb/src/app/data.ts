@@ -8,7 +8,7 @@ import { AuthService } from "./auth";
 })
 export class DataService {
   private apiUrl =
-    "https://lively-river-0c3237510.eastus3-0.azurestaticapps.net/api";
+    "https://hockey-rink-api-bbhch3gwgzedc9e3.centralus-01.azurewebsites.net/api";
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 

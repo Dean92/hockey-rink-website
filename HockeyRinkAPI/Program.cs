@@ -151,7 +151,9 @@ public class Program
                 policy =>
                 {
                     policy
-                        .WithOrigins("https://lively-river-0c3237510.1.azurestaticapps.net") // Replace with your deployed URL
+                        .WithOrigins(
+                            "https://hockey-rink-api-bbhch3gwgzedc9e3.centralus-01.azurewebsites.net"
+                        ) // Replace with your deployed URL
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials();
@@ -173,7 +175,7 @@ public class Program
 
         app.UseSerilogRequestLogging();
         app.UseRouting();
-        app.UseCors("AllowAngularDevServer"); // Use "AllowProduction" in production
+        app.UseCors("AllowProduction"); // Use "AllowProduction" in production
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
