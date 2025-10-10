@@ -37,12 +37,12 @@ public class UsersController : ControllerBase
             var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
             var parts = tokenData.Split('|');
             var userId = parts[0];
-            user = await _userManager.FindByIdAsync(userId);
+            user = await _userManager.FindByIdAsync(userId)!;
         }
         else
         {
             // Fall back to cookie auth
-            user = await _userManager.GetUserAsync(User);
+            user = await _userManager.GetUserAsync(User)!;
         }
 
         if (user == null)
