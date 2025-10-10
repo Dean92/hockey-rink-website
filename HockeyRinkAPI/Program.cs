@@ -216,7 +216,8 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.Migrate();
+            // Temporarily disable migrations for troubleshooting
+            // db.Database.Migrate();
             if (!db.Leagues.Any())
             {
                 db.Leagues.AddRange(
