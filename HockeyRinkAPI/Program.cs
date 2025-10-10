@@ -18,66 +18,56 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Host.UseSerilog(
-            (context, services, configuration) =>
-                configuration
-                    .ReadFrom.Configuration(context.Configuration)
-                    .ReadFrom.Services(services)
-                    .Enrich.FromLogContext()
-                    .WriteTo.Console()
-                    .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
-        );
+        // Configure Serilog for logging
+        builder.Host.UseSerilog((context, services, configuration) =>
+            configuration
+                .ReadFrom.Configuration(context.Configuration)
+                .ReadFrom.Services(services)
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day));
 
         builder.Services.AddControllers();
         builder.Services.AddApplicationInsightsTelemetry();
+
+        // Configure database context
         builder.Services.AddDbContext<AppDbContext>(options =>
         {
-            if (
-                !string.IsNullOrEmpty(
-                    builder.Configuration.GetConnectionString("DefaultConnection")
-                )
-            )
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrEmpty(connectionString))
             {
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnection"),
-                    sqlServerOptions =>
-                        sqlServerOptions.EnableRetryOnFailure(
-                            maxRetryCount: 5,
-                            maxRetryDelay: TimeSpan.FromSeconds(30),
-                            errorNumbersToAdd: null
-                        )
-                );
+                throw new InvalidOperationException("DefaultConnection string is missing or empty.");
             }
-            else
-            {
-                options.UseInMemoryDatabase("TestDatabase"); // Fallback for tests
-            }
+            options.UseSqlServer(connectionString,
+                sqlServerOptions => sqlServerOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorNumbersToAdd: null));
         });
 
-        builder
-            .Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-            {
-                options.SignIn.RequireConfirmedEmail = true;
-                options.Password.RequireDigit = true;
-                options.Password.RequiredLength = 8;
-            })
-            .AddEntityFrameworkStores<AppDbContext>()
-            .AddDefaultTokenProviders();
+        // Configure Identity
+        builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+        {
+            options.SignIn.RequireConfirmedEmail = true;
+            options.Password.RequireDigit = true;
+            options.Password.RequiredLength = 8;
+        })
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddDefaultTokenProviders();
 
-        builder
-            .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+        // Configure authentication
+        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
             {
                 options.LoginPath = "/api/auth/login";
                 options.AccessDeniedPath = "/api/auth/access-denied";
                 options.Cookie.HttpOnly = false; // Allow JavaScript access for development
-                options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP for development
-                options.Cookie.SameSite = SameSiteMode.Lax; // More compatible than None
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Enforce HTTPS in production
+                options.Cookie.SameSite = SameSiteMode.Lax;
                 options.ExpireTimeSpan = TimeSpan.FromHours(24);
                 options.SlidingExpiration = true;
                 options.Events.OnRedirectToLogin = context =>
                 {
-                    // Return 401 instead of redirecting for API calls
                     if (context.Request.Path.StartsWithSegments("/api"))
                     {
                         context.Response.StatusCode = 401;
@@ -100,68 +90,65 @@ public class Program
 
         builder.Services.AddTransient<MockStripeService>();
 
+        // Configure Swagger
         builder.Services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "HockeyRinkApi", Version = "v1" });
-            c.AddSecurityDefinition(
-                "CookieAuth",
-                new OpenApiSecurityScheme
+            c.AddSecurityDefinition("CookieAuth", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.ApiKey,
+                In = ParameterLocation.Cookie,
+                Name = "ASP.NET_SessionId",
+                Description = "Cookie-based authentication using ASP.NET Identity"
+            });
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
                 {
-                    Type = SecuritySchemeType.ApiKey,
-                    In = ParameterLocation.Cookie,
-                    Name = "ASP.NET_SessionId",
-                    Description = "Cookie-based authentication using ASP.NET Identity",
-                }
-            );
-            c.AddSecurityRequirement(
-                new OpenApiSecurityRequirement
-                {
+                    new OpenApiSecurityScheme
                     {
-                        new OpenApiSecurityScheme
+                        Reference = new OpenApiReference
                         {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "CookieAuth",
-                            },
-                        },
-                        new string[] { }
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "CookieAuth"
+                        }
                     },
+                    new string[] { }
                 }
-            );
+            });
         });
 
-        // Add CORS configuration
+        // Configure CORS
         builder.Services.AddCors(options =>
         {
-            options.AddPolicy(
-                "AllowAngularDevServer",
-                policy =>
-                {
-                    policy
-                        .WithOrigins("http://localhost:4200") // Angular dev server
-                        .AllowAnyMethod()
-                        .AllowAnyHeader()
-                        .AllowCredentials(); // Required for cookies
-                }
-            );
+            options.AddPolicy("AllowAngularDevServer", policy =>
+            {
+                policy.WithOrigins("http://localhost:4200")
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .AllowCredentials();
+            });
 
-            options.AddPolicy(
-                "AllowProduction",
-                policy =>
-                {
-                    policy
-                        .WithOrigins(
-                            "https://lively-river-0c3237510.1.azurestaticapps.net" // Azure Static Web Apps frontend
-                        )
-                        .AllowAnyMethod()
-                        .AllowAnyHeader()
-                        .AllowCredentials();
-                }
-            );
+            options.AddPolicy("AllowProduction", policy =>
+            {
+                policy.WithOrigins("https://lively-river-0c3237510.1.azurestaticapps.net")
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .AllowCredentials();
+            });
         });
 
         var app = builder.Build();
+
+        // Configure middleware pipeline
+        app.UseExceptionHandler(errorApp =>
+        {
+            errorApp.Run(async context =>
+            {
+                context.Response.StatusCode = 500;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync("{\"error\": \"Internal Server Error\"}");
+            });
+        });
 
         if (app.Environment.IsDevelopment())
         {
@@ -175,24 +162,17 @@ public class Program
 
         app.UseSerilogRequestLogging();
         app.UseRouting();
-        app.UseCors("AllowProduction"); // Use "AllowProduction" in production
+        app.UseCors("AllowProduction");
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
 
+        // Apply migrations and seed data
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            // Skip migrations for in-memory database (tests)
-            if (
-                !string.IsNullOrEmpty(
-                    builder.Configuration.GetConnectionString("DefaultConnection")
-                )
-            )
-            {
-                db.Database.Migrate();
-            }
+            db.Database.Migrate();
             if (!db.Leagues.Any())
             {
                 db.Leagues.AddRange(
