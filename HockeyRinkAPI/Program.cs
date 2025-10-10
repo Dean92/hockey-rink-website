@@ -19,13 +19,15 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Configure Serilog for logging
-        builder.Host.UseSerilog((context, services, configuration) =>
-            configuration
-                .ReadFrom.Configuration(context.Configuration)
-                .ReadFrom.Services(services)
-                .Enrich.FromLogContext()
-                .WriteTo.Console()
-                .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day));
+        builder.Host.UseSerilog(
+            (context, services, configuration) =>
+                configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Services(services)
+                    .Enrich.FromLogContext()
+                    .WriteTo.Console()
+                    .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+        );
 
         builder.Services.AddControllers();
         builder.Services.AddApplicationInsightsTelemetry();
@@ -36,27 +38,35 @@ public class Program
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             if (string.IsNullOrEmpty(connectionString))
             {
-                throw new InvalidOperationException("DefaultConnection string is missing or empty.");
+                throw new InvalidOperationException(
+                    "DefaultConnection string is missing or empty."
+                );
             }
-            options.UseSqlServer(connectionString,
-                sqlServerOptions => sqlServerOptions.EnableRetryOnFailure(
-                    maxRetryCount: 5,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null));
+            options.UseSqlServer(
+                connectionString,
+                sqlServerOptions =>
+                    sqlServerOptions.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorNumbersToAdd: null
+                    )
+            );
         });
 
         // Configure Identity
-        builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-        {
-            options.SignIn.RequireConfirmedEmail = true;
-            options.Password.RequireDigit = true;
-            options.Password.RequiredLength = 8;
-        })
-        .AddEntityFrameworkStores<AppDbContext>()
-        .AddDefaultTokenProviders();
+        builder
+            .Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+            {
+                options.SignIn.RequireConfirmedEmail = true;
+                options.Password.RequireDigit = true;
+                options.Password.RequiredLength = 8;
+            })
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders();
 
         // Configure authentication
-        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+        builder
+            .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
             {
                 options.LoginPath = "/api/auth/login";
@@ -94,52 +104,65 @@ public class Program
         builder.Services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "HockeyRinkApi", Version = "v1" });
-            c.AddSecurityDefinition("CookieAuth", new OpenApiSecurityScheme
-            {
-                Type = SecuritySchemeType.ApiKey,
-                In = ParameterLocation.Cookie,
-                Name = "ASP.NET_SessionId",
-                Description = "Cookie-based authentication using ASP.NET Identity"
-            });
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
+            c.AddSecurityDefinition(
+                "CookieAuth",
+                new OpenApiSecurityScheme
                 {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "CookieAuth"
-                        }
-                    },
-                    new string[] { }
+                    Type = SecuritySchemeType.ApiKey,
+                    In = ParameterLocation.Cookie,
+                    Name = "ASP.NET_SessionId",
+                    Description = "Cookie-based authentication using ASP.NET Identity",
                 }
-            });
+            );
+            c.AddSecurityRequirement(
+                new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "CookieAuth",
+                            },
+                        },
+                        new string[] { }
+                    },
+                }
+            );
         });
 
         // Configure CORS
         builder.Services.AddCors(options =>
         {
-            options.AddPolicy("AllowAngularDevServer", policy =>
-            {
-                policy.WithOrigins("http://localhost:4200")
-                      .AllowAnyMethod()
-                      .AllowAnyHeader()
-                      .AllowCredentials();
-            });
+            options.AddPolicy(
+                "AllowAngularDevServer",
+                policy =>
+                {
+                    policy
+                        .WithOrigins("http://localhost:4200")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                }
+            );
 
-            options.AddPolicy("AllowProduction", policy =>
-            {
-                policy.WithOrigins("https://lively-river-0c3237510.1.azurestaticapps.net")
-                      .AllowAnyMethod()
-                      .AllowAnyHeader()
-                      .AllowCredentials();
-            });
+            options.AddPolicy(
+                "AllowProduction",
+                policy =>
+                {
+                    policy
+                        .WithOrigins("https://lively-river-0c3237510.1.azurestaticapps.net")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                }
+            );
         });
 
         var app = builder.Build();
 
-        // Configure middleware pipeline
+        // Configure the middleware pipeline
         app.UseExceptionHandler(errorApp =>
         {
             errorApp.Run(async context =>
