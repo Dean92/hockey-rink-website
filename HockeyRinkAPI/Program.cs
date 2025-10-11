@@ -190,26 +190,6 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
 
-        // Handle OPTIONS requests for CORS
-        app.Use(
-            async (context, next) =>
-            {
-                if (context.Request.Method == "OPTIONS")
-                {
-                    context.Response.Headers["Access-Control-Allow-Origin"] =
-                        "https://lively-river-0c3237510.1.azurestaticapps.net";
-                    context.Response.Headers["Access-Control-Allow-Methods"] =
-                        "GET, POST, PUT, DELETE, OPTIONS";
-                    context.Response.Headers["Access-Control-Allow-Headers"] =
-                        "Content-Type, Authorization";
-                    context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
-                    context.Response.StatusCode = 200;
-                    return;
-                }
-                await next();
-            }
-        );
-
         app.MapControllers();
 
         // Apply migrations and seed data
