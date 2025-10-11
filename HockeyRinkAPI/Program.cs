@@ -184,8 +184,17 @@ public class Program
         }
 
         app.UseSerilogRequestLogging();
-        app.UseRouting();
+        app.Use(async (context, next) =>
+        {
+            context.RequestServices.GetService<ILogger<Program>>()?.LogInformation(
+                "Request: {Method} {Path} Origin: {Origin}",
+                context.Request.Method,
+                context.Request.Path,
+                context.Request.Headers["Origin"]);
+            await next();
+        });
         app.UseCors("AllowProduction");
+        app.UseRouting();
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
