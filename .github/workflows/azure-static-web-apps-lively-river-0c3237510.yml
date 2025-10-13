@@ -2,11 +2,11 @@ name: Azure Static Web Apps CI/CD
 on:
   push:
     branches:
-      - feature/frontend
+      - main
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
-      - feature/frontend
+      - main
 jobs:
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
