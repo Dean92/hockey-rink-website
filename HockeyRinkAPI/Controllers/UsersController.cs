@@ -1,9 +1,14 @@
-﻿using HockeyRinkAPI.Data;
+﻿using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using HockeyRinkAPI.Data;
 using HockeyRinkAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HockeyRinkAPI.Controllers;
 
@@ -12,76 +17,111 @@ namespace HockeyRinkAPI.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly AppDbContext _dbContext;
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(UserManager<ApplicationUser> userManager)
+    public UsersController(
+        UserManager<ApplicationUser> userManager,
+        AppDbContext dbContext,
+        ILogger<UsersController> logger
+    )
     {
-        _userManager = userManager;
+        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    [Authorize]
     [HttpGet("profile")]
     public async Task<IActionResult> GetProfile()
     {
-        // Check for token-based auth first
-        var authHeader = Request.Headers.Authorization.FirstOrDefault();
-
-        ApplicationUser user;
-        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+        try
         {
-            var token = authHeader.Substring("Bearer ".Length);
-            var isValidToken = await ValidateTokenAsync(token);
-            if (!isValidToken)
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized(new { Message = "Invalid or expired token" });
+                _logger.LogWarning("No user ID found in claims for profile request");
+                return Unauthorized(new { Message = "Invalid or missing authentication" });
             }
-            // Extract user from token
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = tokenData.Split('|');
-            var userId = parts[0];
-            user = await _userManager.FindByIdAsync(userId)!;
+
+            _logger.LogInformation("Fetching profile for user ID: {UserId}", userId);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for ID: {UserId}", userId);
+                return NotFound(new { Message = "User not found" });
+            }
+
+            return Ok(
+                new
+                {
+                    user.Email,
+                    user.FirstName,
+                    user.LastName,
+                    user.LeagueId,
+                }
+            );
         }
-        else
+        catch (Exception ex)
         {
-            // Fall back to cookie auth
-            user = await _userManager.GetUserAsync(User)!;
+            _logger.LogError(ex, "Failed to fetch profile for user");
+            return StatusCode(500, new { Error = "Internal Server Error", Details = ex.Message });
         }
-
-        if (user == null)
-            return NotFound(new { Message = "User not found" });
-
-        return Ok(
-            new
-            {
-                user.Email,
-                user.FirstName,
-                user.LastName,
-                user.LeagueId,
-            }
-        );
     }
 
-    private async Task<bool> ValidateTokenAsync(string token)
+    [Authorize]
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetDashboard()
     {
         try
         {
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = tokenData.Split('|');
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("No user ID found in claims for dashboard request");
+                return Unauthorized(new { Message = "Invalid or missing authentication" });
+            }
 
-            if (parts.Length != 3)
-                return false;
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            if (expiry < DateTime.UtcNow)
-                return false;
-
+            _logger.LogInformation("Fetching dashboard for user ID: {UserId}", userId);
             var user = await _userManager.FindByIdAsync(userId);
-            return user != null && user.Email == email;
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for ID: {UserId}", userId);
+                return NotFound(new { Message = "User not found" });
+            }
+
+            var registrations = await _dbContext
+                .SessionRegistrations.Where(r => r.UserId == userId)
+                .Include(r => r.Session)
+                .ToListAsync();
+
+            return Ok(
+                new
+                {
+                    User = new
+                    {
+                        user.FirstName,
+                        user.LastName,
+                        user.Email,
+                        user.LeagueId,
+                    },
+                    RegisteredSessions = registrations
+                        .Select(r => new
+                        {
+                            r.SessionId,
+                            SessionName = r.Session.Name ?? "Unknown Session",
+                            SessionStartDate = r.Session.StartDate,
+                            SessionEndDate = r.Session.EndDate,
+                            SessionFee = r.Session.Fee,
+                        })
+                        .ToList(),
+                }
+            );
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            _logger.LogError(ex, "Failed to fetch dashboard for user");
+            return StatusCode(500, new { Error = "Internal Server Error", Details = ex.Message });
         }
     }
 }
