@@ -39,20 +39,6 @@ public class Program
                 Environment.GetEnvironmentVariable("DefaultConnection")
                 ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                // Log the available configuration sources for debugging
-                var logger = builder.Services.BuildServiceProvider().GetService<ILogger<Program>>();
-                logger?.LogError(
-                    "DefaultConnection string is missing. Available environment variables: {EnvVars}",
-                    string.Join(", ", Environment.GetEnvironmentVariables().Keys.Cast<string>())
-                );
-
-                throw new InvalidOperationException(
-                    "DefaultConnection string is missing or empty. Check Azure App Service Configuration."
-                );
-            }
-
             options.UseSqlServer(
                 connectionString,
                 sqlServerOptions =>
@@ -196,48 +182,7 @@ public class Program
         }
 
         app.UseSerilogRequestLogging();
-
-        // Add explicit CORS handling before routing
         app.UseCors("AllowProduction");
-
-        // Add debugging middleware
-        app.Use(
-            async (context, next) =>
-            {
-                var logger = context.RequestServices.GetService<ILogger<Program>>();
-                logger?.LogInformation(
-                    "Request: {Method} {Path} Origin: {Origin} Headers: {Headers}",
-                    context.Request.Method,
-                    context.Request.Path,
-                    context.Request.Headers["Origin"].ToString(),
-                    string.Join(", ", context.Request.Headers.Select(h => $"{h.Key}: {h.Value}"))
-                );
-
-                // Handle preflight requests explicitly
-                if (context.Request.Method == "OPTIONS")
-                {
-                    logger?.LogInformation("Handling OPTIONS preflight request");
-                    context.Response.Headers.Add(
-                        "Access-Control-Allow-Origin",
-                        "https://lively-river-0c3237510.1.azurestaticapps.net"
-                    );
-                    context.Response.Headers.Add(
-                        "Access-Control-Allow-Methods",
-                        "GET, POST, PUT, DELETE, OPTIONS"
-                    );
-                    context.Response.Headers.Add(
-                        "Access-Control-Allow-Headers",
-                        "Content-Type, Authorization"
-                    );
-                    context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
-                    context.Response.StatusCode = 200;
-                    return;
-                }
-
-                await next();
-            }
-        );
-
         app.UseRouting();
         app.UseHttpsRedirection();
         app.UseAuthentication();
@@ -248,42 +193,23 @@ public class Program
         // Add a simple health check endpoint
         app.MapGet("/health", () => new { status = "healthy", timestamp = DateTime.UtcNow });
 
-        // Apply migrations and seed data with error handling
-        try
+        // Apply migrations and seed data
+        using (var scope = app.Services.CreateScope())
         {
-            using (var scope = app.Services.CreateScope())
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.Migrate();
+            if (!db.Leagues.Any())
             {
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-                logger.LogInformation("Attempting to apply database migrations...");
-                db.Database.Migrate();
-                logger.LogInformation("Database migrations applied successfully.");
-
-                if (!db.Leagues.Any())
-                {
-                    logger.LogInformation("Seeding league data...");
-                    db.Leagues.AddRange(
-                        new League { Name = "Leisure", Description = "Beginner league" },
-                        new League { Name = "Bronze", Description = "Intermediate league" },
-                        new League { Name = "Silver", Description = "Intermediate league" },
-                        new League { Name = "Gold", Description = "Advanced league" },
-                        new League { Name = "Platinum", Description = "Elite league" },
-                        new League { Name = "Diamond", Description = "Pro league" }
-                    );
-                    await db.SaveChangesAsync();
-                    logger.LogInformation("League data seeded successfully.");
-                }
+                db.Leagues.AddRange(
+                    new League { Name = "Leisure", Description = "Beginner league" },
+                    new League { Name = "Bronze", Description = "Intermediate league" },
+                    new League { Name = "Silver", Description = "Intermediate league" },
+                    new League { Name = "Gold", Description = "Advanced league" },
+                    new League { Name = "Platinum", Description = "Elite league" },
+                    new League { Name = "Diamond", Description = "Pro league" }
+                );
+                await db.SaveChangesAsync();
             }
-        }
-        catch (Exception ex)
-        {
-            var logger = app.Services.GetRequiredService<ILogger<Program>>();
-            logger.LogError(
-                ex,
-                "Error during database initialization. Application will continue without database setup."
-            );
-            // Don't throw - let the app start even if database setup fails
         }
 
         app.Run();
