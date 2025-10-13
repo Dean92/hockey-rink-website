@@ -157,7 +157,8 @@ public class Program
                         .WithOrigins("https://lively-river-0c3237510.1.azurestaticapps.net")
                         .AllowAnyMethod()
                         .AllowAnyHeader()
-                        .AllowCredentials();
+                        .AllowCredentials()
+                        .SetPreflightMaxAge(TimeSpan.FromMinutes(30));
                 }
             );
         });
@@ -186,21 +187,48 @@ public class Program
         }
 
         app.UseSerilogRequestLogging();
+
+        // Add explicit CORS handling before routing
+        app.UseCors("AllowProduction");
+
+        // Add debugging middleware
         app.Use(
             async (context, next) =>
             {
-                context
-                    .RequestServices.GetService<ILogger<Program>>()
-                    ?.LogInformation(
-                        "Request: {Method} {Path} Origin: {Origin}",
-                        context.Request.Method,
-                        context.Request.Path,
-                        context.Request.Headers["Origin"]
+                var logger = context.RequestServices.GetService<ILogger<Program>>();
+                logger?.LogInformation(
+                    "Request: {Method} {Path} Origin: {Origin} Headers: {Headers}",
+                    context.Request.Method,
+                    context.Request.Path,
+                    context.Request.Headers["Origin"].ToString(),
+                    string.Join(", ", context.Request.Headers.Select(h => $"{h.Key}: {h.Value}"))
+                );
+
+                // Handle preflight requests explicitly
+                if (context.Request.Method == "OPTIONS")
+                {
+                    logger?.LogInformation("Handling OPTIONS preflight request");
+                    context.Response.Headers.Add(
+                        "Access-Control-Allow-Origin",
+                        "https://lively-river-0c3237510.1.azurestaticapps.net"
                     );
+                    context.Response.Headers.Add(
+                        "Access-Control-Allow-Methods",
+                        "GET, POST, PUT, DELETE, OPTIONS"
+                    );
+                    context.Response.Headers.Add(
+                        "Access-Control-Allow-Headers",
+                        "Content-Type, Authorization"
+                    );
+                    context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
+                    context.Response.StatusCode = 200;
+                    return;
+                }
+
                 await next();
             }
         );
-        app.UseCors("AllowProduction");
+
         app.UseRouting();
         app.UseHttpsRedirection();
         app.UseAuthentication();
