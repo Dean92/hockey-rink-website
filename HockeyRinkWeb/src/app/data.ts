@@ -44,4 +44,12 @@ export class DataService {
       withCredentials: true,
     });
   }
+
+  getDashboard(): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get(`${this.apiUrl}/users/dashboard`, {
+      headers,
+      withCredentials: true,
+    });
+  }
 }
