@@ -35,7 +35,9 @@ public class Program
         // Configure database context
         builder.Services.AddDbContext<AppDbContext>(options =>
         {
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            var connectionString =
+                Environment.GetEnvironmentVariable("DefaultConnection")
+                ?? builder.Configuration.GetConnectionString("DefaultConnection");
             if (string.IsNullOrEmpty(connectionString))
             {
                 throw new InvalidOperationException(
@@ -210,8 +212,7 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            // Temporarily disable migrations for troubleshooting
-            // db.Database.Migrate();
+            db.Database.Migrate();
             if (!db.Leagues.Any())
             {
                 db.Leagues.AddRange(
