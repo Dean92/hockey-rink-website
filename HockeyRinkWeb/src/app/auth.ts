@@ -1,13 +1,13 @@
 import { Injectable } from "@angular/core";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Observable, tap } from "rxjs";
+import { environment } from "../environments/environment";
 
 @Injectable({
   providedIn: "root",
 })
 export class AuthService {
-  private apiUrl =
-    "https://hockey-rink-api-bbhch3gwgzedc9e3.centralus-01.azurewebsites.net/api/auth";
+  private apiUrl = environment.apiUrl;
   private readonly TOKEN_KEY = "auth_token";
 
   constructor(private http: HttpClient) {}
@@ -15,7 +15,7 @@ export class AuthService {
   login(email: string, password: string): Observable<any> {
     return this.http
       .post<any>(
-        `${this.apiUrl}/login`,
+        `${this.apiUrl}/auth/login`,
         {
           email,
           password,
@@ -39,7 +39,7 @@ export class AuthService {
     password: string
   ): Observable<any> {
     return this.http.post<any>(
-      `${this.apiUrl}/register`,
+      `${this.apiUrl}/auth/register`,
       {
         firstName,
         lastName,
@@ -55,13 +55,13 @@ export class AuthService {
 
     if (token) {
       return this.http.post<any>(
-        `${this.apiUrl}/validate-token`,
+        `${this.apiUrl}/auth/validate-token`,
         { Token: token },
         { withCredentials: true }
       );
     }
 
-    return this.http.get<any>(`${this.apiUrl}/status`, {
+    return this.http.get<any>(`${this.apiUrl}/auth/status`, {
       withCredentials: true,
     });
   }
