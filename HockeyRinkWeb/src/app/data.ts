@@ -2,13 +2,13 @@ import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
 import { AuthService } from "./auth";
+import { environment } from "../environments/environment";
 
 @Injectable({
   providedIn: "root",
 })
 export class DataService {
-  private apiUrl =
-    "https://hockey-rink-api-bbhch3gwgzedc9e3.centralus-01.azurewebsites.net/api";
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
