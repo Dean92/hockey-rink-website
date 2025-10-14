@@ -182,7 +182,17 @@ public class Program
         }
 
         app.UseSerilogRequestLogging();
-        app.UseCors("AllowProduction");
+
+        // Use different CORS policies based on environment
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseCors("AllowAngularDevServer");
+        }
+        else
+        {
+            app.UseCors("AllowProduction");
+        }
+
         app.UseRouting();
         app.UseHttpsRedirection();
         app.UseAuthentication();
