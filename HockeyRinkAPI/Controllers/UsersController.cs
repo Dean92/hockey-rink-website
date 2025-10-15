@@ -109,10 +109,10 @@ public class UsersController : ControllerBase
                         .Select(r => new
                         {
                             r.SessionId,
-                            SessionName = r.Session.Name ?? "Unknown Session",
-                            SessionStartDate = r.Session.StartDate,
-                            SessionEndDate = r.Session.EndDate,
-                            SessionFee = r.Session.Fee,
+                            SessionName = r.Session?.Name ?? "Unknown Session",
+                            SessionStartDate = r.Session?.StartDate,
+                            SessionEndDate = r.Session?.EndDate,
+                            SessionFee = r.Session?.Fee,
                         })
                         .ToList(),
                 }
