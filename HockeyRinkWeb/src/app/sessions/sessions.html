@@ -1,24 +1,42 @@
-<div class="container mt-5">
-  <h2 class="text-primary mb-4">Sessions</h2>
-  <div class="row">
-    <div class="col-md-4 mb-3" *ngFor="let session of sessions">
-      <div class="card h-100">
-        <div class="card-body">
-          <h5 class="card-title">{{ session.name }}</h5>
-          <p class="card-text">Start: {{ session.startDate | date }}</p>
-          <p class="card-text">End: {{ session.endDate | date }}</p>
-          <p class="card-text">Fee: ${{ session.fee }}</p>
-        </div>
-      </div>
-    </div>
+<div class="container mt-4">
+  <h2>Sessions</h2>
+  <div class="mb-3">
+    <label for="leagueFilter" class="form-label">Filter by League:</label>
+    <select
+      id="leagueFilter"
+      class="form-select"
+      [(ngModel)]="selectedLeagueId"
+      (change)="applyFilters()"
+    >
+      <option value="">All Leagues</option>
+      @For (let league of leagues; track league.id) {
+      <option>{{ league.name }}</option>
+      }
+    </select>
+    <label for="dateFilter" class="form-label ms-3">Filter by Date:</label>
+    <input
+      id="dateFilter"
+      type="date"
+      class="form-control d-inline-block"
+      [(ngModel)]="selectedDate"
+      (change)="applyFilters()"
+    />
   </div>
-  <div
-    class="alert alert-warning"
-    *ngIf="sessions.length === 0 && !errorMessage"
-  >
-    No sessions are currently available.
+  @If (sessions.length) {
+  <div>
+    @For (let session of sessions; track session.id) {
+    <ul class="list-group">
+      <li class="list-group-item">
+        {{ session.date | date : "medium" }} - {{ session.league?.name }} ({{
+          session.league?.description
+        }})
+      </li>
+    </ul>
+    }
   </div>
-  <div class="alert alert-danger" *ngIf="errorMessage">
-    {{ errorMessage }}
-  </div>
+  } else {
+  <ng-template #noSessions>
+    <p>No sessions found.</p>
+  </ng-template>
+  }
 </div>

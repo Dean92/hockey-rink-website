@@ -1,31 +1,50 @@
-import { Injectable } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
-import { Observable } from "rxjs";
+import { Injectable, inject } from "@angular/core";
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { Observable, of, tap, catchError } from "rxjs";
 import { AuthService } from "./auth";
 import { environment } from "../environments/environment";
+import { League, Session } from "./models";
 
 @Injectable({
   providedIn: "root",
 })
 export class DataService {
   private apiUrl = environment.apiUrl;
+  private http = inject(HttpClient);
+  private authService = inject(AuthService);
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
-
-  getLeagues(): Observable<any> {
+  getLeagues(): Observable<League[]> {
     const headers = this.authService.getAuthHeaders();
-    return this.http.get(`${this.apiUrl}/leagues`, {
-      headers,
-      withCredentials: true,
-    });
+    return this.http
+      .get<League[]>(`${this.apiUrl}/leagues`, {
+        headers,
+        withCredentials: true,
+      })
+      .pipe(
+        catchError((err) => {
+          console.error("Error fetching leagues:", err);
+          return of([]);
+        })
+      );
   }
 
-  getSessions(): Observable<any> {
+  getSessions(leagueId?: number, date?: Date): Observable<Session[]> {
     const headers = this.authService.getAuthHeaders();
-    return this.http.get(`${this.apiUrl}/sessions`, {
-      headers,
-      withCredentials: true,
-    });
+    let url = `${this.apiUrl}/sessions`;
+    if (leagueId || date) {
+      let params = new HttpParams();
+      if (leagueId) params = params.set("leagueId", leagueId.toString());
+      if (date) params = params.set("date", date.toISOString());
+      url += `?${params.toString()}`;
+    }
+    return this.http
+      .get<Session[]>(url, { headers, withCredentials: true })
+      .pipe(
+        catchError((err) => {
+          console.error("Error fetching sessions:", err);
+          return of([]);
+        })
+      );
   }
 
   registerSession(sessionId: number): Observable<any> {
