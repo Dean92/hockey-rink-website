@@ -1,33 +1,73 @@
-import { Injectable } from "@angular/core";
-import { HttpClient, HttpHeaders } from "@angular/common/http";
-import { Observable, tap } from "rxjs";
+import { Injectable, inject } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { Observable, of } from "rxjs";
+import { catchError, map, tap } from "rxjs/operators";
 import { environment } from "../environments/environment";
 
 @Injectable({
   providedIn: "root",
 })
 export class AuthService {
-  private apiUrl = environment.apiUrl;
-  private readonly TOKEN_KEY = "auth_token";
+  private apiUrl = `${environment.apiUrl}/auth`;
+  private http = inject(HttpClient);
 
-  constructor(private http: HttpClient) {}
+  getToken(): string | null {
+    const token = localStorage.getItem("authToken");
+    console.log("getToken called, token:", token);
+    return token;
+  }
+
+  getAuthHeaders() {
+    const token = this.getToken();
+    console.log("getAuthHeaders called, token:", token);
+    return token ? { Authorization: `Bearer ${token}` } : undefined;
+  }
+
+  checkAuthStatus(): Observable<{ isValid: boolean }> {
+    const token = this.getToken();
+    console.log("checkAuthStatus called, token:", token);
+
+    if (!token) {
+      console.log("No token found, returning isValid: false");
+      return of({ isValid: false });
+    }
+
+    const headers = this.getAuthHeaders();
+    console.log("Calling validate endpoint with headers:", headers);
+
+    return this.http
+      .get<{ isValid: boolean }>(`${this.apiUrl}/validate`, {
+        ...(headers && { headers }),
+        withCredentials: true,
+      })
+      .pipe(
+        tap((response) => console.log("Auth validation response:", response)),
+        map((response) => ({ isValid: response.isValid })),
+        catchError((err) => {
+          console.error("Auth validation failed:", err);
+          return of({ isValid: false });
+        })
+      );
+  }
 
   login(email: string, password: string): Observable<any> {
+    console.log("Login attempt for:", email);
     return this.http
-      .post<any>(
-        `${this.apiUrl}/auth/login`,
-        {
-          email,
-          password,
-          rememberMe: true,
-        },
+      .post<{ token: string }>(
+        `${this.apiUrl}/login`,
+        { email, password },
         { withCredentials: true }
       )
       .pipe(
-        tap((response) => {
-          if (response.token) {
-            this.setToken(response.token);
-          }
+        tap((response) => console.log("Login response:", response)),
+        map((response) => {
+          console.log("Storing token:", response.token);
+          localStorage.setItem("authToken", response.token);
+          return response;
+        }),
+        catchError((err) => {
+          console.error("Login failed:", err);
+          throw err;
         })
       );
   }
@@ -38,51 +78,34 @@ export class AuthService {
     email: string,
     password: string
   ): Observable<any> {
-    return this.http.post<any>(
-      `${this.apiUrl}/auth/register`,
-      {
-        firstName,
-        lastName,
-        email,
-        password,
-      },
-      { withCredentials: true }
-    );
-  }
-
-  checkAuthStatus(): Observable<any> {
-    const token = this.getToken();
-
-    if (token) {
-      return this.http.post<any>(
-        `${this.apiUrl}/auth/validate-token`,
-        { Token: token },
+    console.log("Register attempt for:", email);
+    return this.http
+      .post<{ token: string }>(
+        `${this.apiUrl}/register`,
+        {
+          firstName,
+          lastName,
+          email,
+          password,
+        },
         { withCredentials: true }
+      )
+      .pipe(
+        tap((response) => console.log("Register response:", response)),
+        map((response) => {
+          console.log("Storing token:", response.token);
+          localStorage.setItem("authToken", response.token);
+          return response;
+        }),
+        catchError((err) => {
+          console.error("Registration failed:", err);
+          throw err;
+        })
       );
-    }
-
-    return this.http.get<any>(`${this.apiUrl}/auth/status`, {
-      withCredentials: true,
-    });
-  }
-
-  private setToken(token: string): void {
-    localStorage.setItem(this.TOKEN_KEY, token);
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
-  getAuthHeaders(): HttpHeaders {
-    const token = this.getToken();
-    if (token) {
-      return new HttpHeaders().set("Authorization", `Bearer ${token}`);
-    }
-    return new HttpHeaders();
   }
 
   logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
+    console.log("Logging out, removing token");
+    localStorage.removeItem("authToken");
   }
 }

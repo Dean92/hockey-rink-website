@@ -1,28 +1,69 @@
-import { Component } from "@angular/core";
-import { AuthService } from "../auth";
+import { Component, signal } from "@angular/core";
 import { Router } from "@angular/router";
-import { FormsModule } from "@angular/forms";
+import { AuthService } from "../auth";
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+} from "@angular/forms";
 import { CommonModule } from "@angular/common";
 
 @Component({
   selector: "app-login",
-  imports: [FormsModule, CommonModule],
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: "./login.html",
-  styleUrls: ["./login.css"],
+  styleUrl: "./login.css",
 })
 export class Login {
-  email: string = "";
-  password: string = "";
+  loginForm: FormGroup;
+  errorMessage = signal<string>("");
+  isLoading = signal<boolean>(false);
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private fb: FormBuilder
+  ) {
+    this.loginForm = this.fb.group({
+      email: ["", [Validators.required, Validators.email]],
+      password: ["", [Validators.required, Validators.minLength(8)]],
+    });
+  }
+
+  hasError(field: string, errorType: string): boolean {
+    const control = this.loginForm.get(field);
+    return !!(
+      control &&
+      control.hasError(errorType) &&
+      (control.dirty || control.touched)
+    );
+  }
 
   onLogin() {
-    this.authService.login(this.email, this.password).subscribe({
-      next: (response) => {
+    this.errorMessage.set("");
+
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
+
+    this.isLoading.set(true);
+    const { email, password } = this.loginForm.value;
+
+    this.authService.login(email, password).subscribe({
+      next: () => {
+        console.log("Login successful");
+        this.isLoading.set(false);
         this.router.navigate(["/leagues"]);
       },
       error: (err) => {
-        console.error("Login failed", err);
+        console.error("Login failed:", err);
+        this.isLoading.set(false);
+        this.errorMessage.set(
+          err.error?.message || "Invalid email or password. Please try again."
+        );
       },
     });
   }

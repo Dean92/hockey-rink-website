@@ -1,42 +1,92 @@
 <div class="container mt-4">
-  <h2>Sessions</h2>
-  <div class="mb-3">
-    <label for="leagueFilter" class="form-label">Filter by League:</label>
-    <select
-      id="leagueFilter"
-      class="form-select"
-      [(ngModel)]="selectedLeagueId"
-      (change)="applyFilters()"
-    >
-      <option value="">All Leagues</option>
-      @For (let league of leagues; track league.id) {
-      <option>{{ league.name }}</option>
-      }
-    </select>
-    <label for="dateFilter" class="form-label ms-3">Filter by Date:</label>
-    <input
-      id="dateFilter"
-      type="date"
-      class="form-control d-inline-block"
-      [(ngModel)]="selectedDate"
-      (change)="applyFilters()"
-    />
+  <h2 class="text-primary mb-4">Sessions</h2>
+
+  @if (errorMessage()) {
+  <div class="alert alert-danger">
+    {{ errorMessage() }}
   </div>
-  @If (sessions.length) {
-  <div>
-    @For (let session of sessions; track session.id) {
-    <ul class="list-group">
-      <li class="list-group-item">
-        {{ session.date | date : "medium" }} - {{ session.league?.name }} ({{
-          session.league?.description
-        }})
-      </li>
-    </ul>
+  }
+
+  <div class="card shadow mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Filter Sessions</h5>
+      <form [formGroup]="filterForm">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="leagueFilter" class="form-label"
+              >Filter by League:</label
+            >
+            <select
+              id="leagueFilter"
+              formControlName="league"
+              class="form-select"
+            >
+              <option value="">All Leagues</option>
+              @for (league of leagues(); track league.id) {
+              <option [value]="league.id">
+                {{ league.name }} - {{ league.description }}
+              </option>
+              }
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="dateFilter" class="form-label">Filter by Date:</label>
+            <input
+              id="dateFilter"
+              type="date"
+              formControlName="date"
+              class="form-control"
+            />
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+  <div class="text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  } @else { @if (sessions().length) {
+  <div class="row">
+    @for (session of sessions(); track session.id) {
+    <div class="col-md-6 mb-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">{{ session.name }}</h5>
+          <p class="card-text">
+            <strong>League:</strong> {{ session.league?.name || "N/A" }}<br />
+            <strong>Start:</strong> {{ session.startDate | date : "medium"
+            }}<br />
+            <strong>End:</strong> {{ session.endDate | date : "medium" }}<br />
+            <strong>Fee:</strong> ${{ session.fee }}<br />
+            <strong>Status:</strong>
+            <span
+              [class]="
+                session.isActive ? 'badge bg-success' : 'badge bg-secondary'
+              "
+            >
+              {{ session.isActive ? "Active" : "Inactive" }}
+            </span>
+          </p>
+          <a
+            [routerLink]="['/session-registration']"
+            [queryParams]="{ sessionId: session.id }"
+            class="btn btn-primary"
+            [class.disabled]="!session.isActive"
+          >
+            Register for Session
+          </a>
+        </div>
+      </div>
+    </div>
     }
   </div>
-  } else {
-  <ng-template #noSessions>
-    <p>No sessions found.</p>
-  </ng-template>
-  }
+  } @else {
+  <div class="alert alert-info">
+    <p class="mb-0">No sessions found. Try adjusting your filters.</p>
+  </div>
+  } }
 </div>

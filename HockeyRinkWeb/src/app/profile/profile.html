@@ -1,19 +1,38 @@
 <div class="container mt-5">
   <h2 class="text-primary mb-4">User Profile</h2>
-  <div *ngIf="profile; else loading" class="card">
-    <div class="card-body">
-      <h5 class="card-title">{{ profile.firstName }} {{ profile.lastName }}</h5>
-      <p class="card-text"><strong>Email:</strong> {{ profile.email }}</p>
-      <p class="card-text">
-        <strong>Email Confirmed:</strong>
-        {{ profile.emailConfirmed ? "Yes" : "No" }}
-      </p>
+
+  @if (isLoading()) {
+  <div class="text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
   </div>
-  <ng-template #loading>
-    <div class="alert alert-info">Loading profile...</div>
-  </ng-template>
-  <div class="alert alert-danger" *ngIf="errorMessage">
-    {{ errorMessage }}
+  } @if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">
+    {{ errorMessage() }}
   </div>
+  } @if (profile() && !isLoading()) {
+  <div class="card shadow">
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-3 fw-bold">First Name:</div>
+        <div class="col-md-9">{{ profile()!.firstName }}</div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-3 fw-bold">Last Name:</div>
+        <div class="col-md-9">{{ profile()!.lastName }}</div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-3 fw-bold">Email:</div>
+        <div class="col-md-9">{{ profile()!.email }}</div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-3 fw-bold">League ID:</div>
+        <div class="col-md-9">
+          {{ profile()!.leagueId || "Not assigned" }}
+        </div>
+      </div>
+    </div>
+  </div>
+  }
 </div>

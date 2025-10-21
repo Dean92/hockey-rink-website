@@ -2,32 +2,38 @@ export interface League {
   id: number;
   name: string;
   description: string;
-  createdAt: string;
-  teams?: Team[];
+  createdAt: Date;
 }
 
 export interface Session {
   id: number;
   name: string;
-  startDate: string;
-  endDate: string;
+  startDate: Date;
+  endDate: Date;
   fee: number;
   isActive: boolean;
-  createdAt: string;
-  registrations: SessionRegistration[];
+  createdAt: Date;
+  leagueId?: number;
+  league?: League;
 }
 
-export interface Team {
-  id: number;
-  name: string;
-  leagueId: number;
-  createdAt: string;
+export interface UserProfile {
+  email: string;
+  firstName: string;
+  lastName: string;
+  leagueId?: number;
 }
 
-export interface SessionRegistration {
-  id: number;
+export interface DashboardData {
+  user: UserProfile;
+  registeredSessions: RegisteredSession[];
+}
+
+export interface RegisteredSession {
   sessionId: number;
-  userId: string;
-  registeredAt: string;
-  paymentStatus: string;
+  sessionName: string;
+  sessionStartDate: Date;
+  sessionEndDate: Date;
+  sessionFee: number;
+  leagueName?: string;
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HockeyRinkAPI.Controllers;
 
@@ -13,61 +14,76 @@ public class LeaguesController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ILogger<LeaguesController> _logger;
 
-    public LeaguesController(AppDbContext db, UserManager<ApplicationUser> userManager)
+    public LeaguesController(
+        AppDbContext db,
+        UserManager<ApplicationUser> userManager,
+        ILogger<LeaguesController> logger)
     {
         _db = db;
         _userManager = userManager;
+        _logger = logger;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetLeagues()
     {
-        Console.WriteLine("LeaguesController.GetLeagues() - Request received");
-        
-        // Check for token-based auth first
-        var authHeader = Request.Headers.Authorization.FirstOrDefault();
-        Console.WriteLine($"Authorization header: {authHeader}");
-        
-        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+        try
         {
-            var token = authHeader.Substring("Bearer ".Length);
-            Console.WriteLine($"Token extracted: {token}");
-            var isValidToken = await ValidateTokenAsync(token);
-            Console.WriteLine($"Token validation result: {isValidToken}");
-            if (!isValidToken)
-            {
-                Console.WriteLine("Token validation failed - returning Unauthorized");
-                return Unauthorized(new { Message = "Invalid or expired token" });
-            }
-            Console.WriteLine("Token validation successful");
-        }
-        // If no token, fall back to cookie auth
-        else if (!HttpContext.User.Identity?.IsAuthenticated ?? true)
-        {
-            Console.WriteLine("No valid token and not cookie authenticated - returning Unauthorized");
-            return Unauthorized(new { Message = "Authentication required" });
-        }
+            _logger.LogInformation("GetLeagues - Request received");
 
-        Console.WriteLine("Authentication successful - fetching leagues");
-        var leagues = _db.Leagues.ToList();
-        Console.WriteLine($"Found {leagues.Count} leagues in database");
-        Console.WriteLine($"Returning leagues: {System.Text.Json.JsonSerializer.Serialize(leagues)}");
-        return Ok(leagues);
+            // Check for token-based auth first
+            var authHeader = Request.Headers.Authorization.FirstOrDefault();
+            _logger.LogInformation("GetLeagues - Authorization header: {AuthHeader}", authHeader);
+
+            bool isAuthenticated = false;
+
+            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+            {
+                var token = authHeader.Substring("Bearer ".Length);
+                _logger.LogInformation("GetLeagues - Token extracted: {Token}", token);
+                isAuthenticated = await ValidateTokenAsync(token);
+                _logger.LogInformation("GetLeagues - Token validation result: {IsAuthenticated}", isAuthenticated);
+            }
+            // Fall back to cookie auth
+            else if (HttpContext.User.Identity?.IsAuthenticated == true)
+            {
+                _logger.LogInformation("GetLeagues - Cookie authenticated");
+                isAuthenticated = true;
+            }
+
+            if (!isAuthenticated)
+            {
+                _logger.LogWarning("GetLeagues - Not authenticated, returning Unauthorized");
+                return Unauthorized(new { message = "Authentication required" });
+            }
+
+            _logger.LogInformation("GetLeagues - Authentication successful, fetching leagues");
+            var leagues = await _db.Leagues.ToListAsync();
+            _logger.LogInformation("GetLeagues - Found {Count} leagues", leagues.Count);
+
+            return Ok(leagues);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetLeagues - Error occurred");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
     }
 
     private async Task<bool> ValidateTokenAsync(string token)
     {
         try
         {
-            Console.WriteLine($"ValidateTokenAsync - Token: {token}");
+            _logger.LogInformation("ValidateTokenAsync - Token: {Token}", token);
             var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            Console.WriteLine($"ValidateTokenAsync - Decoded token data: {tokenData}");
+            _logger.LogInformation("ValidateTokenAsync - Decoded token data: {TokenData}", tokenData);
             var parts = tokenData.Split('|');
 
             if (parts.Length != 3)
             {
-                Console.WriteLine($"ValidateTokenAsync - Invalid parts count: {parts.Length}");
+                _logger.LogWarning("ValidateTokenAsync - Invalid parts count: {Count}", parts.Length);
                 return false;
             }
 
@@ -75,22 +91,25 @@ public class LeaguesController : ControllerBase
             var email = parts[1];
             var expiry = DateTime.Parse(parts[2]);
 
-            Console.WriteLine($"ValidateTokenAsync - UserId: {userId}, Email: {email}, Expiry: {expiry}");
+            _logger.LogInformation("ValidateTokenAsync - UserId: {UserId}, Email: {Email}, Expiry: {Expiry}",
+                userId, email, expiry);
 
             if (expiry < DateTime.UtcNow)
             {
-                Console.WriteLine("ValidateTokenAsync - Token expired");
+                _logger.LogWarning("ValidateTokenAsync - Token expired");
                 return false;
             }
 
             var user = await _userManager.FindByIdAsync(userId);
             var isValid = user != null && user.Email == email;
-            Console.WriteLine($"ValidateTokenAsync - User found: {user != null}, Email match: {user?.Email == email}, Result: {isValid}");
+            _logger.LogInformation("ValidateTokenAsync - User found: {UserFound}, Email match: {EmailMatch}, Result: {IsValid}",
+                user != null, user?.Email == email, isValid);
+
             return isValid;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"ValidateTokenAsync - Exception: {ex.Message}");
+            _logger.LogError(ex, "ValidateTokenAsync - Exception: {Message}", ex.Message);
             return false;
         }
     }

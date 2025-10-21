@@ -38,7 +38,6 @@ public class Program
             var connectionString =
                 Environment.GetEnvironmentVariable("DefaultConnection")
                 ?? builder.Configuration.GetConnectionString("DefaultConnection");
-            
 
             options.UseSqlServer(
                 connectionString,
@@ -55,9 +54,12 @@ public class Program
         builder
             .Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
-                options.SignIn.RequireConfirmedEmail = true;
+                options.SignIn.RequireConfirmedEmail = false; // Set to false for MVP
                 options.Password.RequireDigit = true;
                 options.Password.RequiredLength = 8;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireLowercase = true;
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
@@ -108,7 +110,7 @@ public class Program
                 {
                     Type = SecuritySchemeType.ApiKey,
                     In = ParameterLocation.Cookie,
-                    Name = "ASP.NET_SessionId",
+                    Name = ".AspNetCore.Cookies",
                     Description = "Cookie-based authentication using ASP.NET Identity",
                 }
             );
@@ -204,22 +206,24 @@ public class Program
         // Add a simple health check endpoint
         app.MapGet("/health", () => new { status = "healthy", timestamp = DateTime.UtcNow });
 
-        // Apply migrations and seed data
+        // Apply migrations automatically (optional - good for development)
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.Migrate();
-            if (!db.Leagues.Any())
+            try
             {
-                db.Leagues.AddRange(
-                    new League { Name = "Leisure", Description = "Beginner league" },
-                    new League { Name = "Bronze", Description = "Intermediate league" },
-                    new League { Name = "Silver", Description = "Intermediate league" },
-                    new League { Name = "Gold", Description = "Advanced league" },
-                    new League { Name = "Platinum", Description = "Elite league" },
-                    new League { Name = "Diamond", Description = "Pro league" }
-                );
-                await db.SaveChangesAsync();
+                await db.Database.MigrateAsync();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("Database migrations applied successfully");
+
+                // Log league count for verification
+                var leagueCount = await db.Leagues.CountAsync();
+                logger.LogInformation("Current league count in database: {LeagueCount}", leagueCount);
+            }
+            catch (Exception ex)
+            {
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                logger.LogError(ex, "An error occurred while applying database migrations");
             }
         }
 
