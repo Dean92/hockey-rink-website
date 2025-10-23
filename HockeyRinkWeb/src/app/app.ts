@@ -14,6 +14,10 @@ export class App {
 
   constructor(private authService: AuthService, private router: Router) {}
 
+  isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
+
   onLogout() {
     this.authService.logout();
     this.router.navigate(["/login"]);

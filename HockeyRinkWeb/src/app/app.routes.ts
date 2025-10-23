@@ -7,7 +7,10 @@ import { Sessions } from "./sessions/sessions";
 import { SessionRegistration } from "./session-registration/session-registration";
 import { Profile } from "./profile/profile";
 import { Dashboard } from "./dashboard/dashboard";
+import { AdminDashboard } from "./admin-dashboard/admin-dashboard";
+import { AdminUsers } from "./admin-users/admin-users";
 import { AuthGuard } from "./auth.guard";
+import { AdminGuard } from "./admin-guard";
 
 export const routes: Routes = [
   { path: "", redirectTo: "/home", pathMatch: "full" },
@@ -23,4 +26,14 @@ export const routes: Routes = [
   },
   { path: "profile", component: Profile, canActivate: [AuthGuard] },
   { path: "dashboard", component: Dashboard, canActivate: [AuthGuard] },
+  {
+    path: "admin",
+    component: AdminDashboard,
+    canActivate: [AuthGuard, AdminGuard],
+  },
+  {
+    path: "admin/users",
+    component: AdminUsers,
+    canActivate: [AuthGuard, AdminGuard],
+  },
 ];

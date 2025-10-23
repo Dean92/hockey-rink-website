@@ -1,0 +1,60 @@
+<div class="container mt-5">
+  <h2 class="text-primary mb-4">
+    <i class="bi bi-people"></i> User Management
+  </h2>
+
+  @if (isLoading()) {
+  <div class="text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  } @if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">
+    {{ errorMessage() }}
+  </div>
+  } @if (!isLoading() && users().length > 0) {
+  <div class="card shadow">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>League</th>
+              <th>Email Confirmed</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users(); track user.id) {
+            <tr>
+              <td>{{ user.firstName }} {{ user.lastName }}</td>
+              <td>{{ user.email }}</td>
+              <td>
+                @if (user.leagueName) {
+                <span class="badge bg-secondary">{{ user.leagueName }}</span>
+                } @else {
+                <span class="text-muted">Not assigned</span>
+                }
+              </td>
+              <td>
+                @if (user.emailConfirmed) {
+                <span class="badge bg-success">✓ Confirmed</span>
+                } @else {
+                <span class="badge bg-warning">Pending</span>
+                }
+              </td>
+              <td>{{ user.createdAt | date : "short" }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  } @if (!isLoading() && users().length === 0) {
+  <div class="alert alert-info">No users found.</div>
+  }
+</div>

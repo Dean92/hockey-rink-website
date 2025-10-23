@@ -17,6 +17,12 @@ export class AuthService {
     return token;
   }
 
+  isAdmin(): boolean {
+    const isAdmin = localStorage.getItem("isAdmin") === "true";
+    console.log("isAdmin called, result:", isAdmin);
+    return isAdmin;
+  }
+
   getAuthHeaders() {
     const token = this.getToken();
     console.log("getAuthHeaders called, token:", token);
@@ -53,7 +59,7 @@ export class AuthService {
   login(email: string, password: string): Observable<any> {
     console.log("Login attempt for:", email);
     return this.http
-      .post<{ token: string }>(
+      .post<{ token: string; isAdmin: boolean }>(
         `${this.apiUrl}/login`,
         { email, password },
         { withCredentials: true }
@@ -62,7 +68,9 @@ export class AuthService {
         tap((response) => console.log("Login response:", response)),
         map((response) => {
           console.log("Storing token:", response.token);
+          console.log("User is admin:", response.isAdmin);
           localStorage.setItem("authToken", response.token);
+          localStorage.setItem("isAdmin", response.isAdmin.toString());
           return response;
         }),
         catchError((err) => {
@@ -95,6 +103,7 @@ export class AuthService {
         map((response) => {
           console.log("Storing token:", response.token);
           localStorage.setItem("authToken", response.token);
+          localStorage.setItem("isAdmin", "false"); // New users are not admin
           return response;
         }),
         catchError((err) => {
@@ -105,7 +114,8 @@ export class AuthService {
   }
 
   logout(): void {
-    console.log("Logging out, removing token");
+    console.log("Logging out, removing token and admin status");
     localStorage.removeItem("authToken");
+    localStorage.removeItem("isAdmin");
   }
 }

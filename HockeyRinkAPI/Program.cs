@@ -54,7 +54,7 @@ public class Program
         builder
             .Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
-                options.SignIn.RequireConfirmedEmail = false; // Set to false for MVP
+                options.SignIn.RequireConfirmedEmail = false;
                 options.Password.RequireDigit = true;
                 options.Password.RequiredLength = 8;
                 options.Password.RequireNonAlphanumeric = false;
@@ -71,8 +71,8 @@ public class Program
             {
                 options.LoginPath = "/api/auth/login";
                 options.AccessDeniedPath = "/api/auth/access-denied";
-                options.Cookie.HttpOnly = false; // Allow JavaScript access for development
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Enforce HTTPS in production
+                options.Cookie.HttpOnly = false;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 options.Cookie.SameSite = SameSiteMode.Lax;
                 options.ExpireTimeSpan = TimeSpan.FromHours(24);
                 options.SlidingExpiration = true;
@@ -186,7 +186,6 @@ public class Program
 
         app.UseSerilogRequestLogging();
 
-        // Use different CORS policies based on environment
         if (app.Environment.IsDevelopment())
         {
             app.UseCors("AllowAngularDevServer");
@@ -202,28 +201,72 @@ public class Program
         app.UseAuthorization();
 
         app.MapControllers();
-
-        // Add a simple health check endpoint
         app.MapGet("/health", () => new { status = "healthy", timestamp = DateTime.UtcNow });
 
-        // Apply migrations automatically (optional - good for development)
+        // Apply migrations and seed data
         using (var scope = app.Services.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var services = scope.ServiceProvider;
+            var logger = services.GetRequiredService<ILogger<Program>>();
+
             try
             {
+                var db = services.GetRequiredService<AppDbContext>();
                 await db.Database.MigrateAsync();
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
                 logger.LogInformation("Database migrations applied successfully");
 
-                // Log league count for verification
                 var leagueCount = await db.Leagues.CountAsync();
                 logger.LogInformation("Current league count in database: {LeagueCount}", leagueCount);
+
+                // Seed roles and admin user
+                var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+                var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+
+                // Create Admin role if it doesn't exist
+                if (!await roleManager.RoleExistsAsync("Admin"))
+                {
+                    await roleManager.CreateAsync(new IdentityRole("Admin"));
+                    logger.LogInformation("Admin role created");
+                }
+
+                // Create User role if it doesn't exist
+                if (!await roleManager.RoleExistsAsync("User"))
+                {
+                    await roleManager.CreateAsync(new IdentityRole("User"));
+                    logger.LogInformation("User role created");
+                }
+
+                // Create admin user if it doesn't exist
+                var adminEmail = "admin@hockeyrink.com";
+                var adminUser = await userManager.FindByEmailAsync(adminEmail);
+                if (adminUser == null)
+                {
+                    adminUser = new ApplicationUser
+                    {
+                        UserName = adminEmail,
+                        Email = adminEmail,
+                        FirstName = "Admin",
+                        LastName = "User",
+                        EmailConfirmed = true
+                    };
+
+                    var result = await userManager.CreateAsync(adminUser, "Admin123!");
+                    if (result.Succeeded)
+                    {
+                        await userManager.AddToRoleAsync(adminUser, "Admin");
+                        logger.LogInformation("Admin user created: {Email}", adminEmail);
+                    }
+                    else
+                    {
+                        logger.LogError("Failed to create admin user: {Errors}",
+                            string.Join(", ", result.Errors.Select(e => e.Description)));
+                    }
+                }
             }
             catch (Exception ex)
             {
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-                logger.LogError(ex, "An error occurred while applying database migrations");
+                var log = services.GetRequiredService<ILogger<Program>>();
+                log.LogError(ex, "An error occurred while applying database migrations or seeding data");
             }
         }
 

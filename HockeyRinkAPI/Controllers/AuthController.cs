@@ -105,15 +105,19 @@ public class AuthController : ControllerBase
             await _signInManager.SignInAsync(user, isPersistent: false);
             var token = GenerateToken(user);
 
-            _logger.LogInformation("User logged in successfully: {Email}", model.Email);
-            _logger.LogInformation("Generated token for user {Email}: {Token}", model.Email, token);
+            // Check if user is admin
+            var roles = await _userManager.GetRolesAsync(user);
+            var isAdmin = roles.Contains("Admin");
+
+            _logger.LogInformation("User logged in successfully: {Email}, IsAdmin: {IsAdmin}", model.Email, isAdmin);
 
             return Ok(new
             {
                 token = token,
                 message = "Login successful",
                 userId = user.Id,
-                email = user.Email
+                email = user.Email,
+                isAdmin = isAdmin
             });
         }
         catch (Exception ex)

@@ -1,0 +1,127 @@
+<div class="container mt-5">
+  <h2 class="text-primary mb-4">
+    <i class="bi bi-speedometer2"></i> Admin Dashboard
+  </h2>
+
+  @if (isLoading()) {
+  <div class="text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  } @if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">
+    {{ errorMessage() }}
+  </div>
+  } @if (dashboardData() && !isLoading()) {
+  <!-- Stats Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3 mb-3">
+      <div class="card stats-card bg-primary text-white shadow">
+        <div class="card-body">
+          <h6 class="card-title">Total Users</h6>
+          <h2 class="mb-0">{{ dashboardData()!.totalUsers }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card stats-card bg-success text-white shadow">
+        <div class="card-body">
+          <h6 class="card-title">Total Sessions</h6>
+          <h2 class="mb-0">{{ dashboardData()!.totalSessions }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card stats-card bg-info text-white shadow">
+        <div class="card-body">
+          <h6 class="card-title">Total Registrations</h6>
+          <h2 class="mb-0">{{ dashboardData()!.totalRegistrations }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card stats-card bg-warning text-dark shadow">
+        <div class="card-body">
+          <h6 class="card-title">Total Revenue</h6>
+          <h2 class="mb-0">{{ dashboardData()!.totalRevenue | currency }}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title">Quick Actions</h5>
+          <div class="d-flex gap-2 flex-wrap">
+            <a routerLink="/admin/users" class="btn btn-primary">
+              <i class="bi bi-people"></i> Manage Users
+            </a>
+            <a routerLink="/admin/sessions" class="btn btn-success">
+              <i class="bi bi-calendar-event"></i> Manage Sessions
+            </a>
+            <a routerLink="/admin/registrations" class="btn btn-info">
+              <i class="bi bi-list-check"></i> View Registrations
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Registrations -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Recent Registrations</h5>
+        </div>
+        <div class="card-body">
+          @if (dashboardData()!.recentRegistrations.length === 0) {
+          <p class="text-muted">No recent registrations</p>
+          } @else {
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Session</th>
+                  <th>Payment Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (reg of dashboardData()!.recentRegistrations; track reg.id)
+                {
+                <tr>
+                  <td>{{ reg.userName }}</td>
+                  <td>{{ reg.userEmail }}</td>
+                  <td>{{ reg.sessionName }}</td>
+                  <td>
+                    <span
+                      [class]="
+                        reg.paymentStatus === 'Paid'
+                          ? 'badge bg-success'
+                          : 'badge bg-warning'
+                      "
+                    >
+                      {{ reg.paymentStatus }}
+                    </span>
+                  </td>
+                  <td>{{ reg.createdAt | date : "short" }}</td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+</div>
