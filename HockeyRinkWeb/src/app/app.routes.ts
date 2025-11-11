@@ -18,7 +18,7 @@ export const routes: Routes = [
   { path: "home", component: Home },
   { path: "login", component: Login },
   { path: "register", component: Register },
-  { path: "leagues", component: Leagues },
+  { path: "leagues", component: Leagues }, // Public - no auth required
   { path: "sessions", component: Sessions, canActivate: [AuthGuard] },
   {
     path: "session-registration",

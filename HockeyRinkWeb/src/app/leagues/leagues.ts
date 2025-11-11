@@ -1,57 +1,50 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, signal } from "@angular/core";
+import { RouterLink } from "@angular/router";
 import { DataService } from "../data";
-import { AuthService } from "../auth";
+import { League } from "../models";
 
 @Component({
   selector: "app-leagues",
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: "./leagues.html",
   styleUrls: ["./leagues.css"],
 })
 export class Leagues implements OnInit {
-  leagues: any[] = [];
-  errorMessage: string | null = null;
+  leagues = signal<League[]>([]);
+  errorMessage = signal<string | null>(null);
+  isLoading = signal<boolean>(false);
 
-  constructor(
-    private dataService: DataService,
-    private authService: AuthService
-  ) {}
+  constructor(private dataService: DataService) {}
 
   ngOnInit() {
-    this.checkAuthAndLoadLeagues();
+    this.loadLeagues();
   }
 
-  checkAuthAndLoadLeagues() {
-    // First check if we're authenticated
-    this.authService.checkAuthStatus().subscribe({
-      next: (authStatus) => {
-        // Check both token-based and cookie-based auth responses
-        // Note: API returns lowercase property names
-        const isAuthenticated = authStatus.isValid;
+  loadLeagues() {
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
 
-        if (isAuthenticated) {
-          this.loadLeagues();
-        } else {
-          this.errorMessage = "Not authenticated. Please login again.";
-        }
+    this.dataService.getLeagues().subscribe({
+      next: (data) => {
+        this.leagues.set(data);
+        this.isLoading.set(false);
       },
       error: (err) => {
-        console.error("Auth check failed:", err);
-        this.errorMessage = "Authentication check failed. Please login again.";
+        console.error("Error fetching leagues", err);
+        this.errorMessage.set(
+          "Failed to load leagues. Please try again later."
+        );
+        this.isLoading.set(false);
       },
     });
   }
 
-  loadLeagues() {
-    this.dataService.getLeagues().subscribe({
-      next: (data) => {
-        this.leagues = data;
-      },
-      error: (err) => {
-        console.error("Error fetching leagues", err);
-        this.errorMessage = `Failed to fetch leagues: ${err.status} ${err.statusText}`;
-      },
+  formatDate(dateString?: string): string {
+    if (!dateString) return "TBA";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
     });
   }
 }

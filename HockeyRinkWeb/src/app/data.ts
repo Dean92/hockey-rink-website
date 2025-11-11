@@ -14,10 +14,9 @@ export class DataService {
   private authService = inject(AuthService);
 
   getLeagues(): Observable<League[]> {
-    const headers = this.authService.getAuthHeaders();
+    // Public endpoint - no authentication required
     return this.http
       .get<League[]>(`${this.apiUrl}/leagues`, {
-        headers,
         withCredentials: true,
       })
       .pipe(

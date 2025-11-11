@@ -11,6 +11,7 @@ import { CommonModule } from "@angular/common";
 })
 export class App {
   protected readonly title = signal("HockeyRinkWeb");
+  protected readonly currentYear = new Date().getFullYear();
 
   constructor(private authService: AuthService, private router: Router) {}
 
