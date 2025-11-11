@@ -7,6 +7,11 @@ import { Sessions } from "./sessions/sessions";
 import { SessionRegistration } from "./session-registration/session-registration";
 import { Profile } from "./profile/profile";
 import { Dashboard } from "./dashboard/dashboard";
+import { AdminDashboard } from "./admin-dashboard/admin-dashboard";
+import { AdminUsers } from "./admin-users/admin-users";
+import { AdminSessions } from "./admin-sessions/admin-sessions";
+import { AuthGuard } from "./auth.guard";
+import { AdminGuard } from "./admin-guard";
 
 export const routes: Routes = [
   { path: "", redirectTo: "/home", pathMatch: "full" },
@@ -14,8 +19,27 @@ export const routes: Routes = [
   { path: "login", component: Login },
   { path: "register", component: Register },
   { path: "leagues", component: Leagues },
-  { path: "sessions", component: Sessions },
-  { path: "session-registration", component: SessionRegistration },
-  { path: "profile", component: Profile },
-  { path: "dashboard", component: Dashboard },
+  { path: "sessions", component: Sessions, canActivate: [AuthGuard] },
+  {
+    path: "session-registration",
+    component: SessionRegistration,
+    canActivate: [AuthGuard],
+  },
+  { path: "profile", component: Profile, canActivate: [AuthGuard] },
+  { path: "dashboard", component: Dashboard, canActivate: [AuthGuard] },
+  {
+    path: "admin",
+    component: AdminDashboard,
+    canActivate: [AuthGuard, AdminGuard],
+  },
+  {
+    path: "admin/users",
+    component: AdminUsers,
+    canActivate: [AuthGuard, AdminGuard],
+  },
+  {
+    path: "admin/sessions",
+    component: AdminSessions,
+    canActivate: [AuthGuard, AdminGuard],
+  },
 ];

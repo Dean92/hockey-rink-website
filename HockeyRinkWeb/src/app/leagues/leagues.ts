@@ -28,10 +28,7 @@ export class Leagues implements OnInit {
       next: (authStatus) => {
         // Check both token-based and cookie-based auth responses
         // Note: API returns lowercase property names
-        const isAuthenticated =
-          authStatus.isValid ||
-          authStatus.IsAuthenticated ||
-          authStatus.isAuthenticated;
+        const isAuthenticated = authStatus.isValid;
 
         if (isAuthenticated) {
           this.loadLeagues();

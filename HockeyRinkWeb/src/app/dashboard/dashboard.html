@@ -1,1 +1,93 @@
-<p>dashboard works!</p>
+<div class="container mt-5">
+  <h2 class="text-primary mb-4">Dashboard</h2>
+
+  @if (isLoading()) {
+  <div class="text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  } @if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">
+    {{ errorMessage() }}
+  </div>
+  } @if (dashboardData() && !isLoading()) {
+  <div class="row">
+    <div class="col-md-4 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Profile Summary</h5>
+        </div>
+        <div class="card-body">
+          <p>
+            <strong>Name:</strong> {{ dashboardData()!.user.firstName }}
+            {{ dashboardData()!.user.lastName }}
+          </p>
+          <p><strong>Email:</strong> {{ dashboardData()!.user.email }}</p>
+          <p>
+            <strong>League ID:</strong>
+            {{ dashboardData()!.user.leagueId || "Not assigned" }}
+          </p>
+          <a routerLink="/profile" class="btn btn-outline-primary btn-sm mt-2"
+            >View Full Profile</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            Registered Sessions ({{
+              dashboardData()!.registeredSessions.length
+            }})
+          </h5>
+        </div>
+        <div class="card-body">
+          @if (dashboardData()!.registeredSessions.length === 0) {
+          <div class="text-center py-4">
+            <p class="text-muted mb-3">
+              You haven't registered for any sessions yet.
+            </p>
+            <a routerLink="/sessions" class="btn btn-primary"
+              >Browse Sessions</a
+            >
+          </div>
+          } @else {
+          <div class="list-group">
+            @for (session of dashboardData()!.registeredSessions; track
+            session.sessionId) {
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ session.sessionName }}</h6>
+                <small class="text-success">✓ Registered</small>
+              </div>
+              <p class="mb-1">
+                <span class="badge bg-secondary">{{ session.leagueName }}</span>
+              </p>
+              <p class="mb-1">
+                <small>
+                  <strong>Start:</strong>
+                  {{ session.sessionStartDate | date : "medium" }}
+                </small>
+              </p>
+              <p class="mb-1">
+                <small>
+                  <strong>End:</strong>
+                  {{ session.sessionEndDate | date : "medium" }}
+                </small>
+              </p>
+              <p class="mb-0">
+                <strong>Fee Paid:</strong> ${{ session.sessionFee }}
+              </p>
+            </div>
+            }
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+</div>

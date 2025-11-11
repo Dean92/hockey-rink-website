@@ -1,6 +1,6 @@
-<nav class="navbar navbar-expand-lg">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#">Hockey Rink Website</a>
+    <a class="navbar-brand" routerLink="/home">🏒 Hockey Rink</a>
     <button
       class="navbar-toggler"
       type="button"
@@ -13,29 +13,77 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
+      <ul class="navbar-nav me-auto">
+        <!-- Always visible -->
         <li class="nav-item">
-          <a class="nav-link" routerLink="/home">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/leagues">Leagues</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/sessions">Sessions</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/session-registration"
-            >Register Session</a
+          <a class="nav-link" routerLink="/home" routerLinkActive="active"
+            >Home</a
           >
         </li>
         <li class="nav-item">
-          <a class="nav-link" routerLink="/profile">Profile</a>
+          <a class="nav-link" routerLink="/leagues" routerLinkActive="active"
+            >Leagues</a
+          >
+        </li>
+
+        <!-- Authenticated users only -->
+        @if (isAuthenticated()) {
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/sessions" routerLinkActive="active"
+            >Sessions</a
+          >
         </li>
         <li class="nav-item">
-          <a class="nav-link clickable" (click)="onLogout()">Logout</a>
+          <a class="nav-link" routerLink="/dashboard" routerLinkActive="active"
+            >Dashboard</a
+          >
         </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/profile" routerLinkActive="active"
+            >Profile</a
+          >
+        </li>
+        }
+      </ul>
+      <ul class="navbar-nav">
+        <!-- Admin users only -->
+        @if (isAdmin()) {
+        <li class="nav-item">
+          <a
+            class="nav-link btn btn-warning text-dark me-2"
+            routerLink="/admin"
+            routerLinkActive="active"
+          >
+            <i class="bi bi-shield-lock"></i> Admin
+          </a>
+        </li>
+        }
+
+        <!-- Guest users (not authenticated) -->
+        @if (!isAuthenticated()) {
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/login" routerLinkActive="active"
+            >Login</a
+          >
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/register" routerLinkActive="active"
+            >Register</a
+          >
+        </li>
+        }
+
+        <!-- Authenticated users -->
+        @if (isAuthenticated()) {
+        <li class="nav-item">
+          <button class="btn btn-link nav-link" (click)="onLogout()">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </button>
+        </li>
+        }
       </ul>
     </div>
   </div>
 </nav>
+
 <router-outlet></router-outlet>

@@ -1,34 +1,79 @@
 <div class="container mt-5">
-  <div class="row justify-center">
+  <div class="row justify-content-center">
     <div class="col-md-6">
-      <div class="card">
-        <div class="card-header text-center"><h2>Login</h2></div>
+      <div class="card shadow">
         <div class="card-body">
-          <form (ngSubmit)="onLogin()">
+          <h2 class="card-title text-center text-primary mb-4">Login</h2>
+
+          @if (errorMessage()) {
+          <div class="alert alert-danger" role="alert">
+            {{ errorMessage() }}
+          </div>
+          }
+
+          <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
             <div class="mb-3">
               <label for="email" class="form-label">Email</label>
               <input
                 type="email"
-                id="email"
+                formControlName="email"
                 class="form-control"
-                [(ngModel)]="email"
-                name="email"
-                required
+                id="email"
+                placeholder="Enter your email"
+                [class.is-invalid]="
+                  hasError('email', 'required') || hasError('email', 'email')
+                "
               />
+              @if (hasError('email', 'required')) {
+              <div class="invalid-feedback">Email is required.</div>
+              } @if (hasError('email', 'email')) {
+              <div class="invalid-feedback">Please enter a valid email.</div>
+              }
             </div>
+
             <div class="mb-3">
               <label for="password" class="form-label">Password</label>
               <input
                 type="password"
-                id="password"
+                formControlName="password"
                 class="form-control"
-                [(ngModel)]="password"
-                name="password"
-                required
+                id="password"
+                placeholder="Enter your password"
+                [class.is-invalid]="
+                  hasError('password', 'required') ||
+                  hasError('password', 'minlength')
+                "
               />
+              @if (hasError('password', 'required')) {
+              <div class="invalid-feedback">Password is required.</div>
+              } @if (hasError('password', 'minlength')) {
+              <div class="invalid-feedback">
+                Password must be at least 8 characters.
+              </div>
+              }
             </div>
-            <button type="submit" class="btn btn-primary w-100">Login</button>
+
+            <button
+              type="submit"
+              class="btn btn-primary w-100"
+              [disabled]="isLoading()"
+            >
+              @if (isLoading()) {
+              <span
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              Logging in... } @else { Login }
+            </button>
           </form>
+
+          <div class="text-center mt-3">
+            <p class="mb-0">
+              Don't have an account?
+              <a routerLink="/register" class="text-primary">Register here</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

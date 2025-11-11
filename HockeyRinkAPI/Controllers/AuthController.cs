@@ -1,7 +1,11 @@
-﻿using HockeyRinkAPI.Models;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using HockeyRinkAPI.Models;
 
 namespace HockeyRinkAPI.Controllers;
 
@@ -16,8 +20,7 @@ public class AuthController : ControllerBase
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        ILogger<AuthController> logger
-    )
+        ILogger<AuthController> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -27,305 +30,217 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterModel model)
     {
-        if (
-            model == null
-            || string.IsNullOrEmpty(model.Email)
-            || string.IsNullOrEmpty(model.Password)
-        )
+        try
         {
-            _logger.LogWarning("Invalid registration attempt: missing email or password");
-            return BadRequest(new { Message = "Email and Password are required" });
+            _logger.LogInformation("Starting registration for email: {Email}", model?.Email);
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid model state for registration");
+                return BadRequest(ModelState);
+            }
+
+            var user = new ApplicationUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                EmailConfirmed = true
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    _logger.LogWarning("User creation failed: {Error}", error.Description);
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return BadRequest(ModelState);
+            }
+
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            var token = GenerateToken(user);
+
+            _logger.LogInformation("User registered and logged in successfully: {Email}", model.Email);
+            return Ok(new
+            {
+                message = "User registered successfully",
+                token = token
+            });
         }
-
-        var user = new ApplicationUser
+        catch (Exception ex)
         {
-            UserName = model.Email,
-            Email = model.Email,
-            NormalizedEmail = model.Email.ToUpperInvariant(),
-            NormalizedUserName = model.Email.ToUpperInvariant(),
-            FirstName = model.FirstName,
-            LastName = model.LastName,
-            IsSubAvailable = false,
-            LeagueId = null,
-        };
-
-        var result = await _userManager.CreateAsync(user, model.Password);
-        if (!result.Succeeded)
-        {
-            _logger.LogWarning(
-                "User registration failed for {Email}: {Errors}",
-                model.Email,
-                string.Join(", ", result.Errors.Select(e => e.Description))
-            );
-            return BadRequest(new { Errors = result.Errors.Select(e => e.Description) });
+            _logger.LogError(ex, "Failed to register user {Email}", model?.Email);
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
-
-        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-        _logger.LogInformation(
-            "Mock email confirmation for {Email}: Token={Token}",
-            user.Email,
-            token
-        );
-
-        return Ok(
-            new { Message = "User registered. Check email for confirmation.", Token = token }
-        );
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
-        if (
-            model == null
-            || string.IsNullOrEmpty(model.Email)
-            || string.IsNullOrEmpty(model.Password)
-        )
-        {
-            _logger.LogWarning("Invalid login attempt: missing email or password");
-            return BadRequest(new { Message = "Email and Password are required" });
-        }
-
-        var users = await _userManager.Users.Where(u => u.Email == model.Email).ToListAsync();
-
-        if (users.Count > 1)
-        {
-            _logger.LogWarning(
-                "Multiple users found with email {Email}. Login aborted.",
-                model.Email
-            );
-            return StatusCode(500, new { Message = "Internal server error: duplicate users" });
-        }
-
-        var user = users.SingleOrDefault();
-        if (user == null)
-        {
-            _logger.LogWarning("Login failed: user not found for {Email}", model.Email);
-            return Unauthorized(new { Message = "Invalid email or password" });
-        }
-
-        // Skip email confirmation check for development
-        // TODO: Re-enable email confirmation for production
-        // if (!user.EmailConfirmed)
-        // {
-        //     _logger.LogWarning("Login failed: unconfirmed account for {Email}", model.Email);
-        //     return Unauthorized(new { Message = "Please confirm your email before logging in" });
-        // }
-
-        // For development: Check password directly and bypass email confirmation
-        var passwordValid = await _userManager.CheckPasswordAsync(user, model.Password);
-
-        if (passwordValid)
-        {
-            _logger.LogInformation("Login successful for {Email}", model.Email);
-
-            // For development: Create a simple token (in production, use proper JWT)
-            var token = Convert.ToBase64String(
-                System.Text.Encoding.UTF8.GetBytes(
-                    $"{user.Id}|{user.Email}|{DateTime.UtcNow.AddHours(24):O}"
-                )
-            );
-
-            // Also sign in with cookies for compatibility
-            await _signInManager.SignInAsync(user, model.RememberMe);
-
-            return Ok(
-                new
-                {
-                    Message = "Login successful",
-                    UserId = user.Id,
-                    Token = token,
-                    Email = user.Email,
-                }
-            );
-        }
-
-        _logger.LogWarning("Login failed: invalid credentials for {Email}", model.Email);
-        return Unauthorized(new { Message = "Invalid credentials" });
-    }
-
-    [HttpGet("status")]
-    public IActionResult GetAuthStatus()
-    {
-        var isAuthenticated = HttpContext.User.Identity?.IsAuthenticated ?? false;
-        var userId = HttpContext.User.Identity?.Name;
-
-        _logger.LogInformation(
-            "Auth status check: IsAuthenticated={IsAuthenticated}, UserId={UserId}",
-            isAuthenticated,
-            userId
-        );
-
-        return Ok(
-            new
-            {
-                IsAuthenticated = isAuthenticated,
-                UserId = userId,
-                Claims = HttpContext.User.Claims.Select(c => new { c.Type, c.Value }).ToList(),
-            }
-        );
-    }
-
-    [HttpPost("validate-token")]
-    public async Task<IActionResult> ValidateToken([FromBody] ValidateTokenModel model)
-    {
-        _logger.LogInformation(
-            "Token validation request received. Token present: {TokenPresent}",
-            !string.IsNullOrEmpty(model?.Token)
-        );
-
-        if (string.IsNullOrEmpty(model?.Token))
-        {
-            _logger.LogWarning("Token validation failed: Token is required");
-            return BadRequest(new { Message = "Token is required" });
-        }
-
         try
         {
-            _logger.LogInformation(
-                "Attempting to decode token: {Token}",
-                model.Token.Substring(0, Math.Min(20, model.Token.Length)) + "..."
-            );
+            _logger.LogInformation("Login attempt for email: {Email}", model?.Email);
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid model state for login");
+                return BadRequest(ModelState);
+            }
 
-            var tokenData = System.Text.Encoding.UTF8.GetString(
-                Convert.FromBase64String(model.Token)
-            );
-            _logger.LogInformation("Decoded token data: {TokenData}", tokenData);
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found: {Email}", model.Email);
+                return Unauthorized(new { message = "Invalid email or password" });
+            }
+
+            var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: false);
+            if (!result.Succeeded)
+            {
+                _logger.LogWarning("Invalid password for user: {Email}", model.Email);
+                return Unauthorized(new { message = "Invalid email or password" });
+            }
+
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            var token = GenerateToken(user);
+
+            // Check if user is admin
+            var roles = await _userManager.GetRolesAsync(user);
+            var isAdmin = roles.Contains("Admin");
+
+            _logger.LogInformation("User logged in successfully: {Email}, IsAdmin: {IsAdmin}", model.Email, isAdmin);
+
+            return Ok(new
+            {
+                token = token,
+                message = "Login successful",
+                userId = user.Id,
+                email = user.Email,
+                isAdmin = isAdmin
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to login user {Email}", model?.Email);
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        try
+        {
+            await _signInManager.SignOutAsync();
+            return Ok(new { message = "Logged out successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to logout user");
+            return StatusCode(500, new { error = "Internal Server Error" });
+        }
+    }
+
+    [HttpGet("validate")]
+    public async Task<IActionResult> ValidateToken()
+    {
+        try
+        {
+            _logger.LogInformation("ValidateToken called");
+
+            var authHeader = Request.Headers.Authorization.FirstOrDefault();
+            _logger.LogInformation("Authorization header: {AuthHeader}", authHeader);
+
+            // Check token-based auth first
+            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+            {
+                var token = authHeader.Substring("Bearer ".Length);
+                _logger.LogInformation("Validating token: {Token}", token);
+                var isValid = await ValidateTokenAsync(token);
+                _logger.LogInformation("Token validation result: {IsValid}", isValid);
+                return Ok(new { isValid });
+            }
+
+            // Fall back to cookie auth
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                _logger.LogInformation("Cookie authenticated, userId: {UserId}", userId);
+                return Ok(new { isValid = true });
+            }
+
+            _logger.LogWarning("No valid authentication found");
+            return Ok(new { isValid = false });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating token");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    private string GenerateToken(ApplicationUser user)
+    {
+        var expiry = DateTime.UtcNow.AddHours(24);
+        var tokenData = $"{user.Id}|{user.Email}|{expiry:O}";
+        var tokenBytes = System.Text.Encoding.UTF8.GetBytes(tokenData);
+        return Convert.ToBase64String(tokenBytes);
+    }
+
+    private async Task<bool> ValidateTokenAsync(string token)
+    {
+        try
+        {
+            _logger.LogInformation("ValidateTokenAsync - Decoding token: {Token}", token);
+            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
+            _logger.LogInformation("ValidateTokenAsync - Decoded data: {TokenData}", tokenData);
 
             var parts = tokenData.Split('|');
-            _logger.LogInformation("Token parts count: {PartsCount}", parts.Length);
-
             if (parts.Length != 3)
             {
-                _logger.LogWarning(
-                    "Token validation failed: Invalid token format. Expected 3 parts, got {PartsCount}",
-                    parts.Length
-                );
-                return Unauthorized(new { Message = "Invalid token format" });
+                _logger.LogWarning("ValidateTokenAsync - Invalid token format, parts count: {Count}", parts.Length);
+                return false;
             }
 
             var userId = parts[0];
             var email = parts[1];
-            var expiryString = parts[2];
+            var expiry = DateTime.Parse(parts[2]);
 
-            _logger.LogInformation(
-                "Token data - UserId: {UserId}, Email: {Email}, Expiry: {Expiry}",
-                userId,
-                email,
-                expiryString
-            );
-
-            if (!DateTime.TryParse(expiryString, out var expiry))
-            {
-                _logger.LogWarning(
-                    "Token validation failed: Invalid expiry date format: {ExpiryString}",
-                    expiryString
-                );
-                return Unauthorized(new { Message = "Invalid token expiry" });
-            }
+            _logger.LogInformation("ValidateTokenAsync - UserId: {UserId}, Email: {Email}, Expiry: {Expiry}",
+                userId, email, expiry);
 
             if (expiry < DateTime.UtcNow)
             {
-                _logger.LogWarning(
-                    "Token validation failed: Token expired. Expiry: {Expiry}, Current: {Current}",
-                    expiry,
-                    DateTime.UtcNow
-                );
-                return Unauthorized(new { Message = "Token expired" });
+                _logger.LogWarning("ValidateTokenAsync - Token expired");
+                return false;
             }
 
             var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                _logger.LogWarning(
-                    "Token validation failed: User not found for ID: {UserId}",
-                    userId
-                );
-                return Unauthorized(new { Message = "Invalid token - user not found" });
-            }
+            var isValid = user != null && user.Email == email;
+            _logger.LogInformation("ValidateTokenAsync - User found: {UserFound}, Email match: {EmailMatch}, Result: {IsValid}",
+                user != null, user?.Email == email, isValid);
 
-            if (user.Email != email)
-            {
-                _logger.LogWarning(
-                    "Token validation failed: Email mismatch. Token email: {TokenEmail}, User email: {UserEmail}",
-                    email,
-                    user.Email
-                );
-                return Unauthorized(new { Message = "Invalid token - email mismatch" });
-            }
-
-            _logger.LogInformation("Token validation successful for user: {UserId}", userId);
-            return Ok(
-                new
-                {
-                    IsValid = true,
-                    UserId = user.Id,
-                    Email = user.Email,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                }
-            );
+            return isValid;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Token validation failed with exception");
-            return Unauthorized(new { Message = "Invalid token" });
+            _logger.LogError(ex, "ValidateTokenAsync - Exception occurred");
+            return false;
         }
-    }
-
-    [HttpPost("confirm-email")]
-    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailModel model)
-    {
-        if (model == null || string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Token))
-        {
-            _logger.LogWarning("Invalid confirm-email attempt: missing email or token");
-            return BadRequest(new { Message = "Email and Token are required" });
-        }
-
-        var user = await _userManager.FindByEmailAsync(model.Email);
-        if (user == null)
-        {
-            _logger.LogWarning("Confirm-email failed: user not found for {Email}", model.Email);
-            return BadRequest(new { Message = "User not found" });
-        }
-
-        var result = await _userManager.ConfirmEmailAsync(user, model.Token);
-        if (!result.Succeeded)
-        {
-            _logger.LogWarning(
-                "Email confirmation failed for {Email}: {Errors}",
-                model.Email,
-                string.Join(", ", result.Errors.Select(e => e.Description))
-            );
-            return BadRequest(new { Errors = result.Errors.Select(e => e.Description) });
-        }
-
-        _logger.LogInformation("Email confirmed for {Email}", model.Email);
-        return Ok(new { Message = "Email confirmed" });
     }
 }
 
 public class RegisterModel
 {
-    public string? Email { get; set; }
-    public string? Password { get; set; }
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
 }
 
 public class LoginModel
 {
-    public string? Email { get; set; }
-    public string? Password { get; set; }
-    public bool RememberMe { get; set; }
-}
-
-public class ConfirmEmailModel
-{
-    public string? Email { get; set; }
-    public string? Token { get; set; }
-}
-
-public class ValidateTokenModel
-{
-    public string? Token { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
 }

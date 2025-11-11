@@ -1,8 +1,50 @@
 <div class="container mt-5">
-  <h1 class="text-primary">Welcome to Hockey Rink Website</h1>
-  <p>Manage your hockey league and session registrations.</p>
-  <button class="btn btn-primary" routerLink="/login">Login</button>
-  <button class="btn btn-secondary ms-2" routerLink="/register">
-    Register
-  </button>
+  <div class="jumbotron text-center">
+    <h1 class="display-4">Welcome to Hockey Rink</h1>
+    <p class="lead">
+      Manage your hockey league registrations and sessions easily
+    </p>
+    <hr class="my-4" />
+    <p>Join leagues, register for sessions, and track your hockey activities</p>
+    <div class="mt-4">
+      <a routerLink="/login" class="btn btn-primary btn-lg me-3">Login</a>
+      <a routerLink="/register" class="btn btn-outline-primary btn-lg"
+        >Register</a
+      >
+    </div>
+  </div>
+
+  <div class="row mt-5">
+    <div class="col-md-4">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Browse Leagues</h5>
+          <p class="card-text">
+            View available leagues from Leisure to Diamond
+          </p>
+          <a routerLink="/leagues" class="btn btn-primary">View Leagues</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Register for Sessions</h5>
+          <p class="card-text">Sign up for upcoming hockey sessions</p>
+          <a routerLink="/session-registration" class="btn btn-primary"
+            >Register</a
+          >
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Your Dashboard</h5>
+          <p class="card-text">Track your registrations and profile</p>
+          <a routerLink="/dashboard" class="btn btn-primary">Dashboard</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

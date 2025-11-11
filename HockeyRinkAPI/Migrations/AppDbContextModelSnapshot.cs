@@ -242,13 +242,20 @@ namespace HockeyRinkAPI.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("LeagueId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LeagueId");
 
                     b.ToTable("Sessions");
                 });
@@ -489,6 +496,15 @@ namespace HockeyRinkAPI.Migrations
                     b.Navigation("Team");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("HockeyRinkAPI.Models.Session", b =>
+                {
+                    b.HasOne("HockeyRinkAPI.Models.League", "League")
+                        .WithMany()
+                        .HasForeignKey("LeagueId");
+
+                    b.Navigation("League");
                 });
 
             modelBuilder.Entity("HockeyRinkAPI.Models.SessionRegistration", b =>
