@@ -14,6 +14,7 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto">
+        <!-- Always visible -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/home" routerLinkActive="active"
             >Home</a
@@ -24,17 +25,12 @@
             >Leagues</a
           >
         </li>
+
+        <!-- Authenticated users only -->
+        @if (isAuthenticated()) {
         <li class="nav-item">
           <a class="nav-link" routerLink="/sessions" routerLinkActive="active"
             >Sessions</a
-          >
-        </li>
-        <li class="nav-item">
-          <a
-            class="nav-link"
-            routerLink="/session-registration"
-            routerLinkActive="active"
-            >Register</a
           >
         </li>
         <li class="nav-item">
@@ -47,12 +43,14 @@
             >Profile</a
           >
         </li>
+        }
       </ul>
       <ul class="navbar-nav">
+        <!-- Admin users only -->
         @if (isAdmin()) {
         <li class="nav-item">
           <a
-            class="nav-link btn btn-warning text-dark"
+            class="nav-link btn btn-warning text-dark me-2"
             routerLink="/admin"
             routerLinkActive="active"
           >
@@ -60,6 +58,9 @@
           </a>
         </li>
         }
+
+        <!-- Guest users (not authenticated) -->
+        @if (!isAuthenticated()) {
         <li class="nav-item">
           <a class="nav-link" routerLink="/login" routerLinkActive="active"
             >Login</a
@@ -70,11 +71,16 @@
             >Register</a
           >
         </li>
+        }
+
+        <!-- Authenticated users -->
+        @if (isAuthenticated()) {
         <li class="nav-item">
           <button class="btn btn-link nav-link" (click)="onLogout()">
-            Logout
+            <i class="bi bi-box-arrow-right"></i> Logout
           </button>
         </li>
+        }
       </ul>
     </div>
   </div>

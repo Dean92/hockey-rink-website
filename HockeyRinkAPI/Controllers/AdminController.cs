@@ -49,7 +49,9 @@ public class AdminController : ControllerBase
         }
         else if (HttpContext.User.Identity?.IsAuthenticated == true)
         {
-            var userId = HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userId = HttpContext
+                .User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)
+                ?.Value;
             if (!string.IsNullOrEmpty(userId))
             {
                 var user = await _userManager.FindByIdAsync(userId);
@@ -107,12 +109,12 @@ public class AdminController : ControllerBase
             var totalUsers = await _dbContext.Users.CountAsync();
             var totalSessions = await _dbContext.Sessions.CountAsync();
             var totalRegistrations = await _dbContext.SessionRegistrations.CountAsync();
-            var totalRevenue = await _dbContext.Payments
-                .Where(p => p.Status == "Success")
+            var totalRevenue = await _dbContext
+                .Payments.Where(p => p.Status == "Success")
                 .SumAsync(p => p.Amount);
 
-            var recentRegistrations = await _dbContext.SessionRegistrations
-                .Include(r => r.User)
+            var recentRegistrations = await _dbContext
+                .SessionRegistrations.Include(r => r.User)
                 .Include(r => r.Session)
                 .OrderByDescending(r => r.CreatedAt)
                 .Take(10)
@@ -123,18 +125,20 @@ public class AdminController : ControllerBase
                     UserEmail = r.User.Email,
                     SessionName = r.Session!.Name,
                     r.PaymentStatus,
-                    r.CreatedAt
+                    r.CreatedAt,
                 })
                 .ToListAsync();
 
-            return Ok(new
-            {
-                totalUsers,
-                totalSessions,
-                totalRegistrations,
-                totalRevenue,
-                recentRegistrations
-            });
+            return Ok(
+                new
+                {
+                    totalUsers,
+                    totalSessions,
+                    totalRegistrations,
+                    totalRevenue,
+                    recentRegistrations,
+                }
+            );
         }
         catch (Exception ex)
         {
@@ -153,8 +157,8 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            var users = await _dbContext.Users
-                .Include(u => u.League)
+            var users = await _dbContext
+                .Users.Include(u => u.League)
                 .Select(u => new
                 {
                     u.Id,
@@ -164,7 +168,7 @@ public class AdminController : ControllerBase
                     u.LeagueId,
                     LeagueName = u.League != null ? u.League.Name : null,
                     u.EmailConfirmed,
-                    u.CreatedAt
+                    u.CreatedAt,
                 })
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
@@ -188,8 +192,8 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            var sessions = await _dbContext.Sessions
-                .Include(s => s.League)
+            var sessions = await _dbContext
+                .Sessions.Include(s => s.League)
                 .Include(s => s.Registrations)
                 .Select(s => new
                 {
@@ -202,7 +206,7 @@ public class AdminController : ControllerBase
                     s.LeagueId,
                     LeagueName = s.League != null ? s.League.Name : null,
                     RegistrationCount = s.Registrations.Count,
-                    s.CreatedAt
+                    s.CreatedAt,
                 })
                 .OrderByDescending(s => s.CreatedAt)
                 .ToListAsync();
@@ -239,13 +243,17 @@ public class AdminController : ControllerBase
                 Fee = model.Fee,
                 IsActive = model.IsActive,
                 LeagueId = model.LeagueId,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
 
             _dbContext.Sessions.Add(session);
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation("Session created: {SessionName} (ID: {SessionId})", session.Name, session.Id);
+            _logger.LogInformation(
+                "Session created: {SessionName} (ID: {SessionId})",
+                session.Name,
+                session.Id
+            );
             return Ok(new { message = "Session created successfully", sessionId = session.Id });
         }
         catch (Exception ex)
@@ -285,7 +293,11 @@ public class AdminController : ControllerBase
 
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation("Session updated: {SessionName} (ID: {SessionId})", session.Name, session.Id);
+            _logger.LogInformation(
+                "Session updated: {SessionName} (ID: {SessionId})",
+                session.Name,
+                session.Id
+            );
             return Ok(new { message = "Session updated successfully" });
         }
         catch (Exception ex)
@@ -305,8 +317,8 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            var session = await _dbContext.Sessions
-                .Include(s => s.Registrations)
+            var session = await _dbContext
+                .Sessions.Include(s => s.Registrations)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (session == null)
@@ -320,14 +332,22 @@ public class AdminController : ControllerBase
                 // Instead of deleting, deactivate the session
                 session.IsActive = false;
                 await _dbContext.SaveChangesAsync();
-                _logger.LogInformation("Session deactivated (has registrations): {SessionName} (ID: {SessionId})", session.Name, session.Id);
+                _logger.LogInformation(
+                    "Session deactivated (has registrations): {SessionName} (ID: {SessionId})",
+                    session.Name,
+                    session.Id
+                );
                 return Ok(new { message = "Session deactivated (has existing registrations)" });
             }
 
             _dbContext.Sessions.Remove(session);
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation("Session deleted: {SessionName} (ID: {SessionId})", session.Name, session.Id);
+            _logger.LogInformation(
+                "Session deleted: {SessionName} (ID: {SessionId})",
+                session.Name,
+                session.Id
+            );
             return Ok(new { message = "Session deleted successfully" });
         }
         catch (Exception ex)
@@ -347,8 +367,8 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            var registrations = await _dbContext.SessionRegistrations
-                .Include(r => r.User)
+            var registrations = await _dbContext
+                .SessionRegistrations.Include(r => r.User)
                 .Include(r => r.Session)
                 .ThenInclude(s => s!.League)
                 .Include(r => r.Payments)
@@ -364,7 +384,7 @@ public class AdminController : ControllerBase
                     r.PaymentStatus,
                     r.PaymentDate,
                     TotalPaid = r.Payments.Where(p => p.Status == "Success").Sum(p => p.Amount),
-                    r.CreatedAt
+                    r.CreatedAt,
                 })
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
@@ -386,7 +406,7 @@ public class CreateSessionModel
     public DateTime EndDate { get; set; }
     public decimal Fee { get; set; }
     public bool IsActive { get; set; } = true;
-    public int? LeagueId { get; set; }
+    public int LeagueId { get; set; }
 }
 
 public class UpdateSessionModel
@@ -396,5 +416,5 @@ public class UpdateSessionModel
     public DateTime EndDate { get; set; }
     public decimal Fee { get; set; }
     public bool IsActive { get; set; }
-    public int? LeagueId { get; set; }
+    public int LeagueId { get; set; }
 }

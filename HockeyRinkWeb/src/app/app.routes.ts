@@ -9,6 +9,7 @@ import { Profile } from "./profile/profile";
 import { Dashboard } from "./dashboard/dashboard";
 import { AdminDashboard } from "./admin-dashboard/admin-dashboard";
 import { AdminUsers } from "./admin-users/admin-users";
+import { AdminSessions } from "./admin-sessions/admin-sessions";
 import { AuthGuard } from "./auth.guard";
 import { AdminGuard } from "./admin-guard";
 
@@ -34,6 +35,11 @@ export const routes: Routes = [
   {
     path: "admin/users",
     component: AdminUsers,
+    canActivate: [AuthGuard, AdminGuard],
+  },
+  {
+    path: "admin/sessions",
+    component: AdminSessions,
     canActivate: [AuthGuard, AdminGuard],
   },
 ];

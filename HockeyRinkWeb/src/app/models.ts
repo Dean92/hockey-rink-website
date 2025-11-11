@@ -8,13 +8,14 @@ export interface League {
 export interface Session {
   id: number;
   name: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   fee: number;
   isActive: boolean;
-  createdAt: Date;
+  createdAt: string;
   leagueId?: number;
   league?: League;
+  registrations?: any[];
 }
 
 export interface UserProfile {

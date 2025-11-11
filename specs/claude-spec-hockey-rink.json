@@ -1,0 +1,387 @@
+{
+  "project": "Hockey Rink Website MVP",
+  "timeline": {
+    "start": "2025-08-22",
+    "end": "2025-10-20",
+    "daily_hours": "1–2"
+  },
+  "tech_stack": {
+    "backend": ".NET Core 9, ASP.NET Core, Azure SQL (Free Tier)",
+    "frontend": "Angular 20, Bootstrap 5.3.3",
+    "devops": "GitHub Actions, Azure Static Web Apps"
+  },
+  "features": [
+    "User registration and login",
+    "League and session browsing",
+    "Session registration and payment simulation",
+    "Team drafts and admin dashboard",
+    "User profile management",
+    "Notifications and error handling"
+  ],
+  "week_1": {
+    "status": "Completed",
+    "focus": "Backend setup",
+    "deliverables": [
+      "Models: Player, League, Session, Payment, etc.",
+      "API endpoints: /api/auth/*, /api/users/profile, /api/sessions, /api/leagues",
+      "xUnit tests passing",
+      "Azure SQL configured and seeded"
+    ]
+  },
+  "week_2": {
+    "status": "Completed",
+    "focus": "Frontend setup",
+    "deliverables": [
+      "Angular components: Login, Register, Leagues, Sessions, Profile",
+      "Bootstrap styling",
+      "Deployed to Azure Static Web Apps"
+    ]
+  },
+  "week_3": {
+    "status": "✅ Completed - November 11, 2025",
+    "focus": "Admin Features & Enhancements",
+    "estimated_hours": "10 hours",
+    "deliverables": [
+      "✅ Admin dashboard with statistics",
+      "✅ Admin sessions management (full CRUD)",
+      "✅ Admin users management",
+      "✅ Session filtering by league and date",
+      "✅ AuthGuard and AdminGuard implementation",
+      "✅ TypeScript interfaces (League, Session, etc.)",
+      "✅ Angular 20 control flow (@if, @for)",
+      "✅ Database migrations (LeagueId with FK constraints)",
+      "✅ Accessibility improvements (ARIA labels)",
+      "✅ Login redirects to dashboard",
+      "✅ Conditional navigation (auth-based)",
+      "✅ Admin sessions component with reactive forms and modals",
+      "✅ Code formatting and quality improvements"
+    ],
+    "deferred_to_week_4": [
+      "UI polish with hockey-themed branding",
+      "Frontend unit tests (comprehensive coverage)",
+      "Error handling enhancements (toast notifications)"
+    ]
+  },
+  "week_4": {
+    "status": "🚀 Starting - November 11, 2025",
+    "focus": "Landing Page & UI Polish",
+    "estimated_hours": "10 hours",
+    "deliverables": [
+      {
+        "landing_page": {
+          "hero_section": {
+            "layout": "Full-width Bootstrap grid",
+            "headline": "Hit the Ice. Join a League. Track Your Sessions.",
+            "subtext": "Manage your hockey schedule, register for sessions, and connect with your team—all in one place.",
+            "cta_buttons": ["/register", "/leagues"],
+            "image": "hockey-themed stock photo or illustration"
+          },
+          "features_overview": {
+            "cards": [
+              "Browse leagues and sessions",
+              "Register and pay online",
+              "Track your hockey stats"
+            ]
+          }
+        }
+      },
+      {
+        "ui_polish": {
+          "colors": {
+            "ice_blue": "#4FC3F7",
+            "puck_black": "#212529",
+            "goal_red": "#DC3545"
+          },
+          "effects": ["hover transitions on buttons", "smooth scrolling", "SVG hockey icons"],
+          "responsive": "Verify mobile, tablet, desktop layouts",
+          "dark_mode": "Optional toggle for Week 6"
+        }
+      },
+      {
+        "navigation_enhancements": {
+          "active_route_highlighting": "Bootstrap active class on current route",
+          "smooth_transitions": "Angular router animations"
+        }
+      },
+      {
+        "optional_addons": [
+          "Toast notifications (bootstrap-toast or ngx-toastr)",
+          "404 page with hockey-themed illustration",
+          "Final deployment verification to Azure"
+        ]
+      }
+    ]
+  },
+  "week_5": {
+    "status": "Not Started",
+    "focus": "Session Registration & Payment Flow",
+    "estimated_hours": "10 hours",
+    "deliverables": [
+      {
+        "session_registration_form": {
+          "description": "Single long form with sections for user registration to a session",
+          "authentication_required": true,
+          "form_fields": [
+            "Name (from logged-in user, pre-filled)",
+            "Address (street, city, state, zip)",
+            "Phone number (format validation)",
+            "Email (from logged-in user, pre-filled)",
+            "Date of Birth (date picker, age validation)"
+          ],
+          "payment_section": {
+            "service": "MockStripeService simulation",
+            "fields": ["Card number", "Expiry date", "CVV", "Cardholder name"],
+            "validation": "Client-side validation for card format",
+            "amount_display": "Show session fee, early bird discount (if applicable), final total"
+          },
+          "session_capacity": {
+            "max_players": "Set by admin when creating session",
+            "display": "Show 'X spots left' on session card",
+            "full_session": "Show 'Session Full' badge, disable Register button"
+          },
+          "confirmation": {
+            "success_message": "Registration successful! You're all set for [Session Name] on [Date].",
+            "redirect": "Navigate to /dashboard after successful registration"
+          }
+        }
+      },
+      {
+        "database_migrations": {
+          "sessions_table": [
+            "MaxPlayers INT NOT NULL DEFAULT 20",
+            "IsActive BIT NOT NULL DEFAULT 1"
+          ],
+          "registrations_table": [
+            "Name NVARCHAR(100) NOT NULL",
+            "Address NVARCHAR(200)",
+            "Phone NVARCHAR(20)",
+            "Email NVARCHAR(100) NOT NULL",
+            "DateOfBirth DATE NOT NULL",
+            "RegistrationDate DATETIME2 NOT NULL DEFAULT GETUTCDATE()",
+            "AmountPaid DECIMAL(10,2) NOT NULL"
+          ]
+        }
+      },
+      {
+        "admin_session_management_enhancements": {
+          "delete_confirmation_modal": {
+            "description": "Bootstrap modal to confirm before marking session inactive",
+            "buttons": ["Cancel", "Confirm Delete"],
+            "action": "Set IsActive = false instead of DELETE"
+          },
+          "session_filter": {
+            "type": "Dropdown above sessions table",
+            "options": ["All", "Active", "Inactive"],
+            "default": "All",
+            "visual_distinction": "Inactive sessions grayed out with opacity: 0.6"
+          },
+          "max_players_field": {
+            "description": "Add MaxPlayers input to Create/Edit Session modal",
+            "validation": "Min: 1, Max: 50, Default: 20"
+          }
+        }
+      },
+      {
+        "frontend_components": {
+          "register_session": {
+            "route": "/sessions/:id/register",
+            "guard": "AuthGuard (must be logged in)",
+            "form": "ReactiveFormsModule with validation",
+            "api_endpoint": "POST /api/sessions/{id}/register"
+          },
+          "sessions_list_updates": {
+            "display_spots_left": "Calculate from MaxPlayers - current registration count",
+            "session_full_badge": "Bootstrap badge-danger when spots = 0",
+            "disable_register_button": "When session full or registration closed"
+          }
+        }
+      },
+      {
+        "backend_enhancements": {
+          "sessions_controller": {
+            "get_sessions_endpoint": "Include SpotsLeft calculation in response",
+            "register_endpoint": "Validate MaxPlayers capacity, check IsActive status"
+          },
+          "admin_controller": {
+            "soft_delete": "UpdateSession to set IsActive = false",
+            "create_session": "Add MaxPlayers field to CreateSessionModel"
+          }
+        }
+      },
+      {
+        "overflow_from_week_3": [
+          "Complete hockey-themed branding (CSS variables for colors)",
+          "Comprehensive frontend unit tests (AuthService, DataService, components)",
+          "Enhanced error handling (global interceptor, toast notifications)"
+        ]
+      }
+    ]
+  },
+  "week_6": {
+    "status": "Not Started",
+    "focus": "Early Bird Registration & Admin Analytics",
+    "estimated_hours": "10 hours",
+    "deliverables": [
+      {
+        "early_bird_registration": {
+          "description": "Dynamic pricing with percentage-based discounts for early registrations",
+          "database_migrations": {
+            "sessions_table": [
+              "RegistrationOpenDate DATETIME2 NULL (when registration opens)",
+              "RegistrationCloseDate DATETIME2 NULL (when registration closes)",
+              "EarlyBirdEndDate DATETIME2 NULL (discount valid until this date)",
+              "EarlyBirdDiscountPercent DECIMAL(5,2) NULL (e.g., 15.00 for 15% off)"
+            ]
+          },
+          "admin_create_session": {
+            "new_fields": [
+              "Registration Open Date (datetime picker)",
+              "Registration Close Date (datetime picker)",
+              "Early Bird End Date (datetime picker)",
+              "Early Bird Discount % (number input, 0-100)"
+            ],
+            "validation": "Open < EarlyBird < Close < SessionDate"
+          },
+          "session_display_logic": {
+            "registration_not_open": "Show 'Registration Opens [Date]' badge, disable Register button",
+            "registration_open_early_bird": "Show 'Early Bird: X% off until [Date]' badge in green",
+            "registration_closing_soon": "Show 'Registration Closing Soon' badge when 5 days before close date",
+            "registration_closed": "Show 'Registration Closed' badge, hide Register button"
+          },
+          "pricing_display": {
+            "early_bird_active": "Show original price strikethrough, discounted price in green, savings amount",
+            "regular_price": "Show standard session fee",
+            "cart_breakdown": "Line items: Session Fee, Early Bird Discount (-X%), Total"
+          },
+          "backend_calculation": {
+            "endpoint": "GET /api/sessions/{id} includes calculated price based on current date",
+            "logic": "If now <= EarlyBirdEndDate, apply discount; else return regular fee"
+          }
+        }
+      },
+      {
+        "admin_dashboard_analytics": {
+          "todays_registrations_card": {
+            "title": "Today's Registrations",
+            "metric": "Count of registrations where RegistrationDate = UTC today",
+            "display": "Large number with trend icon (up/down vs yesterday)",
+            "api_endpoint": "GET /api/admin/dashboard/registrations/today"
+          },
+          "registrations_per_session_card": {
+            "title": "Registrations by Session",
+            "metric": "Table showing each session with total registration count",
+            "columns": ["Session Name", "Date", "Total Registrations", "Max Players", "Spots Left"],
+            "sorting": "Sort by date descending (most recent first)",
+            "api_endpoint": "GET /api/admin/dashboard/registrations/by-session"
+          },
+          "revenue_overview": {
+            "title": "Registration Revenue",
+            "metrics": [
+              "Total revenue (sum of AmountPaid)",
+              "Today's revenue",
+              "Early bird discounts given (tracked amount)"
+            ],
+            "optional": "Chart showing revenue over time (last 30 days)"
+          }
+        }
+      },
+      {
+        "backend_enhancements": {
+          "admin_dashboard_controller": {
+            "new_endpoints": [
+              "GET /api/admin/dashboard/registrations/today",
+              "GET /api/admin/dashboard/registrations/by-session",
+              "GET /api/admin/dashboard/revenue"
+            ],
+            "authorization": "[Authorize(Roles = \"Admin\")]",
+            "timezone": "All date calculations use UTC"
+          },
+          "sessions_controller_updates": {
+            "get_session_details": "Include IsRegistrationOpen, IsEarlyBird, CalculatedFee properties",
+            "register_validation": "Check RegistrationOpenDate and RegistrationCloseDate before allowing registration"
+          }
+        }
+      },
+      {
+        "frontend_components": {
+          "admin_dashboard_updates": {
+            "new_cards": [
+              "TodaysRegistrationsComponent (card with metric)",
+              "SessionRegistrationsTableComponent (table card)"
+            ],
+            "styling": "Consistent with existing dashboard cards"
+          },
+          "session_card_enhancements": {
+            "badges": [
+              "Registration Opens [Date] (info badge)",
+              "Early Bird Active (success badge)",
+              "Registration Closing Soon (warning badge)",
+              "Registration Closed (secondary badge)",
+              "Session Full (danger badge)"
+            ],
+            "price_display": "Conditional rendering with strikethrough and discount highlight"
+          }
+        }
+      },
+      {
+        "testing": {
+          "unit_tests": [
+            "Early bird discount calculation logic",
+            "Registration date validation",
+            "Session capacity checks",
+            "Admin analytics endpoint responses"
+          ],
+          "integration_tests": [
+            "Full registration flow with early bird pricing",
+            "Admin dashboard data accuracy",
+            "Session state transitions (open → early bird → regular → closing soon → closed)"
+          ],
+          "manual_testing": [
+            "Create session with early bird dates",
+            "Register during early bird period, verify discount applied",
+            "Test registration close date enforcement",
+            "Verify admin dashboard metrics update correctly"
+          ]
+        }
+      },
+      {
+        "optional_enhancements": [
+          "Email notifications when registration opens for favorite leagues",
+          "Admin report export (CSV of all registrations)",
+          "Dark mode toggle for UI",
+          "Performance optimization for large session lists"
+        ]
+      }
+    ]
+  },
+  "database_schema_updates": {
+    "sessions_table": {
+      "new_columns": [
+        "MaxPlayers INT NOT NULL DEFAULT 20",
+        "IsActive BIT NOT NULL DEFAULT 1",
+        "RegistrationOpenDate DATETIME2 NULL",
+        "RegistrationCloseDate DATETIME2 NULL",
+        "EarlyBirdEndDate DATETIME2 NULL",
+        "EarlyBirdDiscountPercent DECIMAL(5,2) NULL"
+      ],
+      "migration_order": "Week 5 (MaxPlayers, IsActive), Week 6 (Registration dates)"
+    },
+    "registrations_table": {
+      "new_columns": [
+        "Name NVARCHAR(100) NOT NULL",
+        "Address NVARCHAR(200)",
+        "Phone NVARCHAR(20)",
+        "Email NVARCHAR(100) NOT NULL",
+        "DateOfBirth DATE NOT NULL",
+        "RegistrationDate DATETIME2 NOT NULL DEFAULT GETUTCDATE()",
+        "AmountPaid DECIMAL(10,2) NOT NULL"
+      ],
+      "indexes": [
+        "IX_Registrations_RegistrationDate (for today's registrations query)",
+        "IX_Registrations_SessionId (for session analytics)"
+      ],
+      "migration_order": "Week 5"
+    }
+  },
+  "repo": "https://github.com/Dean92/hockey-rink-website"
+}

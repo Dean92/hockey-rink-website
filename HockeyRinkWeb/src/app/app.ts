@@ -14,6 +14,10 @@ export class App {
 
   constructor(private authService: AuthService, private router: Router) {}
 
+  isAuthenticated(): boolean {
+    return this.authService.getToken() !== null;
+  }
+
   isAdmin(): boolean {
     return this.authService.isAdmin();
   }

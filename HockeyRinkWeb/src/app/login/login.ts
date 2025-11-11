@@ -56,7 +56,7 @@ export class Login {
       next: () => {
         console.log("Login successful");
         this.isLoading.set(false);
-        this.router.navigate(["/leagues"]);
+        this.router.navigate(["/dashboard"]);
       },
       error: (err) => {
         console.error("Login failed:", err);

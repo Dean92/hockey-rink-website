@@ -71,4 +71,37 @@ export class DataService {
       withCredentials: true,
     });
   }
+
+  // Admin methods
+  getAllSessions(): Observable<Session[]> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get<Session[]>(`${this.apiUrl}/admin/sessions/all`, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  createSession(session: Partial<Session>): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.post(`${this.apiUrl}/admin/sessions`, session, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  updateSession(id: number, session: Partial<Session>): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put(`${this.apiUrl}/admin/sessions/${id}`, session, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  deleteSession(id: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.delete(`${this.apiUrl}/admin/sessions/${id}`, {
+      headers,
+      withCredentials: true,
+    });
+  }
 }

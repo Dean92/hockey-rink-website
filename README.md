@@ -1,29 +1,52 @@
-# Hockey Rink Website
+# 🏒 Hockey Rink Website
 
-A web application for managing a local hockey league.
+A full-stack web application for managing local hockey leagues, player sessions, and team registrations.
 
-- **Backend**: .NET Core 9 API with Entity Framework Core and Azure SQL.
-- **Frontend**: Angular 20 with Bootstrap 5 (CSS-based styling).
-- **Features**: User registration, session management, team drafts, admin dashboard.
+---
 
-## Getting Started
+## 🚀 Tech Stack
 
-### Prerequisites
+| Layer        | Technology                                        |
+| ------------ | ------------------------------------------------- |
+| **Backend**  | .NET Core 9 API, Entity Framework Core, Azure SQL |
+| **Frontend** | Angular 20, Bootstrap 5.3.3 (CSS variables)       |
+| **DevOps**   | GitHub Actions (CI/CD), Azure Static Web Apps     |
+
+---
+
+## 🎯 Core Features
+
+- User registration and login
+- League and session browsing
+- Session registration and payment simulation
+- Team drafts and admin dashboard
+- User profile management
+- Notifications and error handling
+
+---
+
+## 🧰 Getting Started
+
+### 🔧 Prerequisites
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download)
 - [Node.js](https://nodejs.org/) (for Angular)
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) or [VS Code](https://code.visualstudio.com/)
 - SQL Server LocalDB or Azure SQL Database
 
-### Running the API (HockeyRinkAPI)
+---
 
-#### Trust the HTTPS Development Certificate (First Time Only)
+### ▶️ Running the Backend (`HockeyRinkAPI`)
+
+#### Step 1: Trust HTTPS Certificate (First Time Only)
 
 ```powershell
 dotnet dev-certs https --trust
 ```
 
-#### Option 1: Using Command Line (Recommended when Visual Studio is open)
+#### Step 2: Start the API
+
+**Option A** – Visual Studio Open:
 
 ```powershell
 cd HockeyRinkAPI
@@ -31,26 +54,25 @@ dotnet build
 dotnet run --no-build --launch-profile https
 ```
 
-#### Option 2: Using Command Line (When Visual Studio is closed)
+**Option B** – Visual Studio Closed:
 
 ```powershell
 cd HockeyRinkAPI
 dotnet run --launch-profile https
 ```
 
-#### Option 3: Using Visual Studio 2022
+**Option C** – Visual Studio GUI:
+Open `HockeyRinkWebsite.sln`, press F5 or click "https" in the toolbar.
 
-Open `HockeyRinkWebsite.sln` and press F5 or click the "https" button in the toolbar.
+#### Step 3: Verify API
 
-#### Verify the API is Running
+- Swagger UI (HTTPS): `https://localhost:7134`
+- Swagger UI (HTTP): `http://localhost:5253`
+- Health Check: `http://localhost:5253/health`
 
-- **Swagger UI (HTTPS)**: https://localhost:7134
-- **Swagger UI (HTTP)**: http://localhost:5253
-- **Health Check**: http://localhost:5253/health
+---
 
-**Note**: If `dotnet run` hangs at "Building...", this is due to MSBuild lock conflicts when Visual Studio is open. Use Option 1 above (build and run separately) or close Visual Studio.
-
-### Running the Frontend (HockeyRinkWeb)
+### ▶️ Running the Frontend (`HockeyRinkWeb`)
 
 ```powershell
 cd HockeyRinkWeb
@@ -58,31 +80,91 @@ npm install
 ng serve -o
 ```
 
-The Angular app will open at `http://localhost:4200`
+App launches at: `http://localhost:4200`
 
-### Troubleshooting
+---
 
-#### API Won't Start - Port Already in Use
+## 🧪 Troubleshooting
 
-If you see "Failed to bind to address https://127.0.0.1:7134: address already in use":
+### Port Conflict (API)
 
-1. Find the process using the port:
+```powershell
+netstat -ano | findstr :7134
+taskkill /PID <PID> /F
+```
 
-   ```powershell
-   netstat -ano | findstr :7134
-   ```
+### `dotnet run` Hangs
 
-2. Kill the process (replace PID with actual process ID):
-   ```powershell
-   taskkill /PID <PID> /F
-   ```
+- Run `dotnet build` then `dotnet run --no-build`
+- Close Visual Studio before running
+- Use Visual Studio’s built-in run instead
 
-#### dotnet run Hangs at "Building..."
+---
 
-This happens when Visual Studio 2022 has the solution open. Use one of these solutions:
+## 📌 MVP Development Plan
 
-- Run `dotnet build` followed by `dotnet run --no-build`
-- Close Visual Studio before using `dotnet run`
-- Use Visual Studio's built-in run functionality instead
+### ⏳ Timeline: Aug 22 – Oct 20, 2025 (~1–2 hrs/day)
 
-[Add any unique remote content here]
+---
+
+### ✅ Week 1: Backend Setup
+
+- Initialized `HockeyRinkAPI` and `HockeyRinkWeb`
+- Models: `Player`, `League`, `Session`, `Payment`, etc.
+- API endpoints: `/api/auth/*`, `/api/users/profile`, `/api/sessions`, `/api/leagues`
+- xUnit tests implemented and passing
+- Azure SQL (Free Tier) configured and seeded
+
+---
+
+### ✅ Week 2: Frontend Setup
+
+- Angular 20 project with routing and Bootstrap 5.3.3
+- Components: `Login`, `Register`, `Leagues`, `Sessions`, `Profile`
+- Deployed to Azure Static Web Apps
+
+---
+
+### ✅ Week 3: Enhancements
+
+- Admin dashboard and session filtering
+- Hockey-themed branding and UI polish
+- Frontend unit tests and error handling
+
+---
+
+### 🚀 Week 4: Final Integration & UI Polish
+
+#### 🔐 Navigation Bar
+
+- Angular 20 `@if` blocks for conditional rendering
+- Logged-in users: show `Leagues`, `Sessions`, `Profile`, `Logout`
+- Guests: show only `Login`
+- Use `AuthService` with `signal<boolean>` or `BehaviorSubject<boolean>`
+
+#### 🏒 Hero Section (Landing Page)
+
+- Full-width layout with hockey-themed image
+- Headline: “Hit the Ice. Join a League. Track Your Sessions.”
+- Subtext: “Manage your hockey schedule, register for sessions, and connect with your team—all in one place.”
+- CTA buttons: `/register`, `/leagues`
+- Responsive Bootstrap grid
+
+#### 🎨 UI Polish
+
+- Custom Bootstrap variables: ice blue, puck black, goal red
+- Hover effects, transitions, SVG icons
+- Responsive layout for mobile/desktop
+- Optional dark mode toggle via CSS variables
+
+#### 🧪 Optional Add-ons
+
+- Toast notifications for login/logout/session registration
+- 404 page with hockey-themed illustration
+- Final deployment verification
+
+---
+
+## 📎 Repository
+
+GitHub: [Dean92/hockey-rink-website](https://github.com/Dean92/hockey-rink-website)
