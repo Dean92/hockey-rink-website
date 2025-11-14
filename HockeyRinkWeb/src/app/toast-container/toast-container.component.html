@@ -1,0 +1,30 @@
+<div
+  class="toast-container position-fixed top-0 end-0 p-3"
+  style="z-index: 9999"
+>
+  @for (toast of toastService.toasts(); track toast.id) {
+  <div
+    class="toast show align-items-center text-white border-0 mb-2"
+    [ngClass]="getBgClass(toast.type)"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+  >
+    <div class="d-flex">
+      <div class="toast-body d-flex align-items-center gap-2">
+        <i class="bi fs-5" [ngClass]="getIconClass(toast.type)"></i>
+        <div>
+          <strong class="d-block">{{ toast.title }}</strong>
+          <span>{{ toast.message }}</span>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="btn-close btn-close-white me-2 m-auto"
+        (click)="toastService.remove(toast.id)"
+        aria-label="Close"
+      ></button>
+    </div>
+  </div>
+  }
+</div>

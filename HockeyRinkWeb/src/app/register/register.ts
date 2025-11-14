@@ -8,6 +8,7 @@ import {
   Validators,
 } from "@angular/forms";
 import { CommonModule } from "@angular/common";
+import { ToastService } from "../services/toast.service";
 
 @Component({
   selector: "app-register",
@@ -24,7 +25,8 @@ export class Register {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toastService: ToastService
   ) {
     this.registerForm = this.fb.group({
       firstName: ["", [Validators.required]],
@@ -58,14 +60,19 @@ export class Register {
       next: () => {
         console.log("Registration successful");
         this.isLoading.set(false);
+        this.toastService.success(
+          "Registration Successful",
+          "Welcome! You can now browse leagues."
+        );
         this.router.navigate(["/leagues"]);
       },
       error: (err) => {
         console.error("Registration failed:", err);
         this.isLoading.set(false);
-        this.errorMessage.set(
-          err.error?.message || "Registration failed. Please try again."
-        );
+        const message =
+          err.error?.message || "Registration failed. Please try again.";
+        this.errorMessage.set(message);
+        this.toastService.error("Registration Failed", message);
       },
     });
   }

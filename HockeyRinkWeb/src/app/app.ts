@@ -2,10 +2,11 @@ import { Component, signal } from "@angular/core";
 import { RouterOutlet, Router, RouterLink } from "@angular/router";
 import { AuthService } from "./auth";
 import { CommonModule } from "@angular/common";
+import { ToastContainerComponent } from "./toast-container/toast-container.component";
 
 @Component({
   selector: "app-root",
-  imports: [RouterOutlet, RouterLink, CommonModule],
+  imports: [RouterOutlet, RouterLink, CommonModule, ToastContainerComponent],
   templateUrl: "./app.html",
   styleUrl: "./app.css",
 })

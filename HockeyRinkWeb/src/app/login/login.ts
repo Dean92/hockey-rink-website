@@ -8,6 +8,7 @@ import {
   Validators,
 } from "@angular/forms";
 import { CommonModule } from "@angular/common";
+import { ToastService } from "../services/toast.service";
 
 @Component({
   selector: "app-login",
@@ -24,7 +25,8 @@ export class Login {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toastService: ToastService
   ) {
     this.loginForm = this.fb.group({
       email: ["", [Validators.required, Validators.email]],
@@ -56,14 +58,16 @@ export class Login {
       next: () => {
         console.log("Login successful");
         this.isLoading.set(false);
+        this.toastService.success("Login Successful", "Welcome back!");
         this.router.navigate(["/dashboard"]);
       },
       error: (err) => {
         console.error("Login failed:", err);
         this.isLoading.set(false);
-        this.errorMessage.set(
-          err.error?.message || "Invalid email or password. Please try again."
-        );
+        const message =
+          err.error?.message || "Invalid email or password. Please try again.";
+        this.errorMessage.set(message);
+        this.toastService.error("Login Failed", message);
       },
     });
   }
