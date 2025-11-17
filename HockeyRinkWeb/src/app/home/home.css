@@ -71,6 +71,8 @@
 /* Hero Image */
 .hero-image-placeholder {
   animation: fadeInRight 1s ease-out;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 .hero-image {
@@ -195,6 +197,60 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .hero-section {
+    min-height: auto;
+    padding: 2rem 0;
+  }
+
+  .min-vh-75 {
+    min-height: auto;
+  }
+
+  .hero-headline {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-subtext {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .hero-cta .btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1.5rem;
+  }
+
+  .hero-cta .btn:last-child {
+    margin-bottom: 0;
+  }
+
+  .hero-image-placeholder {
+    margin-top: 2rem;
+    max-width: 100%;
+  }
+
+  .feature-card {
+    margin-bottom: 1.5rem;
+  }
+
+  .placeholder-box {
+    min-height: 250px;
+    padding: 2rem 1rem;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+  }
+
+  .team-photo-section .row {
+    flex-direction: column-reverse;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 992px) {
   .hero-headline {
     font-size: 2.5rem;
   }
@@ -203,23 +259,7 @@
     font-size: 1.1rem;
   }
 
-  .hero-cta .btn {
-    display: block;
-    width: 100%;
-    margin-bottom: 1rem;
-  }
-
-  .hero-cta .btn:last-child {
-    margin-bottom: 0;
-  }
-
-  .feature-card {
-    margin-bottom: 1.5rem;
-  }
-
-  .placeholder-box {
-    min-height: 300px;
-    padding: 3rem 1.5rem;
+  .hero-image-placeholder {
+    max-width: 400px;
   }
 }
-

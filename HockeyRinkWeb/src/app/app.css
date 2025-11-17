@@ -7,3 +7,19 @@
 .clickable {
   cursor: pointer;
 }
+
+/* Main app wrapper - flex layout for sticky footer */
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Content wrapper to push footer down */
+.main-content {
+  flex: 1 0 auto;
+}
+
+.footer {
+  flex-shrink: 0;
+}

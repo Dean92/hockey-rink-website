@@ -121,6 +121,27 @@
               </div>
             </div>
 
+            <!-- Authenticated Users -->
+            @if (isAuthenticated()) { @if (isRegistrationOpen(league)) {
+            <div class="alert alert-success mt-4 mb-0">
+              <i class="bi bi-check-circle me-2"></i>
+              <strong>Registration Open!</strong>
+              <button class="btn btn-success btn-sm ms-2">
+                <i class="bi bi-clipboard-check me-1"></i>Register Now
+              </button>
+            </div>
+            } @else {
+            <div class="alert alert-warning mt-4 mb-0">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              <strong>Registration Currently Closed</strong>
+              <p class="mb-0 mt-2 small">
+                Check back soon for upcoming sessions.
+              </p>
+            </div>
+            } }
+
+            <!-- Unauthenticated Users -->
+            @if (!isAuthenticated()) {
             <div class="alert alert-info mt-4 mb-0">
               <i class="bi bi-info-circle me-2"></i>
               <strong>Ready to join?</strong> Please
@@ -128,6 +149,7 @@
               <a routerLink="/register" class="alert-link">create an account</a>
               to register for sessions.
             </div>
+            }
           </div>
         </div>
       </div>
@@ -135,8 +157,8 @@
     </div>
     }
 
-    <!-- Call to Action -->
-    @if (!isLoading() && leagues().length > 0) {
+    <!-- Call to Action - Only for unauthenticated users -->
+    @if (!isLoading() && leagues().length > 0 && !isAuthenticated()) {
     <div class="row mt-5">
       <div class="col-lg-8 mx-auto">
         <div class="card border-primary text-center">

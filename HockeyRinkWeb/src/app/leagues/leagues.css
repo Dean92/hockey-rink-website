@@ -185,8 +185,29 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .leagues-header {
+    padding: 2rem 0 !important;
+  }
+
   .leagues-header h1 {
     font-size: 2rem;
+  }
+
+  .leagues-header .lead {
+    font-size: 1rem;
+  }
+
+  .badge-feature {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .info-box {
+    margin-top: 2rem;
+  }
+
+  .info-step {
+    font-size: 0.9rem;
   }
 
   .league-card .card-header h4 {
@@ -195,5 +216,29 @@
 
   .detail-row {
     margin-bottom: 0.5rem !important;
+    padding: 0.5rem;
+  }
+
+  .detail-row .fs-4 {
+    font-size: 1.5rem !important;
+  }
+
+  .cta-section .btn {
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+
+  .cta-section .btn:last-child {
+    margin-bottom: 0;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 992px) {
+  .leagues-header h1 {
+    font-size: 2.5rem;
+  }
+
+  .badge-feature {
+    font-size: 0.8rem;
   }
 }

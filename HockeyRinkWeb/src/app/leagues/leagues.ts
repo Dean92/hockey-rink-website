@@ -3,6 +3,7 @@ import { Component, OnInit, signal } from "@angular/core";
 import { RouterLink } from "@angular/router";
 import { DataService } from "../data";
 import { League } from "../models";
+import { AuthService } from "../auth";
 
 @Component({
   selector: "app-leagues",
@@ -15,7 +16,10 @@ export class Leagues implements OnInit {
   errorMessage = signal<string | null>(null);
   isLoading = signal<boolean>(false);
 
-  constructor(private dataService: DataService) {}
+  constructor(
+    private dataService: DataService,
+    protected authService: AuthService
+  ) {}
 
   ngOnInit() {
     this.loadLeagues();
@@ -46,5 +50,17 @@ export class Leagues implements OnInit {
       month: "long",
       year: "numeric",
     });
+  }
+
+  isAuthenticated(): boolean {
+    return this.authService.getToken() !== null;
+  }
+
+  isRegistrationOpen(league: League): boolean {
+    // Check if expectedStartDate exists and is in the future
+    if (!league.expectedStartDate) return false;
+    const startDate = new Date(league.expectedStartDate);
+    const today = new Date();
+    return startDate > today;
   }
 }
