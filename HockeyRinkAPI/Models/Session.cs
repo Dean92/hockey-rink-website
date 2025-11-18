@@ -22,7 +22,22 @@ public class Session
     [Range(0, 1000, ErrorMessage = "Fee must be between 0 and 1000")]
     public decimal Fee { get; set; }
 
-    public bool IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
+
+    [Range(1, 50, ErrorMessage = "Max players must be between 1 and 50")]
+    public int MaxPlayers { get; set; } = 20;
+
+    public DateTime? RegistrationOpenDate { get; set; }
+
+    public DateTime? RegistrationCloseDate { get; set; }
+
+    [Range(0, 1000, ErrorMessage = "Early bird price must be between 0 and 1000")]
+    public decimal? EarlyBirdPrice { get; set; }
+
+    public DateTime? EarlyBirdEndDate { get; set; }
+
+    [Range(0, 1000, ErrorMessage = "Regular price must be between 0 and 1000")]
+    public decimal? RegularPrice { get; set; }
 
     [Required]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

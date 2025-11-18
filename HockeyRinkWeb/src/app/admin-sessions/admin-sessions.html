@@ -51,7 +51,7 @@
         @for (session of sessions(); track session.id) {
         <tr>
           <td>{{ session.name }}</td>
-          <td>{{ session.league?.name || "N/A" }}</td>
+          <td>{{ session.leagueName || "N/A" }}</td>
           <td>{{ formatDate(session.startDate) }}</td>
           <td>{{ formatDate(session.endDate) }}</td>
           <td>${{ session.fee }}</td>
@@ -163,7 +163,7 @@
             <div class="col-md-6 mb-3">
               <label for="startDate" class="form-label">Start Date *</label>
               <input
-                type="datetime-local"
+                type="date"
                 class="form-control"
                 id="startDate"
                 formControlName="startDate"
@@ -181,7 +181,7 @@
             <div class="col-md-6 mb-3">
               <label for="endDate" class="form-label">End Date *</label>
               <input
-                type="datetime-local"
+                type="date"
                 class="form-control"
                 id="endDate"
                 formControlName="endDate"
@@ -199,47 +199,129 @@
 
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label for="fee" class="form-label">Fee ($) *</label>
+              <label for="maxPlayers" class="form-label">Max Players *</label>
               <input
                 type="number"
                 class="form-control"
-                id="fee"
-                formControlName="fee"
-                min="0"
-                max="1000"
-                step="0.01"
+                id="maxPlayers"
+                formControlName="maxPlayers"
+                min="1"
+                max="250"
                 [class.is-invalid]="
-                  sessionForm.get('fee')?.invalid &&
-                  sessionForm.get('fee')?.touched
+                  sessionForm.get('maxPlayers')?.invalid &&
+                  sessionForm.get('maxPlayers')?.touched
                 "
               />
-              @if (sessionForm.get('fee')?.invalid &&
-              sessionForm.get('fee')?.touched) {
+              @if (sessionForm.get('maxPlayers')?.invalid &&
+              sessionForm.get('maxPlayers')?.touched) {
               <div class="invalid-feedback">
-                @if (sessionForm.get('fee')?.errors?.['required']) { Fee is
-                required } @if (sessionForm.get('fee')?.errors?.['min']) { Fee
-                must be at least $0 } @if
-                (sessionForm.get('fee')?.errors?.['max']) { Fee cannot exceed
-                $1000 }
+                @if (sessionForm.get('maxPlayers')?.errors?.['required']) { Max
+                players is required } @if
+                (sessionForm.get('maxPlayers')?.errors?.['min']) { Must be at
+                least 1 } @if (sessionForm.get('maxPlayers')?.errors?.['max']) {
+                Cannot exceed 250 }
               </div>
               }
             </div>
 
             <div class="col-md-6 mb-3">
-              <label for="isActive" class="form-label">Status</label>
-              <div class="form-check form-switch">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  id="isActive"
-                  formControlName="isActive"
-                />
-                <label class="form-check-label" for="isActive">
-                  {{
-                    sessionForm.get("isActive")?.value ? "Active" : "Inactive"
-                  }}
-                </label>
+              <label for="regularPrice" class="form-label"
+                >Regular Price ($) *</label
+              >
+              <input
+                type="number"
+                class="form-control"
+                id="regularPrice"
+                formControlName="regularPrice"
+                min="0"
+                max="1000"
+                step="0.01"
+                [class.is-invalid]="
+                  sessionForm.get('regularPrice')?.invalid &&
+                  sessionForm.get('regularPrice')?.touched
+                "
+              />
+              @if (sessionForm.get('regularPrice')?.invalid &&
+              sessionForm.get('regularPrice')?.touched) {
+              <div class="invalid-feedback">
+                @if (sessionForm.get('regularPrice')?.errors?.['required']) {
+                Regular price is required } @if
+                (sessionForm.get('regularPrice')?.errors?.['min']) { Price must
+                be at least $0 } @if
+                (sessionForm.get('regularPrice')?.errors?.['max']) { Price
+                cannot exceed $1000 }
               </div>
+              }
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="registrationOpenDate" class="form-label"
+                >Registration Open Date & Time</label
+              >
+              <input
+                type="datetime-local"
+                class="form-control"
+                id="registrationOpenDate"
+                formControlName="registrationOpenDate"
+              />
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="registrationCloseDate" class="form-label"
+                >Registration Close Date & Time</label
+              >
+              <input
+                type="datetime-local"
+                class="form-control"
+                id="registrationCloseDate"
+                formControlName="registrationCloseDate"
+              />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="earlyBirdPrice" class="form-label"
+                >Early Bird Price ($)</label
+              >
+              <input
+                type="number"
+                class="form-control"
+                id="earlyBirdPrice"
+                formControlName="earlyBirdPrice"
+                min="0"
+                max="1000"
+                step="0.01"
+              />
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="earlyBirdEndDate" class="form-label"
+                >Early Bird End Date & Time</label
+              >
+              <input
+                type="datetime-local"
+                class="form-control"
+                id="earlyBirdEndDate"
+                formControlName="earlyBirdEndDate"
+              />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="isActive" class="form-label">Status</label>
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="isActive"
+                formControlName="isActive"
+              />
+              <label class="form-check-label" for="isActive">
+                {{ sessionForm.get("isActive")?.value ? "Active" : "Inactive" }}
+              </label>
             </div>
           </div>
         </div>
@@ -254,12 +336,63 @@
           <button
             type="submit"
             class="btn btn-primary"
-            [disabled]="sessionForm.invalid || isLoading()"
+            [disabled]="
+              (isEditMode() ? false : sessionForm.invalid) || isLoading()
+            "
           >
             {{ isLoading() ? "Saving..." : isEditMode() ? "Update" : "Create" }}
           </button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteModal()) {
+<div class="modal fade show d-block modal-backdrop-custom" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i
+          >Confirm Deletion
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          aria-label="Close"
+          (click)="closeDeleteModal()"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">
+          Are you sure you want to delete the session
+          <strong>"{{ sessionToDelete?.name }}"</strong>?
+        </p>
+        <p class="text-muted mt-2 mb-0">
+          <small>This action cannot be undone.</small>
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="closeDeleteModal()"
+          [disabled]="isLoading()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          (click)="confirmDelete()"
+          [disabled]="isLoading()"
+        >
+          {{ isLoading() ? "Deleting..." : "Delete Session" }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

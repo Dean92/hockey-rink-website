@@ -195,6 +195,31 @@ public class AdminController : ControllerBase
             var sessions = await _dbContext
                 .Sessions.Include(s => s.League)
                 .Include(s => s.Registrations)
+                .ToListAsync();
+
+            // Auto-deactivate expired sessions
+            var today = DateTime.UtcNow.Date;
+            bool hasChanges = false;
+            foreach (var session in sessions)
+            {
+                if (session.IsActive && session.EndDate.Date < today)
+                {
+                    session.IsActive = false;
+                    hasChanges = true;
+                    _logger.LogInformation(
+                        "Auto-deactivated expired session: {SessionName} (ID: {SessionId})",
+                        session.Name,
+                        session.Id
+                    );
+                }
+            }
+
+            if (hasChanges)
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+
+            var result = sessions
                 .Select(s => new
                 {
                     s.Id,
@@ -207,11 +232,17 @@ public class AdminController : ControllerBase
                     LeagueName = s.League != null ? s.League.Name : null,
                     RegistrationCount = s.Registrations.Count,
                     s.CreatedAt,
+                    s.MaxPlayers,
+                    s.RegistrationOpenDate,
+                    s.RegistrationCloseDate,
+                    s.EarlyBirdPrice,
+                    s.EarlyBirdEndDate,
+                    s.RegularPrice,
                 })
                 .OrderByDescending(s => s.CreatedAt)
-                .ToListAsync();
+                .ToList();
 
-            return Ok(sessions);
+            return Ok(result);
         }
         catch (Exception ex)
         {
@@ -240,9 +271,15 @@ public class AdminController : ControllerBase
                 Name = model.Name,
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
-                Fee = model.Fee,
+                Fee = model.RegularPrice ?? model.Fee, // Use RegularPrice as Fee if provided
                 IsActive = model.IsActive,
                 LeagueId = model.LeagueId,
+                MaxPlayers = model.MaxPlayers,
+                RegistrationOpenDate = model.RegistrationOpenDate,
+                RegistrationCloseDate = model.RegistrationCloseDate,
+                EarlyBirdPrice = model.EarlyBirdPrice,
+                EarlyBirdEndDate = model.EarlyBirdEndDate,
+                RegularPrice = model.RegularPrice,
                 CreatedAt = DateTime.UtcNow,
             };
 
@@ -254,7 +291,13 @@ public class AdminController : ControllerBase
                 session.Name,
                 session.Id
             );
-            return Ok(new { message = "Session created successfully", sessionId = session.Id });
+            return Ok(
+                new
+                {
+                    message = $"Session \"{session.Name}\" created successfully",
+                    sessionId = session.Id,
+                }
+            );
         }
         catch (Exception ex)
         {
@@ -284,12 +327,26 @@ public class AdminController : ControllerBase
                 return NotFound(new { message = "Session not found" });
             }
 
+            _logger.LogInformation(
+                "Updating session {SessionId}. RegistrationOpenDate: {RegOpen}, RegistrationCloseDate: {RegClose}, EarlyBirdEndDate: {EBEnd}",
+                id,
+                model.RegistrationOpenDate,
+                model.RegistrationCloseDate,
+                model.EarlyBirdEndDate
+            );
+
             session.Name = model.Name;
             session.StartDate = model.StartDate;
             session.EndDate = model.EndDate;
-            session.Fee = model.Fee;
+            session.Fee = model.RegularPrice ?? model.Fee; // Use RegularPrice as Fee if provided
             session.IsActive = model.IsActive;
             session.LeagueId = model.LeagueId;
+            session.MaxPlayers = model.MaxPlayers;
+            session.RegistrationOpenDate = model.RegistrationOpenDate;
+            session.RegistrationCloseDate = model.RegistrationCloseDate;
+            session.EarlyBirdPrice = model.EarlyBirdPrice;
+            session.EarlyBirdEndDate = model.EarlyBirdEndDate;
+            session.RegularPrice = model.RegularPrice;
 
             await _dbContext.SaveChangesAsync();
 
@@ -298,7 +355,7 @@ public class AdminController : ControllerBase
                 session.Name,
                 session.Id
             );
-            return Ok(new { message = "Session updated successfully" });
+            return Ok(new { message = $"Session \"{session.Name}\" updated successfully" });
         }
         catch (Exception ex)
         {
@@ -407,6 +464,12 @@ public class CreateSessionModel
     public decimal Fee { get; set; }
     public bool IsActive { get; set; } = true;
     public int LeagueId { get; set; }
+    public int MaxPlayers { get; set; } = 20;
+    public DateTime? RegistrationOpenDate { get; set; }
+    public DateTime? RegistrationCloseDate { get; set; }
+    public decimal? EarlyBirdPrice { get; set; }
+    public DateTime? EarlyBirdEndDate { get; set; }
+    public decimal? RegularPrice { get; set; }
 }
 
 public class UpdateSessionModel
@@ -417,4 +480,10 @@ public class UpdateSessionModel
     public decimal Fee { get; set; }
     public bool IsActive { get; set; }
     public int LeagueId { get; set; }
+    public int MaxPlayers { get; set; } = 20;
+    public DateTime? RegistrationOpenDate { get; set; }
+    public DateTime? RegistrationCloseDate { get; set; }
+    public decimal? EarlyBirdPrice { get; set; }
+    public DateTime? EarlyBirdEndDate { get; set; }
+    public decimal? RegularPrice { get; set; }
 }

@@ -17,7 +17,14 @@ export interface Session {
   createdAt: string;
   leagueId?: number;
   league?: League;
+  leagueName?: string;
   registrations?: any[];
+  maxPlayers?: number;
+  registrationOpenDate?: string;
+  registrationCloseDate?: string;
+  earlyBirdPrice?: number;
+  earlyBirdEndDate?: string;
+  regularPrice?: number;
 }
 
 export interface UserProfile {
