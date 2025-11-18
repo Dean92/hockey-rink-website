@@ -1,0 +1,71 @@
+/* Dashboard Responsive Styles */
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  h1, h2 {
+    font-size: 1.75rem;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+  }
+
+  .card {
+    margin-bottom: 1rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .table {
+    font-size: 0.875rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem;
+  }
+
+  /* Make tables horizontally scrollable on mobile */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .badge {
+    font-size: 0.75rem;
+  }
+
+  /* Stack cards vertically on mobile */
+  .row > [class*='col-'] {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 992px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  .card-body {
+    padding: 1.25rem;
+  }
+}
+
+/* Desktop - ensure proper spacing */
+@media (min-width: 993px) {
+  .container {
+    max-width: 1140px;
+  }
+}

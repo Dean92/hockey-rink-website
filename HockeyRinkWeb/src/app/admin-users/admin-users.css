@@ -2,3 +2,33 @@
   max-height: 600px;
   overflow-y: auto;
 }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .table-responsive {
+    max-height: 400px;
+  }
+
+  .table {
+    font-size: 0.8rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.4rem;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 992px) {
+  .table-responsive {
+    max-height: 500px;
+  }
+}

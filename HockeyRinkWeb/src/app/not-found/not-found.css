@@ -1,0 +1,78 @@
+/* 404 Page Container */
+.not-found-container {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 3rem 0;
+}
+
+/* Error Icon */
+.error-icon {
+  position: relative;
+  display: inline-block;
+  color: #ff6f00;
+}
+
+/* Error Code */
+.error-code {
+  font-size: 8rem;
+  font-weight: 900;
+  color: var(--bs-primary);
+  text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
+  line-height: 1;
+}
+
+/* Quick Links */
+.quick-link {
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.quick-link:hover {
+  transform: translateY(-5px);
+  border-color: var(--bs-primary);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.quick-link .card-body {
+  padding: 1.5rem;
+}
+
+.quick-link i {
+  transition: transform 0.3s ease;
+}
+
+.quick-link:hover i {
+  transform: scale(1.2);
+}
+
+/* Hockey Quote Box */
+.hockey-quote {
+  border-left: 4px solid var(--bs-primary);
+}
+
+/* Buttons */
+.btn {
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .error-code {
+    font-size: 5rem;
+  }
+
+  .error-icon .bi-cone-striped {
+    font-size: 4rem !important;
+  }
+
+  .not-found-container {
+    padding: 2rem 0;
+  }
+}

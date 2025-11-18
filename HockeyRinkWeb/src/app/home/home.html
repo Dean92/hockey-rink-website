@@ -1,50 +1,180 @@
-<div class="container mt-5">
-  <div class="jumbotron text-center">
-    <h1 class="display-4">Welcome to Hockey Rink</h1>
-    <p class="lead">
-      Manage your hockey league registrations and sessions easily
-    </p>
-    <hr class="my-4" />
-    <p>Join leagues, register for sessions, and track your hockey activities</p>
-    <div class="mt-4">
-      <a routerLink="/login" class="btn btn-primary btn-lg me-3">Login</a>
-      <a routerLink="/register" class="btn btn-outline-primary btn-lg"
-        >Register</a
-      >
-    </div>
-  </div>
-
-  <div class="row mt-5">
-    <div class="col-md-4">
-      <div class="card text-center">
-        <div class="card-body">
-          <h5 class="card-title">Browse Leagues</h5>
-          <p class="card-text">
-            View available leagues from Leisure to Diamond
-          </p>
-          <a routerLink="/leagues" class="btn btn-primary">View Leagues</a>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card text-center">
-        <div class="card-body">
-          <h5 class="card-title">Register for Sessions</h5>
-          <p class="card-text">Sign up for upcoming hockey sessions</p>
-          <a routerLink="/session-registration" class="btn btn-primary"
-            >Register</a
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="hero-overlay"></div>
+  <div class="container hero-content">
+    <div class="row align-items-center min-vh-75">
+      <div class="col-lg-6 text-white">
+        <h1 class="display-3 fw-bold hero-headline mb-4">
+          Hit the Ice. Join a League. Track Your Sessions.
+        </h1>
+        <p class="lead hero-subtext mb-5">
+          Manage your hockey schedule, register for sessions, and connect with
+          your team—all in one place.
+        </p>
+        <div class="hero-cta">
+          <a
+            routerLink="/register"
+            class="btn btn-primary btn-lg me-3 px-5 py-3"
           >
+            <i class="bi bi-person-plus-fill me-2"></i>Get Started
+          </a>
+          <a
+            routerLink="/leagues"
+            class="btn btn-outline-light btn-lg px-5 py-3"
+          >
+            <i class="bi bi-trophy-fill me-2"></i>Browse Leagues
+          </a>
         </div>
       </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card text-center">
-        <div class="card-body">
-          <h5 class="card-title">Your Dashboard</h5>
-          <p class="card-text">Track your registrations and profile</p>
-          <a routerLink="/dashboard" class="btn btn-primary">Dashboard</a>
+      <div class="col-lg-6 text-center">
+        <div class="hero-image-placeholder">
+          <!-- TODO: Add hockey player action shot image here -->
+          <img
+            src="/images/hockey-player-hero.png"
+            alt="Hockey players in action"
+            class="img-fluid rounded shadow-lg hero-image"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"
+          />
+          <div class="placeholder-box" style="display: none">
+            <i class="bi bi-image fs-1 text-white-50"></i>
+            <p class="text-white-50 mt-3">Hockey Player Image</p>
+            <small class="text-white-50"
+              >1200x800px recommended<br />Place image in:
+              src/app/public/images/</small
+            >
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section py-5">
+  <div class="container">
+    <div class="row text-center mb-5">
+      <div class="col">
+        <h2 class="section-title">Everything You Need to Play</h2>
+        <p class="text-muted">
+          Streamline your hockey experience from registration to game day
+        </p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="feature-card card h-100 border-0 shadow-sm">
+          <div class="card-body text-center p-4">
+            <div class="feature-icon mb-3">
+              <i class="bi bi-search fs-1 text-primary"></i>
+            </div>
+            <h5 class="card-title fw-bold mb-3">
+              Browse Upcoming Men's Leagues & Sessions
+            </h5>
+            <p class="card-text text-muted">
+              Explore leagues and sessions that match your skill level and
+              schedule. From recreational to competitive play.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card card h-100 border-0 shadow-sm">
+          <div class="card-body text-center p-4">
+            <div class="feature-icon mb-3">
+              <i class="bi bi-credit-card fs-1 text-primary"></i>
+            </div>
+            <h5 class="card-title fw-bold mb-3">Register & Pay Online</h5>
+            <p class="card-text text-muted">
+              Secure online registration with instant confirmation. No hassle,
+              no paperwork—just hockey.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card card h-100 border-0 shadow-sm">
+          <div class="card-body text-center p-4">
+            <div class="feature-icon mb-3">
+              <i class="bi bi-graph-up fs-1 text-primary"></i>
+            </div>
+            <h5 class="card-title fw-bold mb-3">Track Your Hockey Stats</h5>
+            <p class="card-text text-muted">
+              View your registration history, upcoming sessions, and manage your
+              profile all in one convenient dashboard.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Team Photo Section -->
+<section class="team-photo-section py-5 bg-light">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-6 mb-4 mb-lg-0">
+        <div class="team-image-placeholder">
+          <!-- TODO: Add team/players photo here -->
+          <img
+            src="assets/images/hockey-team.jpg"
+            alt="Hockey team celebrating"
+            class="img-fluid rounded shadow team-image"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"
+          />
+          <div class="placeholder-box" style="display: none">
+            <i class="bi bi-people-fill fs-1 text-muted"></i>
+            <p class="text-muted mt-3">Team Photo</p>
+            <small class="text-muted"
+              >1200x800px recommended<br />Place image in:
+              src/app/public/images/</small
+            >
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <h2 class="fw-bold mb-4">Join a Community of Players</h2>
+        <p class="lead text-muted mb-4">
+          Connect with players at your skill level, build lasting friendships,
+          and enjoy the game you love.
+        </p>
+        <ul class="list-unstyled">
+          <li class="mb-3">
+            <i class="bi bi-check-circle-fill text-success me-2"></i>
+            <strong>Multiple skill levels</strong> - From beginner to advanced
+          </li>
+          <li class="mb-3">
+            <i class="bi bi-check-circle-fill text-success me-2"></i>
+            <strong>Flexible scheduling</strong> - Sessions that fit your life
+          </li>
+          <li class="mb-3">
+            <i class="bi bi-check-circle-fill text-success me-2"></i>
+            <strong>Professional management</strong> - Organized and reliable
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Call-to-Action Section -->
+<!-- <section class="cta-section py-5 bg-dark text-white">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <h3 class="fw-bold mb-3">Ready to Hit the Ice?</h3>
+        <p class="lead mb-0">
+          Join hundreds of players managing their hockey lives with ease.
+        </p>
+      </div>
+      <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+        <a routerLink="/register" class="btn btn-primary btn-lg px-5">
+          Sign Up Now <i class="bi bi-arrow-right ms-2"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</section> -->

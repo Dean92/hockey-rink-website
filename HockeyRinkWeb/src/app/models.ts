@@ -3,6 +3,8 @@ export interface League {
   name: string;
   description: string;
   createdAt: Date;
+  expectedStartDate?: string;
+  preRegisterPrice?: number;
 }
 
 export interface Session {

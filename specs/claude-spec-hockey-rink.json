@@ -355,6 +355,13 @@
     ]
   },
   "database_schema_updates": {
+    "leagues_table": {
+      "new_columns": [
+        "ExpectedStartDate DATETIME2 NULL (when league season is expected to start)",
+        "PreRegisterPrice DECIMAL(10,2) NULL (early registration price for the league)"
+      ],
+      "migration_order": "Week 4 or 5 - needed for public leagues page display"
+    },
     "sessions_table": {
       "new_columns": [
         "MaxPlayers INT NOT NULL DEFAULT 20",

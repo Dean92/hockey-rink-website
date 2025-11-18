@@ -1,5 +1,265 @@
-.jumbotron {
-  background-color: #f8f9fa;
+/* Hero Section */
+.hero-section {
+  position: relative;
+  min-height: 85vh;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><defs><pattern id="ice" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="1200" height="600" fill="url(%23ice)"/></svg>'),
+    linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  background-size: 200px 200px, cover;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+.min-vh-75 {
+  min-height: 75vh;
+}
+
+.hero-headline {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.hero-subtext {
+  font-size: 1.25rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  animation: fadeInUp 1s ease-out;
+}
+
+.hero-cta {
+  animation: fadeInUp 1.2s ease-out;
+}
+
+.hero-cta .btn {
+  transition: all 0.3s ease;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.hero-cta .btn-primary {
+  background: var(--bs-primary);
+  border: none;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+
+.hero-cta .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+}
+
+.hero-cta .btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+}
+
+/* Hero Image */
+.hero-image-placeholder {
+  animation: fadeInRight 1s ease-out;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.hero-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 1rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Features Section */
+.features-section {
+  background: #f8f9fa;
+}
+
+.section-title {
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 1rem;
+}
+
+.feature-card {
+  transition: all 0.3s ease;
+  border-radius: 1rem;
+}
+
+.feature-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.feature-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0f2fe 0%, #bfdbfe 100%);
+  border-radius: 50%;
+}
+
+.feature-card .btn {
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover .btn {
+  background: var(--bs-primary);
+  color: white;
+  border-color: var(--bs-primary);
+}
+
+/* Team Photo Section */
+.team-photo-section {
+  background: #f8f9fa;
+}
+
+.team-image-placeholder {
+  position: relative;
+}
+
+.team-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Image Placeholders */
+.placeholder-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 1rem;
   padding: 4rem 2rem;
-  border-radius: 0.5rem;
+  min-height: 400px;
+}
+
+.team-photo-section .placeholder-box {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* CTA Section */
+.cta-section {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.cta-section .btn-primary {
+  transition: all 0.3s ease;
+}
+
+.cta-section .btn-primary:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero-section {
+    min-height: auto;
+    padding: 2rem 0;
+  }
+
+  .min-vh-75 {
+    min-height: auto;
+  }
+
+  .hero-headline {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-subtext {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .hero-cta .btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1.5rem;
+  }
+
+  .hero-cta .btn:last-child {
+    margin-bottom: 0;
+  }
+
+  .hero-image-placeholder {
+    margin-top: 2rem;
+    max-width: 100%;
+  }
+
+  .feature-card {
+    margin-bottom: 1.5rem;
+  }
+
+  .placeholder-box {
+    min-height: 250px;
+    padding: 2rem 1rem;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+  }
+
+  .team-photo-section .row {
+    flex-direction: column-reverse;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 992px) {
+  .hero-headline {
+    font-size: 2.5rem;
+  }
+
+  .hero-subtext {
+    font-size: 1.1rem;
+  }
+
+  .hero-image-placeholder {
+    max-width: 400px;
+  }
 }

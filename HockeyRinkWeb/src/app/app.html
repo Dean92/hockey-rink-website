@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
   <div class="container-fluid">
     <a class="navbar-brand" routerLink="/home">🏒 Hockey Rink</a>
     <button
@@ -14,20 +14,13 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto">
-        <!-- Always visible -->
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/home" routerLinkActive="active"
-            >Home</a
-          >
-        </li>
+        <!-- Authenticated users only -->
+        @if (isAuthenticated()) {
         <li class="nav-item">
           <a class="nav-link" routerLink="/leagues" routerLinkActive="active"
             >Leagues</a
           >
         </li>
-
-        <!-- Authenticated users only -->
-        @if (isAuthenticated()) {
         <li class="nav-item">
           <a class="nav-link" routerLink="/sessions" routerLinkActive="active"
             >Sessions</a
@@ -87,3 +80,39 @@
 </nav>
 
 <router-outlet></router-outlet>
+
+<!-- Toast Container -->
+<app-toast-container></app-toast-container>
+
+<!-- Footer -->
+<footer class="footer bg-dark text-white py-3 mt-auto">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6 mb-2 mb-md-0">
+        <h5 class="fw-bold mb-1"><i class="bi bi-hockey"></i> Hockey Rink</h5>
+        <p class="text-white-50 mb-0 small">
+          Managing local hockey leagues with ease since 2025.
+        </p>
+      </div>
+      <div class="col-md-6 text-md-end">
+        <p class="text-white-50 mb-1 small">
+          <a routerLink="/home" class="text-white-50 text-decoration-none me-3">
+            Home
+          </a>
+          <a
+            routerLink="/leagues"
+            class="text-white-50 text-decoration-none me-3"
+          >
+            Leagues
+          </a>
+          <a routerLink="/login" class="text-white-50 text-decoration-none">
+            Login
+          </a>
+        </p>
+        <p class="text-white-50 mb-0 small">
+          &copy; {{ currentYear }} Hockey Rink. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>

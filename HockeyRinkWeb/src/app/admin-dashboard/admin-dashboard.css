@@ -15,3 +15,37 @@
   max-height: 400px;
   overflow-y: auto;
 }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .stats-card {
+    margin-bottom: 1rem;
+  }
+
+  .stats-card h2 {
+    font-size: 2rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .table-responsive {
+    max-height: 300px;
+  }
+
+  .table {
+    font-size: 0.875rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 992px) {
+  .stats-card h2 {
+    font-size: 2.25rem;
+  }
+}

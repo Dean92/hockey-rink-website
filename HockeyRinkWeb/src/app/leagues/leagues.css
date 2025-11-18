@@ -1,0 +1,244 @@
+/* Leagues Header */
+.leagues-header {
+  background: linear-gradient(135deg, #0288d1 0%, #039be5 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.leagues-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><defs><pattern id="ice" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="1200" height="600" fill="url(%23ice)"/></svg>');
+  opacity: 0.3;
+}
+
+.leagues-header .container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Trophy Icon - Gold Color */
+.trophy-icon {
+  color: #ffd700;
+  filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.4));
+  animation: trophy-glow 2s ease-in-out infinite;
+}
+
+@keyframes trophy-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.6));
+  }
+}
+
+/* Feature Badges - Colorful */
+.badge-feature {
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.badge-feature:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.badge-feature-blue {
+  background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+  color: #fff;
+}
+
+.badge-feature-green {
+  background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+  color: #fff;
+}
+
+.badge-feature-orange {
+  background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+  color: #fff;
+}
+
+/* Info Box */
+.info-box {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.info-box-title {
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.info-box-title i {
+  color: #b3e5fc;
+}
+
+.info-step {
+  font-size: 1rem;
+  padding: 0.5rem 0;
+  transition: all 0.2s ease;
+}
+
+.info-step:hover {
+  transform: translateX(5px);
+}
+
+.step-icon {
+  font-size: 1.25rem;
+  transition: transform 0.2s ease;
+}
+
+.step-1 {
+  color: #4fc3f7;
+}
+
+.step-2 {
+  color: #81c784;
+}
+
+.step-3 {
+  color: #ffa726;
+}
+
+.step-4 {
+  color: #ffd700;
+}
+
+.info-step:hover .step-icon {
+  transform: scale(1.2);
+}
+
+
+/* Leagues Section */
+.leagues-section {
+  background: #f8f9fa;
+  min-height: 50vh;
+}
+
+/* League Cards */
+.league-card {
+  transition: all 0.3s ease;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.league-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15) !important;
+}
+
+.league-card .card-header {
+  background: linear-gradient(135deg, #0288d1 0%, #039be5 100%);
+  border: none;
+  padding: 1.25rem 1.5rem;
+}
+
+.league-card .card-body {
+  background: white;
+}
+
+/* League Details */
+.league-details .detail-row {
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+}
+
+.league-details .detail-row:hover {
+  background: #e9ecef;
+  transition: background 0.2s ease;
+}
+
+/* Alert Links */
+.alert-link {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.alert-link:hover {
+  text-decoration: none;
+}
+
+/* Loading State */
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Call to Action Card */
+.card.border-primary {
+  border-width: 2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .leagues-header {
+    padding: 2rem 0 !important;
+  }
+
+  .leagues-header h1 {
+    font-size: 2rem;
+  }
+
+  .leagues-header .lead {
+    font-size: 1rem;
+  }
+
+  .badge-feature {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .info-box {
+    margin-top: 2rem;
+  }
+
+  .info-step {
+    font-size: 0.9rem;
+  }
+
+  .league-card .card-header h4 {
+    font-size: 1.25rem;
+  }
+
+  .detail-row {
+    margin-bottom: 0.5rem !important;
+    padding: 0.5rem;
+  }
+
+  .detail-row .fs-4 {
+    font-size: 1.5rem !important;
+  }
+
+  .cta-section .btn {
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+
+  .cta-section .btn:last-child {
+    margin-bottom: 0;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 992px) {
+  .leagues-header h1 {
+    font-size: 2.5rem;
+  }
+
+  .badge-feature {
+    font-size: 0.8rem;
+  }
+}
