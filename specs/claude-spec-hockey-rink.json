@@ -63,63 +63,178 @@
     ]
   },
   "week_4": {
-    "status": "🚀 Starting - November 11, 2025",
+    "status": "✅ Completed - November 2025",
     "focus": "Landing Page & UI Polish",
     "estimated_hours": "10 hours",
     "deliverables": [
       {
         "landing_page": {
+          "status": "✅ Complete",
           "hero_section": {
-            "layout": "Full-width Bootstrap grid",
-            "headline": "Hit the Ice. Join a League. Track Your Sessions.",
-            "subtext": "Manage your hockey schedule, register for sessions, and connect with your team—all in one place.",
-            "cta_buttons": ["/register", "/leagues"],
-            "image": "hockey-themed stock photo or illustration"
+            "layout": "✅ Full-width Bootstrap grid with animated ice pattern",
+            "headline": "✅ Hit the Ice. Join a League. Track Your Sessions.",
+            "subtext": "✅ Manage your hockey schedule, register for sessions, and connect with your team—all in one place.",
+            "cta_buttons": "✅ [Get Started, Browse Leagues]",
+            "image": "✅ Hockey-themed SVG ice pattern background with gradient"
           },
           "features_overview": {
+            "status": "✅ Complete with animated cards",
             "cards": [
-              "Browse leagues and sessions",
-              "Register and pay online",
-              "Track your hockey stats"
+              "✅ Browse leagues and sessions",
+              "✅ Register and pay online",
+              "✅ Track your hockey stats"
             ]
           }
         }
       },
       {
         "ui_polish": {
+          "status": "✅ Complete",
           "colors": {
-            "ice_blue": "#4FC3F7",
-            "puck_black": "#212529",
-            "goal_red": "#DC3545"
+            "ice_blue": "✅ #4FC3F7 (--ice-blue)",
+            "puck_black": "✅ #212529 (--puck-black)",
+            "goal_red": "✅ #DC3545 (--goal-red)"
           },
-          "effects": ["hover transitions on buttons", "smooth scrolling", "SVG hockey icons"],
-          "responsive": "Verify mobile, tablet, desktop layouts",
-          "dark_mode": "Optional toggle for Week 6"
+          "effects": "✅ Hover transitions, smooth scrolling, SVG hockey icons, card animations",
+          "responsive": "✅ Mobile, tablet, desktop layouts verified",
+          "session_cards": "✅ Ice blue gradient backgrounds with border styling"
         }
       },
       {
         "navigation_enhancements": {
-          "active_route_highlighting": "Bootstrap active class on current route",
-          "smooth_transitions": "Angular router animations"
+          "status": "✅ Complete",
+          "active_route_highlighting": "✅ Bootstrap active class on current route",
+          "smooth_transitions": "✅ CSS transitions on all interactive elements"
         }
       },
       {
         "optional_addons": [
-          "Toast notifications (bootstrap-toast or ngx-toastr)",
-          "404 page with hockey-themed illustration",
-          "Final deployment verification to Azure"
+          "✅ 404 page with hockey-themed design",
+          "✅ Final deployment verified on Azure",
+          "✅ Toast notifications system integrated"
         ]
       }
-    ]
+    ],
+    "deployed_to_azure": "✅ Successfully deployed and verified"
   },
   "week_5": {
-    "status": "Not Started",
-    "focus": "Session Registration & Payment Flow",
+    "status": "🚀 In Progress - November 19, 2025",
+    "focus": "Session Registration Enhancements & Admin League Management",
     "estimated_hours": "10 hours",
-    "deliverables": [
+    "completed_items": [
+      {
+        "admin_league_management": {
+          "status": "✅ Complete - November 19, 2025",
+          "description": "Full CRUD interface for managing league settings",
+          "components": [
+            "✅ AdminLeagues component with reactive forms",
+            "✅ Edit league modal with validation",
+            "✅ Backend endpoints: GET /api/admin/leagues, PUT /api/admin/leagues/{id}",
+            "✅ Navigation link added to admin dashboard"
+          ],
+          "database_changes": [
+            "✅ Added StartDate, EarlyBirdPrice, EarlyBirdEndDate, RegularPrice to League model",
+            "✅ Added RegistrationOpenDate, RegistrationCloseDate to League model",
+            "✅ Migrations: AddLeagueRegistrationFields, AddLeaguePricingFields applied"
+          ]
+        }
+      },
+      {
+        "session_enhancements": {
+          "status": "✅ Complete - November 19, 2025",
+          "max_players_management": {
+            "status": "✅ Complete",
+            "description": "Admin can set max players (1-250) for each session",
+            "default": "20 players",
+            "validation": "Min: 1, Max: 250"
+          },
+          "registration_windows": {
+            "status": "✅ Complete",
+            "fields": [
+              "✅ RegistrationOpenDate (datetime-local input)",
+              "✅ RegistrationCloseDate (datetime-local input)"
+            ],
+            "auto_status_management": "✅ Sessions auto-activate when registration opens, auto-deactivate when closed or session ends"
+          },
+          "pricing_tiers": {
+            "status": "✅ Complete",
+            "fields": [
+              "✅ EarlyBirdPrice (optional)",
+              "✅ EarlyBirdEndDate (datetime-local)",
+              "✅ RegularPrice (replaces Fee field)"
+            ],
+            "display_logic": "✅ Shows early bird price before end date, switches to regular price after"
+          },
+          "inactive_session_handling": {
+            "status": "✅ Complete",
+            "description": "✅ Register button hidden for inactive sessions",
+            "admin_control": "✅ Admin can manually toggle IsActive status"
+          }
+        }
+      },
+      {
+        "leagues_page_enhancements": {
+          "status": "✅ Complete - November 19, 2025",
+          "start_date_display": {
+            "status": "✅ Fixed",
+            "format": "Month Day, Year (e.g., November 15, 2025)",
+            "fallback": "Legacy expectedStartDate field supported"
+          },
+          "dynamic_pricing_display": {
+            "status": "✅ Complete",
+            "early_bird_active": "✅ Shows 'Early Bird Registration: $X' when before end date",
+            "regular_price": "✅ Shows 'Registration Fee: $Y' after early bird expires",
+            "logic": "✅ getCurrentPrice() and getPriceLabel() methods"
+          },
+          "registration_status": {
+            "status": "✅ Complete",
+            "open": "✅ Shows 'Register Now' button linking to /sessions",
+            "closed": "✅ Shows 'Registration Currently Closed' message",
+            "logic": "✅ Checks registrationOpenDate and registrationCloseDate"
+          },
+          "registration_period_display": {
+            "status": "✅ Complete",
+            "description": "✅ Only shown when registration dates are set",
+            "format": "Opens: [datetime], Closes: [datetime]"
+          }
+        }
+      },
+      {
+        "ui_polish": {
+          "status": "✅ Complete - November 19, 2025",
+          "session_cards": {
+            "background": "✅ Ice blue gradient (linear-gradient(135deg, #e1f5fe 0%, #f1f8fb 100%))",
+            "border": "✅ Light blue border (#81d4fa)",
+            "styling": "✅ Matches hockey theme color palette"
+          },
+          "filter_card": {
+            "background": "✅ Matching ice blue gradient",
+            "border": "✅ Light blue border"
+          },
+          "status_badge": "✅ Space added after 'Status:' label"
+        }
+      },
+      {
+        "bug_fixes": {
+          "status": "✅ All fixed - November 19, 2025",
+          "fixes": [
+            "✅ Edit modal showing 'Create' instead of 'Edit'",
+            "✅ League name not displaying in admin sessions table",
+            "✅ Datetime values not saving correctly",
+            "✅ Datetime displaying wrong times in edit",
+            "✅ Success messages not including session names",
+            "✅ Start date missing day number",
+            "✅ Registration status showing incorrect state",
+            "✅ Register Now button not navigating to sessions page"
+          ]
+        }
+      }
+    ],
+    "remaining_items": [
       {
         "session_registration_form": {
-          "description": "Single long form with sections for user registration to a session",
+          "status": "⏳ Not Started",
+          "description": "Single long form for user registration to a session",
           "authentication_required": true,
           "form_fields": [
             "Name (from logged-in user, pre-filled)",

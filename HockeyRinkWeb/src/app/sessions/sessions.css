@@ -6,6 +6,16 @@
   transform: translateY(-5px);
 }
 
+.filter-card {
+  background: linear-gradient(135deg, #e1f5fe 0%, #f1f8fb 100%);
+  border: 1px solid #81d4fa;
+}
+
+.session-card {
+  background: linear-gradient(135deg, #e1f5fe 0%, #f1f8fb 100%);
+  border: 1px solid #81d4fa;
+}
+
 .btn.disabled {
   cursor: not-allowed;
 }

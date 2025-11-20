@@ -78,6 +78,10 @@ namespace HockeyRinkAPI.Data
 
             builder.Entity<Session>().Property(s => s.RegularPrice).HasPrecision(10, 2);
 
+            builder.Entity<League>().Property(l => l.EarlyBirdPrice).HasPrecision(10, 2);
+
+            builder.Entity<League>().Property(l => l.RegularPrice).HasPrecision(10, 2);
+
             builder.Entity<Payment>().Property(p => p.Amount).HasPrecision(10, 2);
 
             // Configure ApplicationUser LeagueId as optional

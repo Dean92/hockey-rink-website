@@ -1,0 +1,21 @@
+.modal-backdrop-custom {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal.show {
+  display: block;
+}
+
+.stats-card {
+  border: none;
+  border-radius: 10px;
+}
+
+.stats-card h2 {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.table th {
+  font-weight: 600;
+}

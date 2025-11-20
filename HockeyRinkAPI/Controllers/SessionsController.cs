@@ -92,12 +92,15 @@ public class SessionsController : ControllerBase
 
             var sessions = await sessionsQuery.ToListAsync();
 
-            // Auto-deactivate expired sessions
-            var today = DateTime.UtcNow.Date;
+            // Auto-update session status based on dates
+            var now = DateTime.UtcNow;
             bool hasChanges = false;
             foreach (var session in sessions)
             {
-                if (session.IsActive && session.EndDate.Date < today)
+                bool originalStatus = session.IsActive;
+
+                // Deactivate if session end date has passed
+                if (session.IsActive && session.EndDate.Date < now.Date)
                 {
                     session.IsActive = false;
                     hasChanges = true;
@@ -106,6 +109,53 @@ public class SessionsController : ControllerBase
                         session.Name,
                         session.Id
                     );
+                }
+                // Deactivate if registration close date has passed
+                else if (
+                    session.IsActive
+                    && session.RegistrationCloseDate.HasValue
+                    && session.RegistrationCloseDate.Value < now
+                )
+                {
+                    session.IsActive = false;
+                    hasChanges = true;
+                    _logger.LogInformation(
+                        "Auto-deactivated session (registration closed): {SessionName} (ID: {SessionId})",
+                        session.Name,
+                        session.Id
+                    );
+                }
+                // Activate if registration open date has arrived (and registration hasn't closed yet)
+                else if (
+                    !session.IsActive
+                    && session.RegistrationOpenDate.HasValue
+                    && session.RegistrationOpenDate.Value <= now
+                )
+                {
+                    // Only activate if registration close date hasn't passed and session end date hasn't passed
+                    bool canActivate = true;
+                    if (
+                        session.RegistrationCloseDate.HasValue
+                        && session.RegistrationCloseDate.Value < now
+                    )
+                    {
+                        canActivate = false;
+                    }
+                    if (session.EndDate.Date < now.Date)
+                    {
+                        canActivate = false;
+                    }
+
+                    if (canActivate)
+                    {
+                        session.IsActive = true;
+                        hasChanges = true;
+                        _logger.LogInformation(
+                            "Auto-activated session (registration opened): {SessionName} (ID: {SessionId})",
+                            session.Name,
+                            session.Id
+                        );
+                    }
                 }
             }
 

@@ -3,6 +3,14 @@ export interface League {
   name: string;
   description: string;
   createdAt: Date;
+  startDate?: string;
+  earlyBirdPrice?: number;
+  earlyBirdEndDate?: string;
+  regularPrice?: number;
+  registrationOpenDate?: string;
+  registrationCloseDate?: string;
+  teamCount?: number;
+  // Legacy fields - keep for backward compatibility
   expectedStartDate?: string;
   preRegisterPrice?: number;
 }

@@ -7,7 +7,7 @@
   </div>
   }
 
-  <div class="card shadow mb-4">
+  <div class="card shadow mb-4 filter-card">
     <div class="card-body">
       <h5 class="card-title">Filter Sessions</h5>
       <form [formGroup]="filterForm">
@@ -53,7 +53,7 @@
   <div class="row">
     @for (session of sessions(); track session.id) {
     <div class="col-md-6 mb-3">
-      <div class="card h-100 shadow-sm">
+      <div class="card h-100 shadow-sm session-card">
         <div class="card-body">
           <h5 class="card-title">{{ session.name }}</h5>
           <p class="card-text">
@@ -81,7 +81,7 @@
             <strong>Max Players:</strong> {{ session.maxPlayers }}<br />
             }
 
-            <strong>Status:</strong>
+            <strong>Status: </strong>
             <span
               [class]="
                 session.isActive ? 'badge bg-success' : 'badge bg-secondary'

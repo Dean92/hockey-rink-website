@@ -197,12 +197,15 @@ public class AdminController : ControllerBase
                 .Include(s => s.Registrations)
                 .ToListAsync();
 
-            // Auto-deactivate expired sessions
-            var today = DateTime.UtcNow.Date;
+            // Auto-update session status based on dates
+            var now = DateTime.UtcNow;
             bool hasChanges = false;
             foreach (var session in sessions)
             {
-                if (session.IsActive && session.EndDate.Date < today)
+                bool originalStatus = session.IsActive;
+
+                // Deactivate if session end date has passed
+                if (session.IsActive && session.EndDate.Date < now.Date)
                 {
                     session.IsActive = false;
                     hasChanges = true;
@@ -211,6 +214,53 @@ public class AdminController : ControllerBase
                         session.Name,
                         session.Id
                     );
+                }
+                // Deactivate if registration close date has passed
+                else if (
+                    session.IsActive
+                    && session.RegistrationCloseDate.HasValue
+                    && session.RegistrationCloseDate.Value < now
+                )
+                {
+                    session.IsActive = false;
+                    hasChanges = true;
+                    _logger.LogInformation(
+                        "Auto-deactivated session (registration closed): {SessionName} (ID: {SessionId})",
+                        session.Name,
+                        session.Id
+                    );
+                }
+                // Activate if registration open date has arrived (and registration hasn't closed yet)
+                else if (
+                    !session.IsActive
+                    && session.RegistrationOpenDate.HasValue
+                    && session.RegistrationOpenDate.Value <= now
+                )
+                {
+                    // Only activate if registration close date hasn't passed and session end date hasn't passed
+                    bool canActivate = true;
+                    if (
+                        session.RegistrationCloseDate.HasValue
+                        && session.RegistrationCloseDate.Value < now
+                    )
+                    {
+                        canActivate = false;
+                    }
+                    if (session.EndDate.Date < now.Date)
+                    {
+                        canActivate = false;
+                    }
+
+                    if (canActivate)
+                    {
+                        session.IsActive = true;
+                        hasChanges = true;
+                        _logger.LogInformation(
+                            "Auto-activated session (registration opened): {SessionName} (ID: {SessionId})",
+                            session.Name,
+                            session.Id
+                        );
+                    }
                 }
             }
 
@@ -414,6 +464,96 @@ public class AdminController : ControllerBase
         }
     }
 
+    [HttpGet("leagues")]
+    public async Task<IActionResult> GetAllLeagues()
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var leagues = await _dbContext
+                .Leagues.OrderBy(l => l.Name)
+                .Select(l => new
+                {
+                    l.Id,
+                    l.Name,
+                    l.Description,
+                    l.StartDate,
+                    l.EarlyBirdPrice,
+                    l.EarlyBirdEndDate,
+                    l.RegularPrice,
+                    l.RegistrationOpenDate,
+                    l.RegistrationCloseDate,
+                    TeamCount = l.Teams != null ? l.Teams.Count : 0,
+                })
+                .ToListAsync();
+
+            return Ok(leagues);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching all leagues");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    [HttpPut("leagues/{id}")]
+    public async Task<IActionResult> UpdateLeague(int id, [FromBody] UpdateLeagueModel model)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var league = await _dbContext.Leagues.FindAsync(id);
+            if (league == null)
+            {
+                return NotFound(new { message = "League not found" });
+            }
+
+            _logger.LogInformation(
+                "Updating league {LeagueId}. StartDate: {StartDate}, RegistrationOpenDate: {RegOpen}, RegistrationCloseDate: {RegClose}",
+                id,
+                model.StartDate,
+                model.RegistrationOpenDate,
+                model.RegistrationCloseDate
+            );
+
+            league.Name = model.Name;
+            league.Description = model.Description;
+            league.StartDate = model.StartDate;
+            league.EarlyBirdPrice = model.EarlyBirdPrice;
+            league.EarlyBirdEndDate = model.EarlyBirdEndDate;
+            league.RegularPrice = model.RegularPrice;
+            league.RegistrationOpenDate = model.RegistrationOpenDate;
+            league.RegistrationCloseDate = model.RegistrationCloseDate;
+
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "League updated: {LeagueName} (ID: {LeagueId})",
+                league.Name,
+                league.Id
+            );
+            return Ok(new { message = $"League \"{league.Name}\" updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating league");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
     [HttpGet("registrations")]
     public async Task<IActionResult> GetAllRegistrations()
     {
@@ -486,4 +626,16 @@ public class UpdateSessionModel
     public decimal? EarlyBirdPrice { get; set; }
     public DateTime? EarlyBirdEndDate { get; set; }
     public decimal? RegularPrice { get; set; }
+}
+
+public class UpdateLeagueModel
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public DateTime? StartDate { get; set; }
+    public decimal? EarlyBirdPrice { get; set; }
+    public DateTime? EarlyBirdEndDate { get; set; }
+    public decimal? RegularPrice { get; set; }
+    public DateTime? RegistrationOpenDate { get; set; }
+    public DateTime? RegistrationCloseDate { get; set; }
 }
