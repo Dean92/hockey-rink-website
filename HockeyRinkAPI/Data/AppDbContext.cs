@@ -1,12 +1,13 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using HockeyRinkAPI.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using HockeyRinkAPI.Models;
 
 namespace HockeyRinkAPI.Data
 {
     public class AppDbContext : IdentityDbContext<ApplicationUser>
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+        public AppDbContext(DbContextOptions<AppDbContext> options)
+            : base(options) { }
 
         public DbSet<League> Leagues { get; set; }
         public DbSet<Team> Teams { get; set; }
@@ -20,62 +21,72 @@ namespace HockeyRinkAPI.Data
         {
             base.OnModelCreating(builder);
 
-            builder.Entity<Team>()
+            builder
+                .Entity<Team>()
                 .HasOne(t => t.League)
                 .WithMany(l => l.Teams)
                 .HasForeignKey(t => t.LeagueId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Player>()
+            builder
+                .Entity<Player>()
                 .HasOne(p => p.User)
                 .WithMany()
                 .HasForeignKey(p => p.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Player>()
+            builder
+                .Entity<Player>()
                 .HasOne(p => p.Team)
                 .WithMany(t => t.Players)
                 .HasForeignKey(p => p.TeamId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Player>()
-                .HasIndex(p => new { p.UserId, p.TeamId })
-                .IsUnique();
+            builder.Entity<Player>().HasIndex(p => new { p.UserId, p.TeamId }).IsUnique();
 
-            builder.Entity<SessionRegistration>()
+            builder
+                .Entity<SessionRegistration>()
                 .HasOne(sr => sr.User)
                 .WithMany()
                 .HasForeignKey(sr => sr.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<SessionRegistration>()
+            builder
+                .Entity<SessionRegistration>()
                 .HasOne(sr => sr.Session)
                 .WithMany(s => s.Registrations)
                 .HasForeignKey(sr => sr.SessionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Payment>()
+            builder
+                .Entity<Payment>()
                 .HasOne(p => p.Registration)
                 .WithMany(sr => sr.Payments)
                 .HasForeignKey(p => p.SessionRegistrationId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Notification>()
+            builder
+                .Entity<Notification>()
                 .HasOne(n => n.User)
                 .WithMany()
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Session>()
-                .Property(s => s.Fee)
-                .HasPrecision(10, 2);
+            builder.Entity<Session>().Property(s => s.Fee).HasPrecision(10, 2);
 
-            builder.Entity<Payment>()
-                .Property(p => p.Amount)
-                .HasPrecision(10, 2);
+            builder.Entity<Session>().Property(s => s.EarlyBirdPrice).HasPrecision(10, 2);
+
+            builder.Entity<Session>().Property(s => s.RegularPrice).HasPrecision(10, 2);
+
+            builder.Entity<League>().Property(l => l.EarlyBirdPrice).HasPrecision(10, 2);
+
+            builder.Entity<League>().Property(l => l.RegularPrice).HasPrecision(10, 2);
+
+            builder.Entity<Payment>().Property(p => p.Amount).HasPrecision(10, 2);
 
             // Configure ApplicationUser LeagueId as optional
-            builder.Entity<ApplicationUser>()
+            builder
+                .Entity<ApplicationUser>()
                 .HasOne(u => u.League)
                 .WithMany()
                 .HasForeignKey(u => u.LeagueId)

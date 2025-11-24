@@ -3,6 +3,14 @@ export interface League {
   name: string;
   description: string;
   createdAt: Date;
+  startDate?: string;
+  earlyBirdPrice?: number;
+  earlyBirdEndDate?: string;
+  regularPrice?: number;
+  registrationOpenDate?: string;
+  registrationCloseDate?: string;
+  teamCount?: number;
+  // Legacy fields - keep for backward compatibility
   expectedStartDate?: string;
   preRegisterPrice?: number;
 }
@@ -17,7 +25,14 @@ export interface Session {
   createdAt: string;
   leagueId?: number;
   league?: League;
+  leagueName?: string;
   registrations?: any[];
+  maxPlayers?: number;
+  registrationOpenDate?: string;
+  registrationCloseDate?: string;
+  earlyBirdPrice?: number;
+  earlyBirdEndDate?: string;
+  regularPrice?: number;
 }
 
 export interface UserProfile {

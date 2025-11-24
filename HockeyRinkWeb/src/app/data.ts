@@ -103,4 +103,20 @@ export class DataService {
       withCredentials: true,
     });
   }
+
+  getAllLeagues(): Observable<League[]> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get<League[]>(`${this.apiUrl}/admin/leagues`, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  updateLeague(id: number, league: Partial<League>): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put(`${this.apiUrl}/admin/leagues/${id}`, league, {
+      headers,
+      withCredentials: true,
+    });
+  }
 }

@@ -60,7 +60,10 @@ public class SessionsController : ControllerBase
                 var token = authHeader.Substring("Bearer ".Length);
                 _logger.LogInformation("GetSessions - Token extracted: {Token}", token);
                 isAuthenticated = await ValidateTokenAsync(token);
-                _logger.LogInformation("GetSessions - Token validation result: {IsAuthenticated}", isAuthenticated);
+                _logger.LogInformation(
+                    "GetSessions - Token validation result: {IsAuthenticated}",
+                    isAuthenticated
+                );
             }
             // Fall back to cookie auth
             else if (HttpContext.User.Identity?.IsAuthenticated == true)
@@ -88,6 +91,79 @@ public class SessionsController : ControllerBase
             }
 
             var sessions = await sessionsQuery.ToListAsync();
+
+            // Auto-update session status based on dates
+            var now = DateTime.UtcNow;
+            bool hasChanges = false;
+            foreach (var session in sessions)
+            {
+                bool originalStatus = session.IsActive;
+
+                // Deactivate if session end date has passed
+                if (session.IsActive && session.EndDate.Date < now.Date)
+                {
+                    session.IsActive = false;
+                    hasChanges = true;
+                    _logger.LogInformation(
+                        "Auto-deactivated expired session: {SessionName} (ID: {SessionId})",
+                        session.Name,
+                        session.Id
+                    );
+                }
+                // Deactivate if registration close date has passed
+                else if (
+                    session.IsActive
+                    && session.RegistrationCloseDate.HasValue
+                    && session.RegistrationCloseDate.Value < now
+                )
+                {
+                    session.IsActive = false;
+                    hasChanges = true;
+                    _logger.LogInformation(
+                        "Auto-deactivated session (registration closed): {SessionName} (ID: {SessionId})",
+                        session.Name,
+                        session.Id
+                    );
+                }
+                // Activate if registration open date has arrived (and registration hasn't closed yet)
+                else if (
+                    !session.IsActive
+                    && session.RegistrationOpenDate.HasValue
+                    && session.RegistrationOpenDate.Value <= now
+                )
+                {
+                    // Only activate if registration close date hasn't passed and session end date hasn't passed
+                    bool canActivate = true;
+                    if (
+                        session.RegistrationCloseDate.HasValue
+                        && session.RegistrationCloseDate.Value < now
+                    )
+                    {
+                        canActivate = false;
+                    }
+                    if (session.EndDate.Date < now.Date)
+                    {
+                        canActivate = false;
+                    }
+
+                    if (canActivate)
+                    {
+                        session.IsActive = true;
+                        hasChanges = true;
+                        _logger.LogInformation(
+                            "Auto-activated session (registration opened): {SessionName} (ID: {SessionId})",
+                            session.Name,
+                            session.Id
+                        );
+                    }
+                }
+            }
+
+            if (hasChanges)
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+
             _logger.LogInformation("Found {Count} sessions", sessions.Count);
 
             return Ok(sessions);
@@ -118,7 +194,10 @@ public class SessionsController : ControllerBase
 
             // Check for token-based auth first
             var authHeader = Request.Headers.Authorization.FirstOrDefault();
-            _logger.LogInformation("RegisterSession - Authorization header: {AuthHeader}", authHeader);
+            _logger.LogInformation(
+                "RegisterSession - Authorization header: {AuthHeader}",
+                authHeader
+            );
 
             string? userId = null;
 
@@ -136,7 +215,10 @@ public class SessionsController : ControllerBase
             else if (HttpContext.User.Identity?.IsAuthenticated == true)
             {
                 userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                _logger.LogInformation("RegisterSession - Cookie authenticated, userId: {UserId}", userId);
+                _logger.LogInformation(
+                    "RegisterSession - Cookie authenticated, userId: {UserId}",
+                    userId
+                );
             }
 
             if (string.IsNullOrEmpty(userId))
@@ -160,12 +242,17 @@ public class SessionsController : ControllerBase
             }
 
             // Check if user is already registered for this session
-            var existingRegistration = await _dbContext.SessionRegistrations
-                .FirstOrDefaultAsync(sr => sr.UserId == userId && sr.SessionId == model.SessionId);
+            var existingRegistration = await _dbContext.SessionRegistrations.FirstOrDefaultAsync(
+                sr => sr.UserId == userId && sr.SessionId == model.SessionId
+            );
 
             if (existingRegistration != null)
             {
-                _logger.LogWarning("User {Email} already registered for session {SessionId}", user.Email, model.SessionId);
+                _logger.LogWarning(
+                    "User {Email} already registered for session {SessionId}",
+                    user.Email,
+                    model.SessionId
+                );
                 return BadRequest(new { message = "You are already registered for this session" });
             }
 

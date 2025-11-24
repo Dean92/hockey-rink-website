@@ -10,6 +10,7 @@ import { Dashboard } from "./dashboard/dashboard";
 import { AdminDashboard } from "./admin-dashboard/admin-dashboard";
 import { AdminUsers } from "./admin-users/admin-users";
 import { AdminSessions } from "./admin-sessions/admin-sessions";
+import { AdminLeagues } from "./admin-leagues/admin-leagues";
 import { NotFound } from "./not-found/not-found";
 import { AuthGuard } from "./auth.guard";
 import { AdminGuard } from "./admin-guard";
@@ -41,6 +42,11 @@ export const routes: Routes = [
   {
     path: "admin/sessions",
     component: AdminSessions,
+    canActivate: [AuthGuard, AdminGuard],
+  },
+  {
+    path: "admin/leagues",
+    component: AdminLeagues,
     canActivate: [AuthGuard, AdminGuard],
   },
   { path: "**", component: NotFound }, // 404 - Wildcard route must be last

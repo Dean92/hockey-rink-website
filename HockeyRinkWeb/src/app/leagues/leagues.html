@@ -95,10 +95,10 @@
                 <div class="d-flex align-items-center">
                   <i class="bi bi-calendar-event fs-4 text-primary me-3"></i>
                   <div>
-                    <small class="text-muted d-block"
-                      >Expected Start Date</small
-                    >
-                    <strong>{{ formatDate(league.expectedStartDate) }}</strong>
+                    <small class="text-muted d-block">Start Date</small>
+                    <strong>{{
+                      formatDate(league.startDate || league.expectedStartDate)
+                    }}</strong>
                   </div>
                 </div>
               </div>
@@ -107,28 +107,62 @@
                 <div class="d-flex align-items-center">
                   <i class="bi bi-tag-fill fs-4 text-success me-3"></i>
                   <div>
-                    <small class="text-muted d-block"
-                      >Pre-Registration Price</small
-                    >
+                    <small class="text-muted d-block">{{
+                      getPriceLabel(league)
+                    }}</small>
                     <strong class="fs-5 text-success">
-                      @if (league.preRegisterPrice) { ${{
-                        league.preRegisterPrice
+                      @if (getCurrentPrice(league) !== null) { ${{
+                        getCurrentPrice(league)
                       }}
                       } @else { TBA }
                     </strong>
                   </div>
                 </div>
               </div>
+
+              @if (league.registrationOpenDate && league.registrationCloseDate)
+              {
+              <div class="detail-row mb-3">
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-clock-fill fs-4 text-info me-3"></i>
+                  <div class="w-100">
+                    <small class="text-muted d-block"
+                      >Registration Period</small
+                    >
+                    <div class="mt-1">
+                      <div
+                        class="d-flex justify-content-between align-items-center mb-1"
+                      >
+                        <span class="badge bg-success">
+                          <i class="bi bi-door-open me-1"></i>Opens:
+                        </span>
+                        <strong>{{
+                          formatDateTime(league.registrationOpenDate)
+                        }}</strong>
+                      </div>
+                      <div
+                        class="d-flex justify-content-between align-items-center"
+                      >
+                        <span class="badge bg-danger">
+                          <i class="bi bi-door-closed me-1"></i>Closes:
+                        </span>
+                        <strong>{{
+                          formatDateTime(league.registrationCloseDate)
+                        }}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              }
             </div>
 
             <!-- Authenticated Users -->
             @if (isAuthenticated()) { @if (isRegistrationOpen(league)) {
-            <div class="alert alert-success mt-4 mb-0">
-              <i class="bi bi-check-circle me-2"></i>
-              <strong>Registration Open!</strong>
-              <button class="btn btn-success btn-sm ms-2">
+            <div class="mt-4 mb-0">
+              <a routerLink="/sessions" class="btn btn-success">
                 <i class="bi bi-clipboard-check me-1"></i>Register Now
-              </button>
+              </a>
             </div>
             } @else {
             <div class="alert alert-warning mt-4 mb-0">
