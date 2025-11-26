@@ -1,4 +1,10 @@
 <div class="container mt-5">
+  <div class="mb-3">
+    <a routerLink="/sessions" class="btn btn-outline-secondary">
+      ← Back to Sessions
+    </a>
+  </div>
+
   <h2 class="text-primary mb-4">Register for Session</h2>
 
   @if (isLoading() && sessions().length === 0) {
@@ -23,20 +29,28 @@
   <div class="card shadow">
     <div class="card-body">
       <form [formGroup]="registrationForm" (ngSubmit)="onRegister()">
-        <div class="mb-3">
-          <label for="sessionId" class="form-label">Select Session</label>
+        <!-- Session Selection -->
+        <div class="mb-4">
+          <label for="sessionId" class="form-label fw-bold"
+            >Select Session <span class="text-danger">*</span></label
+          >
           <select
             formControlName="sessionId"
             class="form-select"
             id="sessionId"
             [class.is-invalid]="hasError('sessionId', 'required')"
+            (change)="onSessionChange()"
           >
             <option value="">-- Choose a session --</option>
             @for (session of sessions(); track session.id) {
-            <option [value]="session.id">
+            <option [value]="session.id" [disabled]="session.isFull">
               {{ session.name }} - {{ session.league?.name }} ({{
                 session.startDate | date : "short"
-              }}) - ${{ session.fee }}
+              }}) @if (session.isFull) { - FULL } @else if (session.spotsLeft
+              !== undefined && session.spotsLeft <= 5) { - Only
+              {{ session.spotsLeft }} spots left! } - ${{
+                getSessionPrice(session)
+              }}
             </option>
             }
           </select>
@@ -45,10 +59,212 @@
           }
         </div>
 
+        <!-- Personal Information Section -->
+        <h5 class="mb-3 text-secondary">Personal Information</h5>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="name" class="form-label"
+              >Full Name: <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              formControlName="name"
+              class="form-control"
+              id="name"
+              placeholder="John Doe"
+              [class.is-invalid]="hasError('name', 'required')"
+            />
+            @if (hasError('name', 'required')) {
+            <div class="invalid-feedback">Name is required.</div>
+            }
+          </div>
+
+          <div class="col-md-6">
+            <label for="email" class="form-label"
+              >Email: <span class="text-danger">*</span></label
+            >
+            <input
+              type="email"
+              formControlName="email"
+              class="form-control"
+              id="email"
+              placeholder="john@example.com"
+              [class.is-invalid]="
+                hasError('email', 'required') || hasError('email', 'email')
+              "
+            />
+            @if (hasError('email', 'required')) {
+            <div class="invalid-feedback">Email address is required.</div>
+            } @else if (hasError('email', 'email')) {
+            <div class="invalid-feedback">
+              Please enter a valid email address.
+            </div>
+            }
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="phone" class="form-label">Phone Number:</label>
+            <input
+              type="tel"
+              formControlName="phone"
+              class="form-control"
+              id="phone"
+              placeholder="(123) 456-7890"
+              [class.is-invalid]="hasError('phone', 'pattern')"
+            />
+            @if (hasError('phone', 'pattern')) {
+            <div class="invalid-feedback">
+              Please enter a valid phone number.
+            </div>
+            }
+          </div>
+
+          <div class="col-md-6">
+            <label for="dateOfBirth" class="form-label"
+              >Date of Birth: <span class="text-danger">*</span></label
+            >
+            <input
+              type="date"
+              formControlName="dateOfBirth"
+              class="form-control"
+              id="dateOfBirth"
+              [class.is-invalid]="hasError('dateOfBirth', 'required')"
+            />
+            @if (hasError('dateOfBirth', 'required')) {
+            <div class="invalid-feedback">Date of birth is required.</div>
+            }
+            <small class="form-text text-muted"
+              >You must be at least 18 years old</small
+            >
+          </div>
+        </div>
+
+        <!-- Address Section -->
+        <h5 class="mb-3 text-secondary mt-4">Address</h5>
+
+        <div class="mb-3">
+          <label for="address" class="form-label">Street Address:</label>
+          <input
+            type="text"
+            formControlName="address"
+            class="form-control"
+            id="address"
+            placeholder="123 Main St"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-5">
+            <label for="city" class="form-label">City:</label>
+            <input
+              type="text"
+              formControlName="city"
+              class="form-control"
+              id="city"
+              placeholder="Springfield"
+            />
+          </div>
+
+          <div class="col-md-4">
+            <label for="state" class="form-label">State:</label>
+            <input
+              type="text"
+              formControlName="state"
+              class="form-control"
+              id="state"
+              placeholder="IL"
+              maxlength="2"
+            />
+          </div>
+
+          <div class="col-md-3">
+            <label for="zipCode" class="form-label">ZIP Code:</label>
+            <input
+              type="text"
+              formControlName="zipCode"
+              class="form-control"
+              id="zipCode"
+              placeholder="62701"
+            />
+          </div>
+        </div>
+
+        <!-- Hockey Position -->
+        <div class="mb-4">
+          <label for="position" class="form-label">Preferred Position</label>
+          <select formControlName="position" class="form-select" id="position">
+            <option value="">-- Select position (optional) --</option>
+            <option value="Forward">Forward</option>
+            <option value="Defense">Defense</option>
+            <option value="Forward/Defense">Forward/Defense</option>
+            <option value="Goalie">Goalie</option>
+          </select>
+          <small class="form-text text-muted"
+            >This helps organizers plan team rosters</small
+          >
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="mb-4">
+          <div class="form-check">
+            <input
+              type="checkbox"
+              formControlName="agreeToTerms"
+              class="form-check-input"
+              id="agreeToTerms"
+              [class.is-invalid]="hasError('agreeToTerms', 'required')"
+            />
+            <label class="form-check-label" for="agreeToTerms">
+              I agree to the
+              <a href="#" class="text-primary">Terms and Conditions</a>
+              <span class="text-danger">*</span>
+            </label>
+            @if (hasError('agreeToTerms', 'required')) {
+            <div class="invalid-feedback d-block">
+              You must agree to the terms and conditions.
+            </div>
+            }
+          </div>
+          <small class="form-text text-muted"
+            >Terms and conditions to be finalized.</small
+          >
+        </div>
+
+        <!-- Payment Summary -->
+        @if (selectedSession()) {
+        <div class="alert alert-info mt-4">
+          <h6 class="alert-heading">Registration Summary</h6>
+          <p class="mb-1">
+            <strong>Session:</strong> {{ selectedSession()?.name }}
+          </p>
+          <p class="mb-1">
+            <strong>Date:</strong>
+            {{ selectedSession()?.startDate | date : "medium" }}
+          </p>
+          @if (selectedSession()?.spotsLeft !== undefined) {
+          <p class="mb-1">
+            <strong>Spots Remaining:</strong> {{ selectedSession()?.spotsLeft }}
+          </p>
+          }
+          <hr />
+          <p class="mb-0 fs-5">
+            <strong>Total Amount:</strong> ${{
+              getSessionPrice(selectedSession()!)
+            }}
+          </p>
+        </div>
+        }
+
+        <!-- Submit Button -->
         <button
           type="submit"
-          class="btn btn-primary w-100"
-          [disabled]="registrationForm.invalid || isLoading()"
+          class="btn btn-primary btn-lg w-100 mt-3 mb-3"
+          [disabled]="
+            registrationForm.invalid || isLoading() || selectedSession()?.isFull
+          "
         >
           @if (isLoading()) {
           <span
@@ -56,16 +272,13 @@
             role="status"
             aria-hidden="true"
           ></span>
-          Registering... } @else { Register for Session }
+          Processing Registration... } @else if (selectedSession()?.isFull) {
+          Session is Full } @else { Complete Registration }
         </button>
       </form>
     </div>
   </div>
 
-  <div class="mt-4">
-    <a routerLink="/sessions" class="btn btn-outline-secondary">
-      ← Back to Sessions
-    </a>
-  </div>
+  <div class="mb-5"></div>
   }
 </div>

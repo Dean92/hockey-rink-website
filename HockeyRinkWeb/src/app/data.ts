@@ -1,12 +1,12 @@
-import { Injectable, inject } from "@angular/core";
-import { HttpClient, HttpParams } from "@angular/common/http";
-import { Observable, of, tap, catchError } from "rxjs";
-import { AuthService } from "./auth";
-import { environment } from "../environments/environment";
-import { League, Session } from "./models";
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, of, tap, catchError } from 'rxjs';
+import { AuthService } from './auth';
+import { environment } from '../environments/environment';
+import { League, Session, SessionRegistrationRequest } from './models';
 
 @Injectable({
-  providedIn: "root",
+  providedIn: 'root',
 })
 export class DataService {
   private apiUrl = environment.apiUrl;
@@ -21,7 +21,7 @@ export class DataService {
       })
       .pipe(
         catchError((err) => {
-          console.error("Error fetching leagues:", err);
+          console.error('Error fetching leagues:', err);
           return of([]);
         })
       );
@@ -32,27 +32,26 @@ export class DataService {
     let url = `${this.apiUrl}/sessions`;
     if (leagueId || date) {
       let params = new HttpParams();
-      if (leagueId) params = params.set("leagueId", leagueId.toString());
-      if (date) params = params.set("date", date.toISOString());
+      if (leagueId) params = params.set('leagueId', leagueId.toString());
+      if (date) params = params.set('date', date.toISOString());
       url += `?${params.toString()}`;
     }
     return this.http
       .get<Session[]>(url, { headers, withCredentials: true })
       .pipe(
         catchError((err) => {
-          console.error("Error fetching sessions:", err);
+          console.error('Error fetching sessions:', err);
           return of([]);
         })
       );
   }
 
-  registerSession(sessionId: number): Observable<any> {
+  registerSession(registration: SessionRegistrationRequest): Observable<any> {
     const headers = this.authService.getAuthHeaders();
-    return this.http.post(
-      `${this.apiUrl}/sessions/register`,
-      { sessionId },
-      { headers, withCredentials: true }
-    );
+    return this.http.post(`${this.apiUrl}/sessions/register`, registration, {
+      headers,
+      withCredentials: true,
+    });
   }
 
   getProfile(): Observable<any> {

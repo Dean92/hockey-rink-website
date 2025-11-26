@@ -118,7 +118,7 @@
     "deployed_to_azure": "✅ Successfully deployed and verified"
   },
   "week_5": {
-    "status": "🚀 In Progress - November 19, 2025",
+    "status": "✅ Completed - November 19, 2025",
     "focus": "Session Registration Enhancements & Admin League Management",
     "estimated_hours": "10 hours",
     "completed_items": [
@@ -230,243 +230,356 @@
         }
       }
     ],
-    "remaining_items": [
+    "deferred_to_week_6": [
+      "Full session registration form with address, phone, DOB fields",
+      "Payment form integration (card details)",
+      "Session capacity tracking and spots left display",
+      "Enhanced SessionRegistration model with additional fields",
+      "Admin session management enhancements (delete confirmation, filters)",
+      "Comprehensive frontend unit tests",
+      "Enhanced error handling with global interceptor"
+    ]
+  },
+  "week_6": {
+    "status": "🚀 In Progress - November 24, 2025",
+    "focus": "Session Registration Form, Capacity Management & Admin Analytics",
+    "estimated_hours": "15 hours",
+    "deliverables": [
       {
         "session_registration_form": {
           "status": "⏳ Not Started",
-          "description": "Single long form for user registration to a session",
+          "description": "Comprehensive registration form for session sign-ups",
           "authentication_required": true,
+          "route": "/sessions/:id/register",
+          "guard": "AuthGuard (must be logged in)",
           "form_fields": [
-            "Name (from logged-in user, pre-filled)",
-            "Address (street, city, state, zip)",
-            "Phone number (format validation)",
-            "Email (from logged-in user, pre-filled)",
-            "Date of Birth (date picker, age validation)"
+            "Name (from logged-in user, pre-filled, editable)",
+            "Address (street, city, state, zip with validation)",
+            "Phone number (format validation: (XXX) XXX-XXXX)",
+            "Email (from logged-in user, pre-filled, read-only)",
+            "Date of Birth (date picker, age validation: must be 18+)",
+            "Position (dropdown: Forward, Defense, Forward/Defense, Goalie)",
+            "Terms and Conditions checkbox (required)"
           ],
           "payment_section": {
             "service": "MockStripeService simulation",
-            "fields": ["Card number", "Expiry date", "CVV", "Cardholder name"],
-            "validation": "Client-side validation for card format",
-            "amount_display": "Show session fee, early bird discount (if applicable), final total"
+            "fields": [
+              "Card number (format: XXXX XXXX XXXX XXXX, validation)",
+              "Expiry date (MM/YY, future date validation)",
+              "CVV (3-4 digits)",
+              "Cardholder name (required)"
+            ],
+            "validation": "Client-side validation for card format and expiry",
+            "amount_display": "Show session regular price or early bird price, calculate total"
           },
-          "session_capacity": {
-            "max_players": "Set by admin when creating session",
-            "display": "Show 'X spots left' on session card",
-            "full_session": "Show 'Session Full' badge, disable Register button"
+          "session_details_display": {
+            "session_name": "Display at top of form",
+            "date_time": "Show session start/end datetime",
+            "location": "Show league name and location if available",
+            "spots_remaining": "Display 'X spots left' or 'Session Full' message"
           },
           "confirmation": {
             "success_message": "Registration successful! You're all set for [Session Name] on [Date].",
-            "redirect": "Navigate to /dashboard after successful registration"
+            "redirect": "Navigate to /profile or /dashboard after 2 seconds"
+          },
+          "error_handling": {
+            "session_full": "Block registration and show 'Session is full' error",
+            "registration_closed": "Block registration and show 'Registration has closed' error",
+            "payment_failure": "Show error message, allow retry"
           }
         }
       },
       {
         "database_migrations": {
-          "sessions_table": [
-            "MaxPlayers INT NOT NULL DEFAULT 20",
-            "IsActive BIT NOT NULL DEFAULT 1"
+          "status": "⏳ Not Started",
+          "sessions_table_updates": [
+            "Note: MaxPlayers and IsActive already added in Week 5",
+            "RegistrationOpenDate, RegistrationCloseDate, EarlyBirdPrice already added"
           ],
-          "registrations_table": [
-            "Name NVARCHAR(100) NOT NULL",
-            "Address NVARCHAR(200)",
-            "Phone NVARCHAR(20)",
-            "Email NVARCHAR(100) NOT NULL",
-            "DateOfBirth DATE NOT NULL",
-            "RegistrationDate DATETIME2 NOT NULL DEFAULT GETUTCDATE()",
-            "AmountPaid DECIMAL(10,2) NOT NULL"
-          ]
+          "session_registrations_table": {
+            "new_columns": [
+              "Name NVARCHAR(100) NOT NULL (registrant full name)",
+              "Address NVARCHAR(200) NULL (street address)",
+              "City NVARCHAR(100) NULL",
+              "State NVARCHAR(50) NULL",
+              "ZipCode NVARCHAR(20) NULL",
+              "Phone NVARCHAR(20) NULL (formatted phone)",
+              "Email NVARCHAR(100) NOT NULL (registrant email)",
+              "DateOfBirth DATE NOT NULL (for age verification)",
+              "Position NVARCHAR(20) NULL (Forward, Defense, Goalie)",
+              "RegistrationDate DATETIME2 NOT NULL DEFAULT GETUTCDATE()",
+              "AmountPaid DECIMAL(10,2) NOT NULL (actual amount paid)"
+            ],
+            "indexes": [
+              "IX_SessionRegistrations_RegistrationDate (for analytics)",
+              "IX_SessionRegistrations_SessionId (for capacity queries)"
+            ],
+            "migration_name": "AddSessionRegistrationDetails"
+          }
+        }
+      },
+      {
+        "session_capacity_management": {
+          "status": "⏳ Not Started",
+          "backend_changes": {
+            "get_sessions_endpoint": {
+              "add_fields": [
+                "SpotsLeft (calculated: MaxPlayers - registration count)",
+                "RegistrationCount (total registrations for session)",
+                "IsFull (boolean: SpotsLeft <= 0)"
+              ],
+              "query_optimization": "Include registration count in single query"
+            },
+            "register_endpoint_validation": {
+              "checks": [
+                "Session exists and IsActive = true",
+                "Registration window is open (between OpenDate and CloseDate)",
+                "Session is not full (RegistrationCount < MaxPlayers)",
+                "User not already registered for this session"
+              ],
+              "error_responses": [
+                "400: Session is full",
+                "400: Registration is closed",
+                "409: Already registered"
+              ]
+            }
+          },
+          "frontend_updates": {
+            "session_list_page": {
+              "spots_display": "Show 'X spots left' badge on each session card",
+              "full_badge": "Show 'Session Full' danger badge when spots = 0",
+              "disable_register": "Disable Register button when full or registration closed",
+              "visual_cue": "Reduce opacity or gray out full sessions"
+            },
+            "session_detail_modal": {
+              "capacity_bar": "Optional: Progress bar showing filled spots",
+              "registration_status": "Clear messaging about availability"
+            }
+          }
+        }
+      },
+      {
+        "backend_registration_enhancements": {
+          "status": "⏳ Not Started",
+          "session_registration_model": {
+            "new_fields": [
+              "int SessionId (required)",
+              "string Name (required, max 100 chars)",
+              "string Address (optional, max 200 chars)",
+              "string City (optional, max 100 chars)",
+              "string State (optional, max 50 chars)",
+              "string ZipCode (optional, max 20 chars)",
+              "string Phone (optional, validated format)",
+              "string Email (required, validated email)",
+              "DateTime DateOfBirth (required, age >= 18)",
+              "string Position (optional, Forward/Defense/Forward/Defense/Goalie)",
+              "PaymentInfo payment details (card info)"
+            ],
+            "validation_attributes": [
+              "[Required], [StringLength], [EmailAddress], [Phone], [Range]"
+            ]
+          },
+          "sessions_controller_updates": {
+            "register_endpoint": "POST /api/sessions/register",
+            "process": [
+              "1. Validate model and user authentication",
+              "2. Check session capacity and active status",
+              "3. Check registration window dates",
+              "4. Calculate amount (early bird or regular price)",
+              "5. Process payment via MockStripeService",
+              "6. Create SessionRegistration with all details",
+              "7. Create Payment record",
+              "8. Return success with session details"
+            ]
+          }
         }
       },
       {
         "admin_session_management_enhancements": {
+          "status": "⏳ Not Started",
           "delete_confirmation_modal": {
-            "description": "Bootstrap modal to confirm before marking session inactive",
-            "buttons": ["Cancel", "Confirm Delete"],
-            "action": "Set IsActive = false instead of DELETE"
+            "description": "Bootstrap modal to confirm before deactivating session",
+            "trigger": "Click Delete/Deactivate button in sessions table",
+            "modal_content": "Warning: This will mark the session as inactive. Confirm?",
+            "buttons": ["Cancel (secondary)", "Deactivate (danger)"],
+            "action": "PUT /api/admin/sessions/{id} with IsActive = false"
           },
-          "session_filter": {
-            "type": "Dropdown above sessions table",
-            "options": ["All", "Active", "Inactive"],
-            "default": "All",
-            "visual_distinction": "Inactive sessions grayed out with opacity: 0.6"
+          "session_filter_dropdown": {
+            "location": "Above sessions table in admin dashboard",
+            "options": ["All Sessions", "Active Only", "Inactive Only"],
+            "default": "Active Only",
+            "visual_distinction": "Inactive sessions shown with opacity: 0.6 and gray badge"
           },
-          "max_players_field": {
-            "description": "Add MaxPlayers input to Create/Edit Session modal",
-            "validation": "Min: 1, Max: 50, Default: 20"
-          }
-        }
-      },
-      {
-        "frontend_components": {
-          "register_session": {
-            "route": "/sessions/:id/register",
-            "guard": "AuthGuard (must be logged in)",
-            "form": "ReactiveFormsModule with validation",
-            "api_endpoint": "POST /api/sessions/{id}/register"
-          },
-          "sessions_list_updates": {
-            "display_spots_left": "Calculate from MaxPlayers - current registration count",
-            "session_full_badge": "Bootstrap badge-danger when spots = 0",
-            "disable_register_button": "When session full or registration closed"
-          }
-        }
-      },
-      {
-        "backend_enhancements": {
-          "sessions_controller": {
-            "get_sessions_endpoint": "Include SpotsLeft calculation in response",
-            "register_endpoint": "Validate MaxPlayers capacity, check IsActive status"
-          },
-          "admin_controller": {
-            "soft_delete": "UpdateSession to set IsActive = false",
-            "create_session": "Add MaxPlayers field to CreateSessionModel"
-          }
-        }
-      },
-      {
-        "overflow_from_week_3": [
-          "Complete hockey-themed branding (CSS variables for colors)",
-          "Comprehensive frontend unit tests (AuthService, DataService, components)",
-          "Enhanced error handling (global interceptor, toast notifications)"
-        ]
-      }
-    ]
-  },
-  "week_6": {
-    "status": "Not Started",
-    "focus": "Early Bird Registration & Admin Analytics",
-    "estimated_hours": "10 hours",
-    "deliverables": [
-      {
-        "early_bird_registration": {
-          "description": "Dynamic pricing with percentage-based discounts for early registrations",
-          "database_migrations": {
-            "sessions_table": [
-              "RegistrationOpenDate DATETIME2 NULL (when registration opens)",
-              "RegistrationCloseDate DATETIME2 NULL (when registration closes)",
-              "EarlyBirdEndDate DATETIME2 NULL (discount valid until this date)",
-              "EarlyBirdDiscountPercent DECIMAL(5,2) NULL (e.g., 15.00 for 15% off)"
-            ]
-          },
-          "admin_create_session": {
-            "new_fields": [
-              "Registration Open Date (datetime picker)",
-              "Registration Close Date (datetime picker)",
-              "Early Bird End Date (datetime picker)",
-              "Early Bird Discount % (number input, 0-100)"
+          "registrations_view": {
+            "description": "View all registrations for a specific session",
+            "trigger": "Click 'View Registrations' link/button in sessions table",
+            "display": "Modal or separate page showing registrant details",
+            "columns": [
+              "Name",
+              "Email",
+              "Phone",
+              "Position",
+              "Registration Date",
+              "Amount Paid"
             ],
-            "validation": "Open < EarlyBird < Close < SessionDate"
+            "endpoint": "GET /api/admin/sessions/{id}/registrations"
           },
-          "session_display_logic": {
-            "registration_not_open": "Show 'Registration Opens [Date]' badge, disable Register button",
-            "registration_open_early_bird": "Show 'Early Bird: X% off until [Date]' badge in green",
-            "registration_closing_soon": "Show 'Registration Closing Soon' badge when 5 days before close date",
-            "registration_closed": "Show 'Registration Closed' badge, hide Register button"
-          },
-          "pricing_display": {
-            "early_bird_active": "Show original price strikethrough, discounted price in green, savings amount",
-            "regular_price": "Show standard session fee",
-            "cart_breakdown": "Line items: Session Fee, Early Bird Discount (-X%), Total"
-          },
-          "backend_calculation": {
-            "endpoint": "GET /api/sessions/{id} includes calculated price based on current date",
-            "logic": "If now <= EarlyBirdEndDate, apply discount; else return regular fee"
+          "manual_registration_management": {
+            "description": "Admin can manually add or remove users from sessions",
+            "add_user_to_session": {
+              "trigger": "Button in session registrations view or sessions table",
+              "modal": "Add User to Session modal",
+              "fields": [
+                "User dropdown/search (select existing user by email/name)",
+                "Or manual entry: Name, Email, Phone, Address, DOB",
+                "Position (dropdown: Forward, Defense, Forward/Defense, Goalie)",
+                "Payment Status (Paid/Pending/Comped)",
+                "Amount Paid (editable, defaults to session price)"
+              ],
+              "validation": [
+                "Check session capacity before adding",
+                "Prevent duplicate registrations",
+                "Validate all required fields"
+              ],
+              "endpoint": "POST /api/admin/sessions/{id}/registrations/manual",
+              "use_case": "Offline registrations, phone sign-ups, admin comps"
+            },
+            "remove_user_from_session": {
+              "trigger": "Delete/Remove button next to each registrant in registrations view",
+              "confirmation": "Modal: 'Remove [Name] from [Session]? This will mark their registration as cancelled.'",
+              "action": "Soft delete: Set status to 'Cancelled' or hard delete registration and payment records",
+              "options": [
+                "Keep registration record with Cancelled status (recommended for audit trail)",
+                "Fully delete registration and payment records (cascade delete)"
+              ],
+              "refund_note": "Display note: 'Refunds must be processed manually outside the system'",
+              "endpoint": "DELETE /api/admin/sessions/{sessionId}/registrations/{registrationId}",
+              "use_case": "User cancellations, duplicate registrations, refunds"
+            }
           }
         }
       },
       {
         "admin_dashboard_analytics": {
+          "status": "⏳ Not Started",
           "todays_registrations_card": {
             "title": "Today's Registrations",
             "metric": "Count of registrations where RegistrationDate = UTC today",
-            "display": "Large number with trend icon (up/down vs yesterday)",
-            "api_endpoint": "GET /api/admin/dashboard/registrations/today"
+            "display": "Large number with trend indicator (up/down vs yesterday)",
+            "icon": "Calendar or user icon",
+            "api_endpoint": "GET /api/admin/dashboard/stats/registrations-today"
           },
-          "registrations_per_session_card": {
-            "title": "Registrations by Session",
-            "metric": "Table showing each session with total registration count",
-            "columns": ["Session Name", "Date", "Total Registrations", "Max Players", "Spots Left"],
-            "sorting": "Sort by date descending (most recent first)",
-            "api_endpoint": "GET /api/admin/dashboard/registrations/by-session"
+          "registrations_per_session_table": {
+            "title": "Session Registration Status",
+            "location": "New card on admin dashboard",
+            "columns": [
+              "Session Name",
+              "Date & Time",
+              "League",
+              "Registrations",
+              "Max Players",
+              "Spots Left",
+              "Status"
+            ],
+            "sorting": "Sort by date descending (upcoming sessions first)",
+            "visual_indicators": [
+              "Green badge for sessions with >5 spots",
+              "Yellow badge for 1-5 spots left",
+              "Red badge for full sessions"
+            ],
+            "api_endpoint": "GET /api/admin/dashboard/sessions/registration-status"
           },
-          "revenue_overview": {
-            "title": "Registration Revenue",
+          "revenue_overview_card": {
+            "title": "Revenue Summary",
             "metrics": [
-              "Total revenue (sum of AmountPaid)",
-              "Today's revenue",
-              "Early bird discounts given (tracked amount)"
+              "Total Revenue All-Time (sum of all AmountPaid)",
+              "Today's Revenue (sum where RegistrationDate = today)",
+              "This Month's Revenue (sum where RegistrationDate in current month)",
+              "Average Registration Fee"
             ],
-            "optional": "Chart showing revenue over time (last 30 days)"
-          }
-        }
-      },
-      {
-        "backend_enhancements": {
-          "admin_dashboard_controller": {
-            "new_endpoints": [
-              "GET /api/admin/dashboard/registrations/today",
-              "GET /api/admin/dashboard/registrations/by-session",
-              "GET /api/admin/dashboard/revenue"
-            ],
+            "display": "Card with 2x2 grid of metric boxes",
+            "optional_chart": "Line chart showing daily revenue for last 30 days",
+            "api_endpoint": "GET /api/admin/dashboard/stats/revenue"
+          },
+          "implementation_notes": {
+            "new_controller": "AdminDashboardController.cs",
             "authorization": "[Authorize(Roles = \"Admin\")]",
-            "timezone": "All date calculations use UTC"
-          },
-          "sessions_controller_updates": {
-            "get_session_details": "Include IsRegistrationOpen, IsEarlyBird, CalculatedFee properties",
-            "register_validation": "Check RegistrationOpenDate and RegistrationCloseDate before allowing registration"
+            "timezone_handling": "All date calculations use UTC",
+            "caching": "Consider caching stats for 5 minutes to reduce DB load"
           }
         }
       },
       {
-        "frontend_components": {
-          "admin_dashboard_updates": {
-            "new_cards": [
-              "TodaysRegistrationsComponent (card with metric)",
-              "SessionRegistrationsTableComponent (table card)"
+        "testing_and_quality": {
+          "status": "⏳ Not Started",
+          "unit_tests": {
+            "backend": [
+              "Session capacity validation tests",
+              "Registration window date logic tests",
+              "Early bird price calculation tests",
+              "Admin analytics queries accuracy",
+              "Payment processing with new fields"
             ],
-            "styling": "Consistent with existing dashboard cards"
+            "frontend": [
+              "Registration form validation (all fields)",
+              "Spots left calculation display",
+              "Session full state handling",
+              "Price display logic (early bird vs regular)",
+              "Form submission and error handling"
+            ]
           },
-          "session_card_enhancements": {
-            "badges": [
-              "Registration Opens [Date] (info badge)",
-              "Early Bird Active (success badge)",
-              "Registration Closing Soon (warning badge)",
-              "Registration Closed (secondary badge)",
-              "Session Full (danger badge)"
-            ],
-            "price_display": "Conditional rendering with strikethrough and discount highlight"
-          }
-        }
-      },
-      {
-        "testing": {
-          "unit_tests": [
-            "Early bird discount calculation logic",
-            "Registration date validation",
-            "Session capacity checks",
-            "Admin analytics endpoint responses"
-          ],
           "integration_tests": [
-            "Full registration flow with early bird pricing",
+            "Complete registration flow end-to-end",
+            "Capacity enforcement (prevent over-registration)",
+            "Registration window enforcement",
             "Admin dashboard data accuracy",
-            "Session state transitions (open → early bird → regular → closing soon → closed)"
+            "Session status auto-updates"
           ],
-          "manual_testing": [
-            "Create session with early bird dates",
-            "Register during early bird period, verify discount applied",
-            "Test registration close date enforcement",
-            "Verify admin dashboard metrics update correctly"
+          "manual_testing_checklist": [
+            "Register for session with all form fields",
+            "Try registering when session is full (should fail)",
+            "Try registering outside registration window (should fail)",
+            "Verify early bird pricing applied correctly",
+            "Admin: View session registrations list",
+            "Admin: Manually add user to session",
+            "Admin: Remove user from session (verify confirmation)",
+            "Admin: Try adding user when session is full (should fail)",
+            "Admin: Check analytics dashboard metrics",
+            "Admin: Filter sessions by active/inactive",
+            "Admin: Deactivate session with confirmation modal"
           ]
         }
       },
       {
-        "optional_enhancements": [
-          "Email notifications when registration opens for favorite leagues",
-          "Admin report export (CSV of all registrations)",
-          "Dark mode toggle for UI",
-          "Performance optimization for large session lists"
-        ]
+        "optional_enhancements": {
+          "status": "Deferred",
+          "items": [
+            "Email notifications when registration opens for favorite leagues",
+            "Admin report export (CSV of all registrations)",
+            "Dark mode toggle for UI",
+            "Performance optimization for large session lists",
+            "Hockey-themed success animations on registration",
+            "Comprehensive frontend unit test coverage (AuthService, DataService, all components)",
+            "Global error interceptor with toast notifications"
+          ]
+        }
       }
+    ],
+    "priority_order": [
+      "1. Database migration for SessionRegistrations table with new fields",
+      "2. Backend: Update SessionRegistration model and validation",
+      "3. Backend: Session capacity checking in register endpoint",
+      "4. Backend: Add SpotsLeft to GetSessions response",
+      "5. Frontend: Build comprehensive registration form component",
+      "6. Frontend: Display spots left on session cards",
+      "7. Frontend: Disable registration for full sessions",
+      "8. Admin: Delete confirmation modal for sessions",
+      "9. Admin: Session filter (active/inactive)",
+      "10. Admin: View registrations for a session",
+      "11. Admin: Manually add user to session (modal form)",
+      "12. Admin: Remove user from session (with confirmation)",
+      "13. Admin: Dashboard analytics (registrations today, revenue)",
+      "14. Testing: Unit and integration tests for new features"
     ]
   },
   "database_schema_updates": {

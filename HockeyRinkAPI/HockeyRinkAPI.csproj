@@ -7,6 +7,7 @@
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <GenerateDependencyFile>true</GenerateDependencyFile>
     <OutputType>Exe</OutputType>
+    <UserSecretsId>e5386294-e853-4968-8f06-56fe17f94bef</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
