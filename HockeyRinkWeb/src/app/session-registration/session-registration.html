@@ -28,7 +28,65 @@
   } @if (sessions().length > 0) {
   <div class="card shadow">
     <div class="card-body">
+      <!-- Step Indicator -->
+      <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="d-flex align-items-center flex-fill">
+            <div
+              class="rounded-circle d-flex align-items-center justify-content-center me-2"
+              [class.bg-primary]="currentStep() >= 1"
+              [class.bg-secondary]="currentStep() < 1"
+              [class.text-white]="true"
+              style="width: 40px; height: 40px; font-weight: bold"
+            >
+              1
+            </div>
+            <span
+              [class.fw-bold]="currentStep() === 1"
+              [class.text-primary]="currentStep() === 1"
+            >
+              Registration Details
+            </span>
+          </div>
+
+          <div
+            class="flex-fill mx-3"
+            style="height: 2px; background-color: #dee2e6"
+          ></div>
+
+          <div class="d-flex align-items-center flex-fill">
+            <div
+              class="rounded-circle d-flex align-items-center justify-content-center me-2"
+              [class.bg-primary]="currentStep() >= 2"
+              [class.bg-secondary]="currentStep() < 2"
+              [class.text-white]="true"
+              style="width: 40px; height: 40px; font-weight: bold"
+            >
+              2
+            </div>
+            <span
+              [class.fw-bold]="currentStep() === 2"
+              [class.text-primary]="currentStep() === 2"
+            >
+              Payment & Confirmation
+            </span>
+          </div>
+        </div>
+        <div class="progress" style="height: 8px">
+          <div
+            class="progress-bar bg-primary"
+            role="progressbar"
+            [style.width.%]="currentStep() * 50"
+            [attr.aria-valuenow]="currentStep() * 50"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          ></div>
+        </div>
+      </div>
+
       <form [formGroup]="registrationForm" (ngSubmit)="onRegister()">
+        <!-- Step 1: Registration Details -->
+        @if (currentStep() === 1) {
         <!-- Session Selection -->
         <div class="mb-4">
           <label for="sessionId" class="form-label fw-bold"
@@ -65,8 +123,8 @@
         <div class="row mb-3">
           <div class="col-md-6">
             <label for="name" class="form-label"
-              >Full Name: <span class="text-danger">*</span></label
-            >
+              ><span class="text-danger">*</span> Full Name:
+            </label>
             <input
               type="text"
               formControlName="name"
@@ -82,7 +140,7 @@
 
           <div class="col-md-6">
             <label for="email" class="form-label"
-              >Email: <span class="text-danger">*</span></label
+              ><span class="text-danger">*</span> Email:</label
             >
             <input
               type="email"
@@ -106,16 +164,22 @@
 
         <div class="row mb-3">
           <div class="col-md-6">
-            <label for="phone" class="form-label">Phone Number:</label>
+            <label for="phone" class="form-label"
+              ><span class="text-danger">*</span> Phone Number:</label
+            >
             <input
               type="tel"
               formControlName="phone"
               class="form-control"
               id="phone"
-              placeholder="(123) 456-7890"
-              [class.is-invalid]="hasError('phone', 'pattern')"
+              mask="(000) 000-0000"
+              [class.is-invalid]="
+                hasError('phone', 'required') || hasError('phone', 'pattern')
+              "
             />
-            @if (hasError('phone', 'pattern')) {
+            @if (hasError('phone', 'required')) {
+            <div class="invalid-feedback">Phone number is required.</div>
+            } @else if (hasError('phone', 'pattern')) {
             <div class="invalid-feedback">
               Please enter a valid phone number.
             </div>
@@ -124,8 +188,8 @@
 
           <div class="col-md-6">
             <label for="dateOfBirth" class="form-label"
-              >Date of Birth: <span class="text-danger">*</span></label
-            >
+              ><span class="text-danger">*</span> Date of Birth:
+            </label>
             <input
               type="date"
               formControlName="dateOfBirth"
@@ -152,7 +216,6 @@
             formControlName="address"
             class="form-control"
             id="address"
-            placeholder="123 Main St"
           />
         </div>
 
@@ -164,7 +227,6 @@
               formControlName="city"
               class="form-control"
               id="city"
-              placeholder="Springfield"
             />
           </div>
 
@@ -175,7 +237,6 @@
               formControlName="state"
               class="form-control"
               id="state"
-              placeholder="IL"
               maxlength="2"
             />
           </div>
@@ -187,7 +248,6 @@
               formControlName="zipCode"
               class="form-control"
               id="zipCode"
-              placeholder="62701"
             />
           </div>
         </div>
@@ -218,9 +278,8 @@
               [class.is-invalid]="hasError('agreeToTerms', 'required')"
             />
             <label class="form-check-label" for="agreeToTerms">
-              I agree to the
+              I agree to the <span class="text-danger">* </span>
               <a href="#" class="text-primary">Terms and Conditions</a>
-              <span class="text-danger">*</span>
             </label>
             @if (hasError('agreeToTerms', 'required')) {
             <div class="invalid-feedback d-block">
@@ -258,27 +317,97 @@
         </div>
         }
 
-        <!-- Submit Button -->
-        <button
-          type="submit"
-          class="btn btn-primary btn-lg w-100 mt-3 mb-3"
-          [disabled]="
-            registrationForm.invalid || isLoading() || selectedSession()?.isFull
-          "
-        >
-          @if (isLoading()) {
-          <span
-            class="spinner-border spinner-border-sm me-2"
-            role="status"
-            aria-hidden="true"
-          ></span>
-          Processing Registration... } @else if (selectedSession()?.isFull) {
-          Session is Full } @else { Complete Registration }
-        </button>
+        <!-- Step 1 Navigation -->
+        <div class="d-flex justify-content-center mt-4 mb-3">
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="nextStep()"
+            [disabled]="registrationForm.invalid || selectedSession()?.isFull"
+          >
+            Continue to Payment and Confirmation →
+          </button>
+        </div>
+        }
+
+        <!-- Step 2: Payment & Confirmation -->
+        @if (currentStep() === 2) {
+        <div class="alert alert-info">
+          <h5 class="alert-heading">Review Your Registration</h5>
+          <hr />
+          <p class="mb-2">
+            <strong>Name:</strong> {{ registrationForm.get("name")?.value }}
+          </p>
+          <p class="mb-2">
+            <strong>Email:</strong> {{ registrationForm.get("email")?.value }}
+          </p>
+          <p class="mb-2">
+            <strong>Phone:</strong> {{ registrationForm.get("phone")?.value }}
+          </p>
+          <p class="mb-2">
+            <strong>Date of Birth:</strong>
+            {{
+              registrationForm.get("dateOfBirth")?.value | date : "mediumDate"
+            }}
+          </p>
+          @if (registrationForm.get('position')?.value) {
+          <p class="mb-2">
+            <strong>Position:</strong>
+            {{ registrationForm.get("position")?.value }}
+          </p>
+          }
+          <hr />
+          <p class="mb-2">
+            <strong>Session:</strong> {{ selectedSession()?.name }}
+          </p>
+          <p class="mb-2">
+            <strong>Date:</strong>
+            {{ selectedSession()?.startDate | date : "medium" }}
+          </p>
+          <p class="mb-0 fs-5">
+            <strong>Total Amount:</strong> ${{
+              getSessionPrice(selectedSession()!)
+            }}
+          </p>
+        </div>
+
+        <div class="alert alert-warning">
+          <h6 class="alert-heading">Payment Information</h6>
+          <p class="mb-0">
+            <strong>Note:</strong> This is a demo registration. No actual
+            payment will be processed. In production, payment processing would
+            be integrated here.
+          </p>
+        </div>
+
+        <!-- Step 2 Navigation -->
+        <div class="d-flex justify-content-between mt-4 mb-3">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="previousStep()"
+          >
+            ← Back to Details
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary btn-lg"
+            [disabled]="isLoading()"
+          >
+            @if (isLoading()) {
+            <span
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+              aria-hidden="true"
+            ></span>
+            Processing Registration... } @else { Complete Registration }
+          </button>
+        </div>
+        }
       </form>
     </div>
   </div>
+  }
 
   <div class="mb-5"></div>
-  }
 </div>

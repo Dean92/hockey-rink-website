@@ -10,11 +10,19 @@ import {
 } from '@angular/forms';
 import { CommonModule, DatePipe } from '@angular/common';
 import { Session, SessionRegistrationRequest } from '../models';
+import { provideNgxMask, NgxMaskDirective } from 'ngx-mask';
 
 @Component({
   selector: 'app-session-registration',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DatePipe, RouterLink],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    DatePipe,
+    RouterLink,
+    NgxMaskDirective,
+  ],
+  providers: [provideNgxMask()],
   templateUrl: './session-registration.html',
   styleUrl: './session-registration.css',
 })
@@ -25,6 +33,7 @@ export class SessionRegistration implements OnInit {
   isLoading = signal<boolean>(true);
   registrationForm: FormGroup;
   selectedSession = signal<Session | null>(null);
+  currentStep = signal<number>(1);
 
   constructor(
     private authService: AuthService,
@@ -37,7 +46,7 @@ export class SessionRegistration implements OnInit {
       sessionId: ['', Validators.required],
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', Validators.pattern(/^[\d\s()+-]+$/)],
+      phone: ['', [Validators.required, Validators.pattern(/^[\d\s()+-]+$/)]],
       dateOfBirth: ['', Validators.required],
       address: [''],
       city: [''],
@@ -112,6 +121,34 @@ export class SessionRegistration implements OnInit {
       }
     }
     return session.regularPrice || session.fee;
+  }
+
+  nextStep() {
+    if (this.currentStep() === 1) {
+      // Validate Step 1 fields
+      const step1Fields = ['sessionId', 'name', 'email', 'dateOfBirth'];
+      let isValid = true;
+
+      step1Fields.forEach((field) => {
+        const control = this.registrationForm.get(field);
+        if (control && control.invalid) {
+          control.markAsTouched();
+          isValid = false;
+        }
+      });
+
+      if (isValid) {
+        this.currentStep.set(2);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  }
+
+  previousStep() {
+    if (this.currentStep() > 1) {
+      this.currentStep.set(this.currentStep() - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   hasError(field: string, errorType: string): boolean {
