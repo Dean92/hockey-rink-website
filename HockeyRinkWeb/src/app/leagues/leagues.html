@@ -160,7 +160,11 @@
             <!-- Authenticated Users -->
             @if (isAuthenticated()) { @if (isRegistrationOpen(league)) {
             <div class="mt-4 mb-0">
-              <a routerLink="/sessions" class="btn btn-success">
+              <a
+                [routerLink]="['/session-registration']"
+                [queryParams]="{ sessionId: getFirstActiveSession(league)?.id }"
+                class="btn btn-success"
+              >
                 <i class="bi bi-clipboard-check me-1"></i>Register Now
               </a>
             </div>

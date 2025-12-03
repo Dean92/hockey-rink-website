@@ -197,68 +197,46 @@ public class AdminController : ControllerBase
                 .Include(s => s.Registrations)
                 .ToListAsync();
 
-            // Auto-update session status based on dates
+            // Auto-deactivate sessions where dates have passed, but respect manual overrides
             var now = DateTime.UtcNow;
             bool hasChanges = false;
             foreach (var session in sessions)
             {
-                bool originalStatus = session.IsActive;
-
-                // Deactivate if session end date has passed
-                if (session.IsActive && session.EndDate.Date < now.Date)
+                // Only auto-deactivate if:
+                // 1. Session is currently active
+                // 2. Dates have passed
+                // 3. Session hasn't been manually modified after the dates passed
+                
+                bool shouldAutoDeactivate = false;
+                DateTime? criticalDate = null;
+                
+                // Check registration close date
+                if (session.RegistrationCloseDate.HasValue && session.RegistrationCloseDate.Value < now)
                 {
-                    session.IsActive = false;
-                    hasChanges = true;
-                    _logger.LogInformation(
-                        "Auto-deactivated expired session: {SessionName} (ID: {SessionId})",
-                        session.Name,
-                        session.Id
-                    );
+                    criticalDate = session.RegistrationCloseDate.Value;
+                    shouldAutoDeactivate = true;
                 }
-                // Deactivate if registration close date has passed
-                else if (
-                    session.IsActive
-                    && session.RegistrationCloseDate.HasValue
-                    && session.RegistrationCloseDate.Value < now
-                )
+                // Check session end date
+                else if (session.EndDate < now)
                 {
-                    session.IsActive = false;
-                    hasChanges = true;
-                    _logger.LogInformation(
-                        "Auto-deactivated session (registration closed): {SessionName} (ID: {SessionId})",
-                        session.Name,
-                        session.Id
-                    );
+                    criticalDate = session.EndDate;
+                    shouldAutoDeactivate = true;
                 }
-                // Activate if registration open date has arrived (and registration hasn't closed yet)
-                else if (
-                    !session.IsActive
-                    && session.RegistrationOpenDate.HasValue
-                    && session.RegistrationOpenDate.Value <= now
-                )
+                
+                // Only deactivate if session is active and either:
+                // - Never been manually modified, OR
+                // - Last modified before the critical date passed
+                if (shouldAutoDeactivate && session.IsActive && criticalDate.HasValue)
                 {
-                    // Only activate if registration close date hasn't passed and session end date hasn't passed
-                    bool canActivate = true;
-                    if (
-                        session.RegistrationCloseDate.HasValue
-                        && session.RegistrationCloseDate.Value < now
-                    )
+                    if (!session.LastModified.HasValue || session.LastModified.Value < criticalDate.Value)
                     {
-                        canActivate = false;
-                    }
-                    if (session.EndDate.Date < now.Date)
-                    {
-                        canActivate = false;
-                    }
-
-                    if (canActivate)
-                    {
-                        session.IsActive = true;
+                        session.IsActive = false;
                         hasChanges = true;
                         _logger.LogInformation(
-                            "Auto-activated session (registration opened): {SessionName} (ID: {SessionId})",
+                            "Auto-deactivated session: {SessionName} (ID: {SessionId}) - Critical date: {CriticalDate}",
                             session.Name,
-                            session.Id
+                            session.Id,
+                            criticalDate
                         );
                     }
                 }
@@ -397,6 +375,7 @@ public class AdminController : ControllerBase
             session.EarlyBirdPrice = model.EarlyBirdPrice;
             session.EarlyBirdEndDate = model.EarlyBirdEndDate;
             session.RegularPrice = model.RegularPrice;
+            session.LastModified = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync();
 
