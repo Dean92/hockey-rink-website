@@ -40,7 +40,7 @@ namespace HockeyRinkAPI.Models
         public string? Position { get; set; } // Forward, Defense, Forward/Defense, Goalie
         
         [Required]
-        public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
+        public DateTime RegistrationDate { get; set; }
         
         [Required]
         public decimal AmountPaid { get; set; }

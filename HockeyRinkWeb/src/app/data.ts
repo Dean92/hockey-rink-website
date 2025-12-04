@@ -118,4 +118,58 @@ export class DataService {
       withCredentials: true,
     });
   }
+
+  // Registration management methods
+  getSessionRegistrations(sessionId: number): Observable<any[]> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get<any[]>(
+      `${this.apiUrl}/admin/sessions/${sessionId}/registrations`,
+      {
+        headers,
+        withCredentials: true,
+      }
+    );
+  }
+
+  addManualRegistration(sessionId: number, data: any): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.post(
+      `${this.apiUrl}/admin/sessions/${sessionId}/registrations/manual`,
+      data,
+      {
+        headers,
+        withCredentials: true,
+      }
+    );
+  }
+
+  updateRegistration(
+    sessionId: number,
+    registrationId: number,
+    data: any
+  ): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put(
+      `${this.apiUrl}/admin/sessions/${sessionId}/registrations/${registrationId}`,
+      data,
+      {
+        headers,
+        withCredentials: true,
+      }
+    );
+  }
+
+  removeRegistration(
+    sessionId: number,
+    registrationId: number
+  ): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.delete(
+      `${this.apiUrl}/admin/sessions/${sessionId}/registrations/${registrationId}`,
+      {
+        headers,
+        withCredentials: true,
+      }
+    );
+  }
 }

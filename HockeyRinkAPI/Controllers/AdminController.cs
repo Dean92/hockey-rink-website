@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using HockeyRinkAPI.Data;
@@ -443,6 +444,272 @@ public class AdminController : ControllerBase
         }
     }
 
+    // Get all registrations for a specific session
+    [HttpGet("sessions/{id}/registrations")]
+    public async Task<IActionResult> GetSessionRegistrations(int id)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var session = await _dbContext
+                .Sessions.Include(s => s.Registrations)
+                .ThenInclude(r => r.User)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (session == null)
+            {
+                return NotFound(new { message = "Session not found" });
+            }
+
+            var registrations = session.Registrations.Select(r => new
+            {
+                r.Id,
+                r.Name,
+                r.Email,
+                r.Phone,
+                r.Position,
+                r.DateOfBirth,
+                r.Address,
+                r.City,
+                r.State,
+                r.ZipCode,
+                r.RegistrationDate,
+                r.AmountPaid,
+                UserId = r.User?.Id,
+                UserEmail = r.User?.Email
+            }).OrderByDescending(r => r.RegistrationDate).ToList();
+
+            return Ok(new
+            {
+                sessionId = session.Id,
+                sessionName = session.Name,
+                sessionDate = session.StartDate,
+                totalRegistrations = registrations.Count,
+                maxPlayers = session.MaxPlayers,
+                registrations
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching session registrations");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    // Manually add a user to a session
+    [HttpPost("sessions/{id}/registrations/manual")]
+    public async Task<IActionResult> AddManualRegistration(int id, [FromBody] ManualRegistrationModel model)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var session = await _dbContext
+                .Sessions.Include(s => s.Registrations)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (session == null)
+            {
+                return NotFound(new { message = "Session not found" });
+            }
+
+            // Check capacity
+            if (session.Registrations.Count >= session.MaxPlayers)
+            {
+                return BadRequest(new { message = "Session is at full capacity" });
+            }
+
+            // Check for duplicate registration by email
+            if (session.Registrations.Any(r => r.Email.ToLower() == model.Email.ToLower()))
+            {
+                return Conflict(new { message = "User is already registered for this session" });
+            }
+
+            // Find user by email if exists
+            ApplicationUser? user = null;
+            if (!string.IsNullOrEmpty(model.Email))
+            {
+                user = await _userManager.FindByEmailAsync(model.Email);
+            }
+
+            // Create registration
+            var registration = new SessionRegistration
+            {
+                SessionId = id,
+                UserId = user?.Id,
+                Name = model.Name,
+                Email = model.Email,
+                Phone = model.Phone,
+                Address = model.Address,
+                City = model.City,
+                State = model.State,
+                ZipCode = model.ZipCode,
+                DateOfBirth = model.DateOfBirth,
+                Position = model.Position,
+                RegistrationDate = DateTime.UtcNow,
+                AmountPaid = model.AmountPaid
+            };
+
+            _dbContext.SessionRegistrations.Add(registration);
+            await _dbContext.SaveChangesAsync(); // Save to get registration.Id
+
+            // Create payment record
+            var payment = new Payment
+            {
+                SessionRegistrationId = registration.Id,
+                Amount = model.AmountPaid,
+                TransactionId = $"MANUAL-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                Status = "Completed"
+            };
+
+            _dbContext.Payments.Add(payment);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Admin manually registered {Name} ({Email}) for session {SessionId}",
+                model.Name,
+                model.Email,
+                id
+            );
+
+            return Ok(new { message = $"{model.Name} successfully registered for session", registrationId = registration.Id });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding manual registration");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    // Update a registration
+    [HttpPut("sessions/{sessionId}/registrations/{registrationId}")]
+    public async Task<IActionResult> UpdateRegistration(int sessionId, int registrationId, [FromBody] ManualRegistrationModel model)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var registration = await _dbContext
+                .SessionRegistrations
+                .Include(r => r.Session)
+                .FirstOrDefaultAsync(r => r.Id == registrationId && r.SessionId == sessionId);
+
+            if (registration == null)
+            {
+                return NotFound(new { message = "Registration not found" });
+            }
+
+            // Update registration fields
+            registration.Name = model.Name;
+            registration.Email = model.Email;
+            registration.Phone = model.Phone;
+            registration.Address = model.Address;
+            registration.City = model.City;
+            registration.State = model.State;
+            registration.ZipCode = model.ZipCode;
+            registration.DateOfBirth = model.DateOfBirth;
+            registration.Position = model.Position;
+            registration.AmountPaid = model.AmountPaid;
+
+            // Update associated payment amount if exists
+            var payment = await _dbContext
+                .Payments
+                .FirstOrDefaultAsync(p => p.SessionRegistrationId == registrationId);
+
+            if (payment != null)
+            {
+                payment.Amount = model.AmountPaid;
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Admin updated registration {RegistrationId} for session {SessionId}",
+                registrationId,
+                sessionId
+            );
+
+            return Ok(new { message = $"Registration for {model.Name} updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating registration");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    // Remove a user from a session
+    [HttpDelete("sessions/{sessionId}/registrations/{registrationId}")]
+    public async Task<IActionResult> RemoveRegistration(int sessionId, int registrationId)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var registration = await _dbContext
+                .SessionRegistrations
+                .Include(r => r.Session)
+                .FirstOrDefaultAsync(r => r.Id == registrationId && r.SessionId == sessionId);
+
+            if (registration == null)
+            {
+                return NotFound(new { message = "Registration not found" });
+            }
+
+            // Find and delete associated payment first (due to foreign key constraint)
+            var payment = await _dbContext
+                .Payments
+                .FirstOrDefaultAsync(p => p.SessionRegistrationId == registrationId);
+
+            if (payment != null)
+            {
+                _dbContext.Payments.Remove(payment);
+            }
+
+            // Then delete the registration
+            _dbContext.SessionRegistrations.Remove(registration);
+
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Admin removed registration {RegistrationId} ({Name}) from session {SessionId}",
+                registrationId,
+                registration.Name,
+                sessionId
+            );
+
+            return Ok(new { message = $"{registration.Name} removed from session. Note: Refunds must be processed manually." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing registration");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
     [HttpGet("leagues")]
     public async Task<IActionResult> GetAllLeagues()
     {
@@ -617,4 +884,40 @@ public class UpdateLeagueModel
     public decimal? RegularPrice { get; set; }
     public DateTime? RegistrationOpenDate { get; set; }
     public DateTime? RegistrationCloseDate { get; set; }
+}
+
+public class ManualRegistrationModel
+{
+    [Required]
+    [StringLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Phone]
+    public string? Phone { get; set; }
+
+    [StringLength(200)]
+    public string? Address { get; set; }
+
+    [StringLength(100)]
+    public string? City { get; set; }
+
+    [StringLength(50)]
+    public string? State { get; set; }
+
+    [StringLength(20)]
+    public string? ZipCode { get; set; }
+
+    [Required]
+    public DateTime DateOfBirth { get; set; }
+
+    [StringLength(20)]
+    public string? Position { get; set; }
+
+    [Required]
+    [Range(0, 10000)]
+    public decimal AmountPaid { get; set; }
 }
