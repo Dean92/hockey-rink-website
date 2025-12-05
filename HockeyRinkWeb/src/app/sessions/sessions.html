@@ -78,7 +78,25 @@
             } @else {
             <strong>Fee:</strong> ${{ session.fee }}<br />
             } @if (session.maxPlayers) {
-            <strong>Max Players:</strong> {{ session.maxPlayers }}<br />
+            <strong>Capacity:</strong> {{ session.registrationCount || 0 }}/{{
+              session.maxPlayers
+            }}
+            @if (session.spotsLeft !== undefined) {
+            <span
+              [class]="
+                session.spotsLeft === 0
+                  ? 'badge bg-danger ms-2'
+                  : session.spotsLeft <= 5
+                  ? 'badge bg-warning text-dark ms-2'
+                  : 'badge bg-success ms-2'
+              "
+            >
+              @if (session.spotsLeft === 0) { FULL } @else if (session.spotsLeft
+              <= 5) { Only {{ session.spotsLeft }} spots remaining! } @else {
+              {{ session.spotsLeft }} spots remaining }
+            </span>
+            }
+            <br />
             }
 
             <strong>Status: </strong>
@@ -91,7 +109,7 @@
             </span>
           </p>
 
-          @if (session.isActive) {
+          @if (session.isActive && !session.isFull) {
           <a
             [routerLink]="['/session-registration']"
             [queryParams]="{ sessionId: session.id }"
@@ -99,6 +117,8 @@
           >
             Register for Session
           </a>
+          } @else if (session.isFull) {
+          <button class="btn btn-secondary" disabled>Session Full</button>
           } @else {
           <div class="alert alert-warning mb-0">
             <i class="bi bi-exclamation-triangle me-2"></i>

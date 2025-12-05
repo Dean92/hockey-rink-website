@@ -1,18 +1,19 @@
-import { CommonModule } from "@angular/common";
-import { Component, OnInit, signal } from "@angular/core";
-import { RouterLink } from "@angular/router";
-import { DataService } from "../data";
-import { League } from "../models";
-import { AuthService } from "../auth";
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { DataService } from '../data';
+import { League, Session } from '../models';
+import { AuthService } from '../auth';
 
 @Component({
-  selector: "app-leagues",
+  selector: 'app-leagues',
   imports: [CommonModule, RouterLink],
-  templateUrl: "./leagues.html",
-  styleUrls: ["./leagues.css"],
+  templateUrl: './leagues.html',
+  styleUrls: ['./leagues.css'],
 })
 export class Leagues implements OnInit {
   leagues = signal<League[]>([]);
+  sessions = signal<Session[]>([]);
   errorMessage = signal<string | null>(null);
   isLoading = signal<boolean>(false);
 
@@ -23,6 +24,7 @@ export class Leagues implements OnInit {
 
   ngOnInit() {
     this.loadLeagues();
+    this.loadSessions();
   }
 
   loadLeagues() {
@@ -35,32 +37,43 @@ export class Leagues implements OnInit {
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error("Error fetching leagues", err);
+        console.error('Error fetching leagues', err);
         this.errorMessage.set(
-          "Failed to load leagues. Please try again later."
+          'Failed to load leagues. Please try again later.'
         );
         this.isLoading.set(false);
       },
     });
   }
 
+  loadSessions() {
+    this.dataService.getSessions().subscribe({
+      next: (data) => {
+        this.sessions.set(data);
+      },
+      error: (err) => {
+        console.error('Error fetching sessions', err);
+      },
+    });
+  }
+
   formatDate(dateString?: string): string {
-    if (!dateString) return "TBA";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
+    if (!dateString) return 'TBA';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
     });
   }
 
   formatDateTime(dateString?: string): string {
-    if (!dateString) return "TBA";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
+    if (!dateString) return 'TBA';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
     });
   }
 
@@ -69,22 +82,17 @@ export class Leagues implements OnInit {
   }
 
   isRegistrationOpen(league: League): boolean {
-    const now = new Date();
+    // Check if there are any active sessions for this league
+    return this.sessions().some(
+      (session) => session.leagueId === league.id && session.isActive
+    );
+  }
 
-    // Check if registration open/close dates are set
-    if (league.registrationOpenDate && league.registrationCloseDate) {
-      const openDate = new Date(league.registrationOpenDate);
-      const closeDate = new Date(league.registrationCloseDate);
-      return now >= openDate && now <= closeDate;
-    }
-
-    // Fallback to legacy expectedStartDate check
-    if (league.expectedStartDate) {
-      const startDate = new Date(league.expectedStartDate);
-      return startDate > now;
-    }
-
-    return false;
+  getFirstActiveSession(league: League): Session | undefined {
+    // Get the first active session for this league
+    return this.sessions().find(
+      (session) => session.leagueId === league.id && session.isActive
+    );
   }
 
   getCurrentPrice(league: League): number | null {
@@ -123,10 +131,10 @@ export class Leagues implements OnInit {
     if (league.earlyBirdPrice && league.earlyBirdEndDate) {
       const earlyBirdEnd = new Date(league.earlyBirdEndDate);
       if (now <= earlyBirdEnd) {
-        return "Early Bird Registration";
+        return 'Early Bird Registration';
       }
     }
 
-    return "Registration Fee";
+    return 'Registration Fee';
   }
 }

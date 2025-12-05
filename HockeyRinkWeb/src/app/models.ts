@@ -33,6 +33,9 @@ export interface Session {
   earlyBirdPrice?: number;
   earlyBirdEndDate?: string;
   regularPrice?: number;
+  registrationCount?: number;
+  spotsLeft?: number;
+  isFull?: boolean;
 }
 
 export interface UserProfile {
@@ -54,4 +57,17 @@ export interface RegisteredSession {
   sessionEndDate: Date;
   sessionFee: number;
   leagueName?: string;
+}
+
+export interface SessionRegistrationRequest {
+  sessionId: number;
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  phone?: string;
+  email: string;
+  dateOfBirth: string;
+  position?: string;
 }

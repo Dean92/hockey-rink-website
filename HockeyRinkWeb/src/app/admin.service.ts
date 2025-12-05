@@ -1,24 +1,49 @@
-import { Injectable, inject } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
-import { Observable } from "rxjs";
-import { AuthService } from "./auth";
-import { environment } from "../environments/environment";
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { AuthService } from './auth';
+import { environment } from '../environments/environment';
 
 export interface AdminDashboardData {
-  totalUsers: number;
-  totalSessions: number;
-  totalRegistrations: number;
+  todaysRegistrationsCount: number;
+  activeSessionsCount: number;
+  activeRegistrationsCount: number;
   totalRevenue: number;
+  monthRevenue: number;
+  activeSessions: ActiveSessionSummary[];
+  upcomingSessions: UpcomingSession[];
   recentRegistrations: RecentRegistration[];
+}
+
+export interface ActiveSessionSummary {
+  id: number;
+  name: string;
+  leagueName: string | null;
+  startDate: string;
+  endDate: string;
+  maxPlayers: number;
+  registeredCount: number;
+  spotsRemaining: number;
+  totalRevenue: number;
+  regularPrice: number;
+}
+
+export interface UpcomingSession {
+  id: number;
+  name: string;
+  leagueName: string | null;
+  startDate: string;
+  registeredCount: number;
+  maxPlayers: number;
 }
 
 export interface RecentRegistration {
   id: number;
-  userName: string;
-  userEmail: string;
-  sessionName: string;
-  paymentStatus: string;
-  createdAt: Date;
+  name: string;
+  email: string;
+  sessionId: number;
+  registrationDate: string;
+  amountPaid: number;
 }
 
 export interface AdminUser {
@@ -69,7 +94,7 @@ export interface CreateSessionRequest {
 }
 
 @Injectable({
-  providedIn: "root",
+  providedIn: 'root',
 })
 export class AdminService {
   private apiUrl = `${environment.apiUrl}/admin`;

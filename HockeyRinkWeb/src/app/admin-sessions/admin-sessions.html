@@ -6,6 +6,39 @@
     </button>
   </div>
 
+  <!-- Filter Buttons -->
+  <div class="mb-3">
+    <div class="btn-group" role="group" aria-label="Session filter">
+      <button
+        type="button"
+        class="btn"
+        [class.btn-primary]="activeFilter() === 'all'"
+        [class.btn-outline-primary]="activeFilter() !== 'all'"
+        (click)="setFilter('all')"
+      >
+        All Sessions
+      </button>
+      <button
+        type="button"
+        class="btn"
+        [class.btn-success]="activeFilter() === 'active'"
+        [class.btn-outline-success]="activeFilter() !== 'active'"
+        (click)="setFilter('active')"
+      >
+        Active
+      </button>
+      <button
+        type="button"
+        class="btn"
+        [class.btn-secondary]="activeFilter() === 'inactive'"
+        [class.btn-outline-secondary]="activeFilter() !== 'inactive'"
+        (click)="setFilter('inactive')"
+      >
+        Inactive
+      </button>
+    </div>
+  </div>
+
   @if (errorMessage()) {
   <div class="alert alert-danger alert-dismissible fade show" role="alert">
     {{ errorMessage() }}
@@ -48,7 +81,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (session of sessions(); track session.id) {
+        @for (session of filteredSessions(); track session.id) {
         <tr>
           <td>{{ session.name }}</td>
           <td>{{ session.leagueName || "N/A" }}</td>
@@ -64,8 +97,15 @@
               {{ session.isActive ? "Active" : "Inactive" }}
             </span>
           </td>
-          <td>{{ session.registrations?.length || 0 }}</td>
+          <td>{{ session.registrationCount || 0 }}</td>
           <td>
+            <button
+              class="btn btn-sm btn-outline-info me-2"
+              (click)="viewRegistrations(session)"
+              title="View Registrations"
+            >
+              <i class="bi bi-people"></i>
+            </button>
             <button
               class="btn btn-sm btn-outline-primary me-2"
               (click)="openEditModal(session)"
@@ -391,6 +431,390 @@
           [disabled]="isLoading()"
         >
           {{ isLoading() ? "Deleting..." : "Delete Session" }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+<!-- View Registrations Modal -->
+@if (showRegistrationsModal()) {
+<div class="modal fade show d-block modal-backdrop-custom" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-people-fill me-2"></i>
+          Registrations for {{ currentSession()?.name }}
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          aria-label="Close"
+          (click)="closeRegistrationsModal()"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+          <p class="mb-0">
+            <strong>Total Registrations:</strong> {{ registrations().length }} /
+            {{ currentSession()?.maxPlayers }}
+          </p>
+          <button
+            class="btn btn-sm btn-success"
+            (click)="openAddRegistrationModal()"
+          >
+            <i class="bi bi-person-plus"></i> Add User
+          </button>
+        </div>
+
+        @if (registrations().length === 0) {
+        <div class="alert alert-info">No registrations yet.</div>
+        } @else {
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Position</th>
+                <th>Registered</th>
+                <th>Amount Paid</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (reg of registrations(); track reg.id) {
+              <tr>
+                <td>{{ reg.name }}</td>
+                <td>{{ reg.email }}</td>
+                <td>{{ formatPhone(reg.phone) }}</td>
+                <td>{{ reg.position }}</td>
+                <td>{{ formatDate(reg.registrationDate) }}</td>
+                <td>${{ reg.amountPaid }}</td>
+                <td>
+                  <button
+                    class="btn btn-sm btn-outline-primary me-2"
+                    (click)="editRegistration(reg)"
+                    title="Edit"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="confirmRemoveRegistration(reg)"
+                    title="Remove"
+                  >
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                </td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="closeRegistrationsModal()"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Add Manual Registration Modal -->
+@if (showAddRegistrationModal()) {
+<div class="modal fade show d-block modal-backdrop-custom" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-person-plus-fill me-2"></i>
+          {{
+            isEditingRegistration() ? "Edit Registration for" : "Add User to"
+          }}
+          {{ currentSession()?.name }}
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          aria-label="Close"
+          (click)="closeAddRegistrationModal()"
+        ></button>
+      </div>
+      <form
+        [formGroup]="manualRegistrationForm"
+        (ngSubmit)="submitManualRegistration()"
+      >
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="name" class="form-label"
+                >Full Name <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                id="name"
+                class="form-control"
+                formControlName="name"
+                [class.is-invalid]="
+                  manualRegistrationForm.get('name')?.invalid &&
+                  manualRegistrationForm.get('name')?.touched
+                "
+              />
+              <div class="invalid-feedback">Name is required</div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="email" class="form-label"
+                >Email <span class="text-danger">*</span></label
+              >
+              <input
+                type="email"
+                id="email"
+                class="form-control"
+                formControlName="email"
+                [class.is-invalid]="
+                  manualRegistrationForm.get('email')?.invalid &&
+                  manualRegistrationForm.get('email')?.touched
+                "
+              />
+              <div class="invalid-feedback">Valid email is required</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="phone" class="form-label"
+                >Phone <span class="text-danger">*</span></label
+              >
+              <input
+                type="tel"
+                id="phone"
+                class="form-control"
+                formControlName="phone"
+                mask="(000) 000-0000"
+                [class.is-invalid]="
+                  manualRegistrationForm.get('phone')?.invalid &&
+                  manualRegistrationForm.get('phone')?.touched
+                "
+              />
+              <div class="invalid-feedback">Phone is required</div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="dateOfBirth" class="form-label"
+                >Date of Birth <span class="text-danger">*</span></label
+              >
+              <input
+                type="date"
+                id="dateOfBirth"
+                class="form-control"
+                formControlName="dateOfBirth"
+                [class.is-invalid]="
+                  manualRegistrationForm.get('dateOfBirth')?.invalid &&
+                  manualRegistrationForm.get('dateOfBirth')?.touched
+                "
+              />
+              <div class="invalid-feedback">
+                Date of birth is required (18+)
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="address" class="form-label"
+              >Address <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              id="address"
+              class="form-control"
+              formControlName="address"
+              [class.is-invalid]="
+                manualRegistrationForm.get('address')?.invalid &&
+                manualRegistrationForm.get('address')?.touched
+              "
+            />
+            <div class="invalid-feedback">Address is required</div>
+          </div>
+          <div class="row">
+            <div class="col-md-5 mb-3">
+              <label for="city" class="form-label"
+                >City <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                id="city"
+                class="form-control"
+                formControlName="city"
+                [class.is-invalid]="
+                  manualRegistrationForm.get('city')?.invalid &&
+                  manualRegistrationForm.get('city')?.touched
+                "
+              />
+              <div class="invalid-feedback">City is required</div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="state" class="form-label"
+                >State <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                id="state"
+                class="form-control"
+                formControlName="state"
+                maxlength="2"
+                [class.is-invalid]="
+                  manualRegistrationForm.get('state')?.invalid &&
+                  manualRegistrationForm.get('state')?.touched
+                "
+              />
+              <div class="invalid-feedback">State is required (2 letters)</div>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="zipCode" class="form-label"
+                >Zip Code <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                id="zipCode"
+                class="form-control"
+                formControlName="zipCode"
+                maxlength="10"
+                [class.is-invalid]="
+                  manualRegistrationForm.get('zipCode')?.invalid &&
+                  manualRegistrationForm.get('zipCode')?.touched
+                "
+              />
+              <div class="invalid-feedback">Zip code is required</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="position" class="form-label"
+                >Position <span class="text-danger">*</span></label
+              >
+              <select
+                id="position"
+                class="form-select"
+                formControlName="position"
+                [class.is-invalid]="
+                  manualRegistrationForm.get('position')?.invalid &&
+                  manualRegistrationForm.get('position')?.touched
+                "
+              >
+                <option value="">Select position...</option>
+                <option value="Forward">Forward</option>
+                <option value="Defense">Defense</option>
+                <option value="Goalie">Goalie</option>
+              </select>
+              <div class="invalid-feedback">Position is required</div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="amountPaid" class="form-label"
+                >Amount Paid <span class="text-danger">*</span></label
+              >
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input
+                  type="number"
+                  id="amountPaid"
+                  class="form-control"
+                  formControlName="amountPaid"
+                  step="0.01"
+                  min="0"
+                  [class.is-invalid]="
+                    manualRegistrationForm.get('amountPaid')?.invalid &&
+                    manualRegistrationForm.get('amountPaid')?.touched
+                  "
+                />
+              </div>
+              <div class="invalid-feedback">
+                Amount paid is required (min: $0)
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="closeAddRegistrationModal()"
+            [disabled]="isLoading()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="manualRegistrationForm.invalid || isLoading()"
+          >
+            {{
+              isLoading()
+                ? isEditingRegistration()
+                  ? "Updating..."
+                  : "Adding..."
+                : isEditingRegistration()
+                ? "Update User"
+                : "Add User"
+            }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Remove Registration Confirmation Modal -->
+@if (showRemoveConfirmModal()) {
+<div class="modal fade show d-block modal-backdrop-custom" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>
+          Confirm Removal
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          aria-label="Close"
+          (click)="closeRemoveConfirmModal()"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">
+          Are you sure you want to remove
+          <strong>{{ registrationToRemove()?.name }}</strong>
+          from this session?
+        </p>
+        <p class="text-muted mt-2 mb-0">
+          <small>This will also delete the associated payment record.</small>
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="closeRemoveConfirmModal()"
+          [disabled]="isLoading()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          (click)="removeRegistration()"
+          [disabled]="isLoading()"
+        >
+          {{ isLoading() ? "Removing..." : "Remove User" }}
         </button>
       </div>
     </div>

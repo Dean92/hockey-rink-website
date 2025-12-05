@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using HockeyRinkAPI.Data;
@@ -96,57 +97,6 @@ public class AdminController : ControllerBase
         }
     }
 
-    [HttpGet("dashboard")]
-    public async Task<IActionResult> GetAdminDashboard()
-    {
-        try
-        {
-            if (!await IsAdminAsync())
-            {
-                return Forbid();
-            }
-
-            var totalUsers = await _dbContext.Users.CountAsync();
-            var totalSessions = await _dbContext.Sessions.CountAsync();
-            var totalRegistrations = await _dbContext.SessionRegistrations.CountAsync();
-            var totalRevenue = await _dbContext
-                .Payments.Where(p => p.Status == "Success")
-                .SumAsync(p => p.Amount);
-
-            var recentRegistrations = await _dbContext
-                .SessionRegistrations.Include(r => r.User)
-                .Include(r => r.Session)
-                .OrderByDescending(r => r.CreatedAt)
-                .Take(10)
-                .Select(r => new
-                {
-                    r.Id,
-                    UserName = $"{r.User!.FirstName} {r.User.LastName}",
-                    UserEmail = r.User.Email,
-                    SessionName = r.Session!.Name,
-                    r.PaymentStatus,
-                    r.CreatedAt,
-                })
-                .ToListAsync();
-
-            return Ok(
-                new
-                {
-                    totalUsers,
-                    totalSessions,
-                    totalRegistrations,
-                    totalRevenue,
-                    recentRegistrations,
-                }
-            );
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching admin dashboard");
-            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
-        }
-    }
-
     [HttpGet("users")]
     public async Task<IActionResult> GetAllUsers()
     {
@@ -197,68 +147,46 @@ public class AdminController : ControllerBase
                 .Include(s => s.Registrations)
                 .ToListAsync();
 
-            // Auto-update session status based on dates
+            // Auto-deactivate sessions where dates have passed, but respect manual overrides
             var now = DateTime.UtcNow;
             bool hasChanges = false;
             foreach (var session in sessions)
             {
-                bool originalStatus = session.IsActive;
-
-                // Deactivate if session end date has passed
-                if (session.IsActive && session.EndDate.Date < now.Date)
+                // Only auto-deactivate if:
+                // 1. Session is currently active
+                // 2. Dates have passed
+                // 3. Session hasn't been manually modified after the dates passed
+                
+                bool shouldAutoDeactivate = false;
+                DateTime? criticalDate = null;
+                
+                // Check registration close date
+                if (session.RegistrationCloseDate.HasValue && session.RegistrationCloseDate.Value < now)
                 {
-                    session.IsActive = false;
-                    hasChanges = true;
-                    _logger.LogInformation(
-                        "Auto-deactivated expired session: {SessionName} (ID: {SessionId})",
-                        session.Name,
-                        session.Id
-                    );
+                    criticalDate = session.RegistrationCloseDate.Value;
+                    shouldAutoDeactivate = true;
                 }
-                // Deactivate if registration close date has passed
-                else if (
-                    session.IsActive
-                    && session.RegistrationCloseDate.HasValue
-                    && session.RegistrationCloseDate.Value < now
-                )
+                // Check session end date
+                else if (session.EndDate < now)
                 {
-                    session.IsActive = false;
-                    hasChanges = true;
-                    _logger.LogInformation(
-                        "Auto-deactivated session (registration closed): {SessionName} (ID: {SessionId})",
-                        session.Name,
-                        session.Id
-                    );
+                    criticalDate = session.EndDate;
+                    shouldAutoDeactivate = true;
                 }
-                // Activate if registration open date has arrived (and registration hasn't closed yet)
-                else if (
-                    !session.IsActive
-                    && session.RegistrationOpenDate.HasValue
-                    && session.RegistrationOpenDate.Value <= now
-                )
+                
+                // Only deactivate if session is active and either:
+                // - Never been manually modified, OR
+                // - Last modified before the critical date passed
+                if (shouldAutoDeactivate && session.IsActive && criticalDate.HasValue)
                 {
-                    // Only activate if registration close date hasn't passed and session end date hasn't passed
-                    bool canActivate = true;
-                    if (
-                        session.RegistrationCloseDate.HasValue
-                        && session.RegistrationCloseDate.Value < now
-                    )
+                    if (!session.LastModified.HasValue || session.LastModified.Value < criticalDate.Value)
                     {
-                        canActivate = false;
-                    }
-                    if (session.EndDate.Date < now.Date)
-                    {
-                        canActivate = false;
-                    }
-
-                    if (canActivate)
-                    {
-                        session.IsActive = true;
+                        session.IsActive = false;
                         hasChanges = true;
                         _logger.LogInformation(
-                            "Auto-activated session (registration opened): {SessionName} (ID: {SessionId})",
+                            "Auto-deactivated session: {SessionName} (ID: {SessionId}) - Critical date: {CriticalDate}",
                             session.Name,
-                            session.Id
+                            session.Id,
+                            criticalDate
                         );
                     }
                 }
@@ -397,6 +325,7 @@ public class AdminController : ControllerBase
             session.EarlyBirdPrice = model.EarlyBirdPrice;
             session.EarlyBirdEndDate = model.EarlyBirdEndDate;
             session.RegularPrice = model.RegularPrice;
+            session.LastModified = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync();
 
@@ -460,6 +389,373 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting session");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    // Get all registrations for a specific session
+    [HttpGet("sessions/{id}/registrations")]
+    public async Task<IActionResult> GetSessionRegistrations(int id)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var session = await _dbContext
+                .Sessions.Include(s => s.Registrations)
+                .ThenInclude(r => r.User)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (session == null)
+            {
+                return NotFound(new { message = "Session not found" });
+            }
+
+            var registrations = session.Registrations.Select(r => new
+            {
+                r.Id,
+                r.Name,
+                r.Email,
+                r.Phone,
+                r.Position,
+                r.DateOfBirth,
+                r.Address,
+                r.City,
+                r.State,
+                r.ZipCode,
+                r.RegistrationDate,
+                r.AmountPaid,
+                UserId = r.User?.Id,
+                UserEmail = r.User?.Email
+            }).OrderByDescending(r => r.RegistrationDate).ToList();
+
+            return Ok(new
+            {
+                sessionId = session.Id,
+                sessionName = session.Name,
+                sessionDate = session.StartDate,
+                totalRegistrations = registrations.Count,
+                maxPlayers = session.MaxPlayers,
+                registrations
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching session registrations");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    // Manually add a user to a session
+    [HttpPost("sessions/{id}/registrations/manual")]
+    public async Task<IActionResult> AddManualRegistration(int id, [FromBody] ManualRegistrationModel model)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var session = await _dbContext
+                .Sessions.Include(s => s.Registrations)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (session == null)
+            {
+                return NotFound(new { message = "Session not found" });
+            }
+
+            // Check capacity
+            if (session.Registrations.Count >= session.MaxPlayers)
+            {
+                return BadRequest(new { message = "Session is at full capacity" });
+            }
+
+            // Check for duplicate registration by email
+            if (session.Registrations.Any(r => r.Email.ToLower() == model.Email.ToLower()))
+            {
+                return Conflict(new { message = "User is already registered for this session" });
+            }
+
+            // Find user by email if exists
+            ApplicationUser? user = null;
+            if (!string.IsNullOrEmpty(model.Email))
+            {
+                user = await _userManager.FindByEmailAsync(model.Email);
+            }
+
+            // Create registration
+            var registration = new SessionRegistration
+            {
+                SessionId = id,
+                UserId = user?.Id,
+                Name = model.Name,
+                Email = model.Email,
+                Phone = model.Phone,
+                Address = model.Address,
+                City = model.City,
+                State = model.State,
+                ZipCode = model.ZipCode,
+                DateOfBirth = model.DateOfBirth,
+                Position = model.Position,
+                RegistrationDate = DateTime.UtcNow,
+                AmountPaid = model.AmountPaid
+            };
+
+            _dbContext.SessionRegistrations.Add(registration);
+            await _dbContext.SaveChangesAsync(); // Save to get registration.Id
+
+            // Create payment record
+            var payment = new Payment
+            {
+                SessionRegistrationId = registration.Id,
+                Amount = model.AmountPaid,
+                TransactionId = $"MANUAL-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                Status = "Completed"
+            };
+
+            _dbContext.Payments.Add(payment);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Admin manually registered {Name} ({Email}) for session {SessionId}",
+                model.Name,
+                model.Email,
+                id
+            );
+
+            return Ok(new { message = $"{model.Name} successfully registered for session", registrationId = registration.Id });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding manual registration");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    // Update a registration
+    [HttpPut("sessions/{sessionId}/registrations/{registrationId}")]
+    public async Task<IActionResult> UpdateRegistration(int sessionId, int registrationId, [FromBody] ManualRegistrationModel model)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var registration = await _dbContext
+                .SessionRegistrations
+                .Include(r => r.Session)
+                .FirstOrDefaultAsync(r => r.Id == registrationId && r.SessionId == sessionId);
+
+            if (registration == null)
+            {
+                return NotFound(new { message = "Registration not found" });
+            }
+
+            // Update registration fields
+            registration.Name = model.Name;
+            registration.Email = model.Email;
+            registration.Phone = model.Phone;
+            registration.Address = model.Address;
+            registration.City = model.City;
+            registration.State = model.State;
+            registration.ZipCode = model.ZipCode;
+            registration.DateOfBirth = model.DateOfBirth;
+            registration.Position = model.Position;
+            registration.AmountPaid = model.AmountPaid;
+
+            // Update associated payment amount if exists
+            var payment = await _dbContext
+                .Payments
+                .FirstOrDefaultAsync(p => p.SessionRegistrationId == registrationId);
+
+            if (payment != null)
+            {
+                payment.Amount = model.AmountPaid;
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Admin updated registration {RegistrationId} for session {SessionId}",
+                registrationId,
+                sessionId
+            );
+
+            return Ok(new { message = $"Registration for {model.Name} updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating registration");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    // Remove a user from a session
+    [HttpDelete("sessions/{sessionId}/registrations/{registrationId}")]
+    public async Task<IActionResult> RemoveRegistration(int sessionId, int registrationId)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var registration = await _dbContext
+                .SessionRegistrations
+                .Include(r => r.Session)
+                .FirstOrDefaultAsync(r => r.Id == registrationId && r.SessionId == sessionId);
+
+            if (registration == null)
+            {
+                return NotFound(new { message = "Registration not found" });
+            }
+
+            // Find and delete associated payment first (due to foreign key constraint)
+            var payment = await _dbContext
+                .Payments
+                .FirstOrDefaultAsync(p => p.SessionRegistrationId == registrationId);
+
+            if (payment != null)
+            {
+                _dbContext.Payments.Remove(payment);
+            }
+
+            // Then delete the registration
+            _dbContext.SessionRegistrations.Remove(registration);
+
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Admin removed registration {RegistrationId} ({Name}) from session {SessionId}",
+                registrationId,
+                registration.Name,
+                sessionId
+            );
+
+            return Ok(new { message = $"{registration.Name} removed from session. Note: Refunds must be processed manually." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing registration");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    // Get admin dashboard analytics
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetDashboardAnalytics()
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var today = DateTime.UtcNow.Date;
+            var tomorrow = today.AddDays(1);
+
+            // Get today's registrations
+            var todaysRegistrations = await _dbContext.SessionRegistrations
+                .Where(r => r.RegistrationDate >= today && r.RegistrationDate < tomorrow)
+                .ToListAsync();
+
+            // Get all active sessions with registration details
+            var activeSessions = await _dbContext.Sessions
+                .Include(s => s.League)
+                .Include(s => s.Registrations)
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.StartDate)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Name,
+                    LeagueName = s.League != null ? s.League.Name : null,
+                    s.StartDate,
+                    s.EndDate,
+                    s.MaxPlayers,
+                    RegisteredCount = s.Registrations.Count,
+                    SpotsRemaining = s.MaxPlayers - s.Registrations.Count,
+                    TotalRevenue = s.Registrations.Sum(r => r.AmountPaid),
+                    s.RegularPrice
+                })
+                .ToListAsync();
+
+            // Calculate overall revenue
+            var totalRevenue = await _dbContext.SessionRegistrations
+                .SumAsync(r => r.AmountPaid);
+
+            var thisMonthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+            var monthRevenue = await _dbContext.SessionRegistrations
+                .Where(r => r.RegistrationDate >= thisMonthStart)
+                .SumAsync(r => r.AmountPaid);
+
+            // Get total active registrations
+            var activeRegistrationsCount = await _dbContext.SessionRegistrations
+                .CountAsync(r => r.Session != null && r.Session.IsActive);
+
+            // Get upcoming sessions (next 7 days)
+            var nextWeek = DateTime.UtcNow.AddDays(7);
+            var upcomingSessions = await _dbContext.Sessions
+                .Include(s => s.League)
+                .Where(s => s.StartDate >= DateTime.UtcNow && s.StartDate <= nextWeek)
+                .OrderBy(s => s.StartDate)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Name,
+                    LeagueName = s.League != null ? s.League.Name : null,
+                    s.StartDate,
+                    RegisteredCount = s.Registrations.Count,
+                    s.MaxPlayers
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                todaysRegistrationsCount = todaysRegistrations.Count,
+                activeSessionsCount = activeSessions.Count,
+                activeRegistrationsCount,
+                totalRevenue,
+                monthRevenue,
+                activeSessions,
+                upcomingSessions,
+                recentRegistrations = todaysRegistrations
+                    .OrderByDescending(r => r.RegistrationDate)
+                    .Take(10)
+                    .Select(r => new
+                    {
+                        r.Id,
+                        r.Name,
+                        r.Email,
+                        r.SessionId,
+                        r.RegistrationDate,
+                        r.AmountPaid
+                    })
+                    .ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching dashboard analytics");
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
     }
@@ -638,4 +934,40 @@ public class UpdateLeagueModel
     public decimal? RegularPrice { get; set; }
     public DateTime? RegistrationOpenDate { get; set; }
     public DateTime? RegistrationCloseDate { get; set; }
+}
+
+public class ManualRegistrationModel
+{
+    [Required]
+    [StringLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Phone]
+    public string? Phone { get; set; }
+
+    [StringLength(200)]
+    public string? Address { get; set; }
+
+    [StringLength(100)]
+    public string? City { get; set; }
+
+    [StringLength(50)]
+    public string? State { get; set; }
+
+    [StringLength(20)]
+    public string? ZipCode { get; set; }
+
+    [Required]
+    public DateTime DateOfBirth { get; set; }
+
+    [StringLength(20)]
+    public string? Position { get; set; }
+
+    [Required]
+    [Range(0, 10000)]
+    public decimal AmountPaid { get; set; }
 }

@@ -1,22 +1,30 @@
-import { Component, OnInit, signal } from "@angular/core";
-import { AuthService } from "../auth";
-import { DataService } from "../data";
-import { Router, ActivatedRoute } from "@angular/router";
+import { Component, OnInit, signal, computed } from '@angular/core';
+import { AuthService } from '../auth';
+import { DataService } from '../data';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import {
   ReactiveFormsModule,
   FormBuilder,
   FormGroup,
   Validators,
-} from "@angular/forms";
-import { CommonModule, DatePipe } from "@angular/common";
-import { Session } from "../models";
+} from '@angular/forms';
+import { CommonModule, DatePipe } from '@angular/common';
+import { Session, SessionRegistrationRequest } from '../models';
+import { provideNgxMask, NgxMaskDirective } from 'ngx-mask';
 
 @Component({
-  selector: "app-session-registration",
+  selector: 'app-session-registration',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DatePipe],
-  templateUrl: "./session-registration.html",
-  styleUrl: "./session-registration.css",
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    DatePipe,
+    RouterLink,
+    NgxMaskDirective,
+  ],
+  providers: [provideNgxMask()],
+  templateUrl: './session-registration.html',
+  styleUrl: './session-registration.css',
 })
 export class SessionRegistration implements OnInit {
   sessions = signal<Session[]>([]);
@@ -24,6 +32,8 @@ export class SessionRegistration implements OnInit {
   successMessage = signal<string | null>(null);
   isLoading = signal<boolean>(true);
   registrationForm: FormGroup;
+  selectedSession = signal<Session | null>(null);
+  currentStep = signal<number>(1);
 
   constructor(
     private authService: AuthService,
@@ -33,34 +43,112 @@ export class SessionRegistration implements OnInit {
     private formBuilder: FormBuilder
   ) {
     this.registrationForm = this.formBuilder.group({
-      sessionId: ["", Validators.required],
+      sessionId: ['', Validators.required],
+      name: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      phone: ['', [Validators.required, Validators.pattern(/^[\d\s()+-]+$/)]],
+      dateOfBirth: ['', Validators.required],
+      address: [''],
+      city: [''],
+      state: [''],
+      zipCode: [''],
+      position: [''],
+      agreeToTerms: [false, Validators.requiredTrue],
     });
   }
 
   ngOnInit() {
     this.loadSessions();
+    this.loadUserProfile();
 
     // Check if sessionId was passed via query params
     this.route.queryParams.subscribe((params) => {
-      if (params["sessionId"]) {
-        this.registrationForm.patchValue({ sessionId: params["sessionId"] });
+      if (params['sessionId']) {
+        this.registrationForm.patchValue({ sessionId: params['sessionId'] });
+        this.onSessionChange();
       }
+    });
+  }
+
+  loadUserProfile() {
+    this.dataService.getProfile().subscribe({
+      next: (profile) => {
+        // Pre-fill user information
+        if (profile.firstName && profile.lastName) {
+          this.registrationForm.patchValue({
+            name: `${profile.firstName} ${profile.lastName}`,
+            email: profile.email,
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Error loading user profile:', err);
+      },
     });
   }
 
   loadSessions() {
     this.dataService.getSessions().subscribe({
       next: (data) => {
-        console.log("Sessions fetched:", data);
+        console.log('Sessions fetched:', data);
         this.sessions.set(data.filter((s) => s.isActive)); // Only show active sessions
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error("Error fetching sessions:", err);
-        this.errorMessage.set(err.error?.message || "Failed to fetch sessions");
+        console.error('Error fetching sessions:', err);
+        this.errorMessage.set(err.error?.message || 'Failed to fetch sessions');
         this.isLoading.set(false);
       },
     });
+  }
+
+  onSessionChange() {
+    const sessionId = this.registrationForm.get('sessionId')?.value;
+    if (sessionId) {
+      const session = this.sessions().find((s) => s.id === parseInt(sessionId));
+      this.selectedSession.set(session || null);
+    } else {
+      this.selectedSession.set(null);
+    }
+  }
+
+  getSessionPrice(session: Session): number {
+    const now = new Date();
+    if (session.earlyBirdPrice && session.earlyBirdEndDate) {
+      const earlyBirdEnd = new Date(session.earlyBirdEndDate);
+      if (now <= earlyBirdEnd) {
+        return session.earlyBirdPrice;
+      }
+    }
+    return session.regularPrice || session.fee;
+  }
+
+  nextStep() {
+    if (this.currentStep() === 1) {
+      // Validate Step 1 fields
+      const step1Fields = ['sessionId', 'name', 'email', 'dateOfBirth'];
+      let isValid = true;
+
+      step1Fields.forEach((field) => {
+        const control = this.registrationForm.get(field);
+        if (control && control.invalid) {
+          control.markAsTouched();
+          isValid = false;
+        }
+      });
+
+      if (isValid) {
+        this.currentStep.set(2);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  }
+
+  previousStep() {
+    if (this.currentStep() > 1) {
+      this.currentStep.set(this.currentStep() - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   hasError(field: string, errorType: string): boolean {
@@ -81,25 +169,46 @@ export class SessionRegistration implements OnInit {
       return;
     }
 
-    this.isLoading.set(true);
-    const sessionId = this.registrationForm.value.sessionId;
+    const session = this.selectedSession();
+    if (session?.isFull) {
+      this.errorMessage.set('This session is full');
+      return;
+    }
 
-    this.dataService.registerSession(sessionId).subscribe({
+    this.isLoading.set(true);
+    const formValue = this.registrationForm.value;
+
+    const registration: SessionRegistrationRequest = {
+      sessionId: parseInt(formValue.sessionId),
+      name: formValue.name,
+      email: formValue.email,
+      phone: formValue.phone || undefined,
+      dateOfBirth: formValue.dateOfBirth,
+      address: formValue.address || undefined,
+      city: formValue.city || undefined,
+      state: formValue.state || undefined,
+      zipCode: formValue.zipCode || undefined,
+      position: formValue.position || undefined,
+    };
+
+    this.dataService.registerSession(registration).subscribe({
       next: (response) => {
-        console.log("Session registration successful:", response);
-        this.successMessage.set("Successfully registered for session!");
+        console.log('Session registration successful:', response);
+        this.successMessage.set(
+          `Successfully registered for ${session?.name}! Redirecting...`
+        );
         this.isLoading.set(false);
 
         // Redirect to dashboard after 2 seconds
         setTimeout(() => {
-          this.router.navigate(["/dashboard"]);
+          this.router.navigate(['/dashboard']);
         }, 2000);
       },
       error: (err) => {
-        console.error("Session registration failed:", err);
+        console.error('Session registration failed:', err);
         this.errorMessage.set(
           err.error?.message ||
-            "Failed to register for session. Please try again."
+            'Failed to register for session. Please try again.'
         );
         this.isLoading.set(false);
       },

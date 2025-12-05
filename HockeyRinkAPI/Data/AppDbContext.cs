@@ -84,6 +84,12 @@ namespace HockeyRinkAPI.Data
 
             builder.Entity<Payment>().Property(p => p.Amount).HasPrecision(10, 2);
 
+            builder.Entity<SessionRegistration>().Property(sr => sr.AmountPaid).HasPrecision(10, 2);
+            
+            builder.Entity<SessionRegistration>().Property(sr => sr.DateOfBirth).HasColumnType("date");
+            
+            builder.Entity<SessionRegistration>().HasIndex(sr => sr.RegistrationDate);
+
             // Configure ApplicationUser LeagueId as optional
             builder
                 .Entity<ApplicationUser>()

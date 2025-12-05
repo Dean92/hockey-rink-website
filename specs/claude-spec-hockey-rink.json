@@ -118,7 +118,7 @@
     "deployed_to_azure": "✅ Successfully deployed and verified"
   },
   "week_5": {
-    "status": "🚀 In Progress - November 19, 2025",
+    "status": "✅ Completed - November 19, 2025",
     "focus": "Session Registration Enhancements & Admin League Management",
     "estimated_hours": "10 hours",
     "completed_items": [
@@ -230,243 +230,356 @@
         }
       }
     ],
-    "remaining_items": [
+    "deferred_to_week_6": [
+      "Full session registration form with address, phone, DOB fields",
+      "Payment form integration (card details)",
+      "Session capacity tracking and spots left display",
+      "Enhanced SessionRegistration model with additional fields",
+      "Admin session management enhancements (delete confirmation, filters)",
+      "Comprehensive frontend unit tests",
+      "Enhanced error handling with global interceptor"
+    ]
+  },
+  "week_6": {
+    "status": "🚀 In Progress - November 24, 2025",
+    "focus": "Session Registration Form, Capacity Management & Admin Analytics",
+    "estimated_hours": "15 hours",
+    "deliverables": [
       {
         "session_registration_form": {
           "status": "⏳ Not Started",
-          "description": "Single long form for user registration to a session",
+          "description": "Comprehensive registration form for session sign-ups",
           "authentication_required": true,
+          "route": "/sessions/:id/register",
+          "guard": "AuthGuard (must be logged in)",
           "form_fields": [
-            "Name (from logged-in user, pre-filled)",
-            "Address (street, city, state, zip)",
-            "Phone number (format validation)",
-            "Email (from logged-in user, pre-filled)",
-            "Date of Birth (date picker, age validation)"
+            "Name (from logged-in user, pre-filled, editable)",
+            "Address (street, city, state, zip with validation)",
+            "Phone number (format validation: (XXX) XXX-XXXX)",
+            "Email (from logged-in user, pre-filled, read-only)",
+            "Date of Birth (date picker, age validation: must be 18+)",
+            "Position (dropdown: Forward, Defense, Forward/Defense, Goalie)",
+            "Terms and Conditions checkbox (required)"
           ],
           "payment_section": {
             "service": "MockStripeService simulation",
-            "fields": ["Card number", "Expiry date", "CVV", "Cardholder name"],
-            "validation": "Client-side validation for card format",
-            "amount_display": "Show session fee, early bird discount (if applicable), final total"
+            "fields": [
+              "Card number (format: XXXX XXXX XXXX XXXX, validation)",
+              "Expiry date (MM/YY, future date validation)",
+              "CVV (3-4 digits)",
+              "Cardholder name (required)"
+            ],
+            "validation": "Client-side validation for card format and expiry",
+            "amount_display": "Show session regular price or early bird price, calculate total"
           },
-          "session_capacity": {
-            "max_players": "Set by admin when creating session",
-            "display": "Show 'X spots left' on session card",
-            "full_session": "Show 'Session Full' badge, disable Register button"
+          "session_details_display": {
+            "session_name": "Display at top of form",
+            "date_time": "Show session start/end datetime",
+            "location": "Show league name and location if available",
+            "spots_remaining": "Display 'X spots left' or 'Session Full' message"
           },
           "confirmation": {
             "success_message": "Registration successful! You're all set for [Session Name] on [Date].",
-            "redirect": "Navigate to /dashboard after successful registration"
+            "redirect": "Navigate to /profile or /dashboard after 2 seconds"
+          },
+          "error_handling": {
+            "session_full": "Block registration and show 'Session is full' error",
+            "registration_closed": "Block registration and show 'Registration has closed' error",
+            "payment_failure": "Show error message, allow retry"
           }
         }
       },
       {
         "database_migrations": {
-          "sessions_table": [
-            "MaxPlayers INT NOT NULL DEFAULT 20",
-            "IsActive BIT NOT NULL DEFAULT 1"
+          "status": "⏳ Not Started",
+          "sessions_table_updates": [
+            "Note: MaxPlayers and IsActive already added in Week 5",
+            "RegistrationOpenDate, RegistrationCloseDate, EarlyBirdPrice already added"
           ],
-          "registrations_table": [
-            "Name NVARCHAR(100) NOT NULL",
-            "Address NVARCHAR(200)",
-            "Phone NVARCHAR(20)",
-            "Email NVARCHAR(100) NOT NULL",
-            "DateOfBirth DATE NOT NULL",
-            "RegistrationDate DATETIME2 NOT NULL DEFAULT GETUTCDATE()",
-            "AmountPaid DECIMAL(10,2) NOT NULL"
-          ]
+          "session_registrations_table": {
+            "new_columns": [
+              "Name NVARCHAR(100) NOT NULL (registrant full name)",
+              "Address NVARCHAR(200) NULL (street address)",
+              "City NVARCHAR(100) NULL",
+              "State NVARCHAR(50) NULL",
+              "ZipCode NVARCHAR(20) NULL",
+              "Phone NVARCHAR(20) NULL (formatted phone)",
+              "Email NVARCHAR(100) NOT NULL (registrant email)",
+              "DateOfBirth DATE NOT NULL (for age verification)",
+              "Position NVARCHAR(20) NULL (Forward, Defense, Goalie)",
+              "RegistrationDate DATETIME2 NOT NULL DEFAULT GETUTCDATE()",
+              "AmountPaid DECIMAL(10,2) NOT NULL (actual amount paid)"
+            ],
+            "indexes": [
+              "IX_SessionRegistrations_RegistrationDate (for analytics)",
+              "IX_SessionRegistrations_SessionId (for capacity queries)"
+            ],
+            "migration_name": "AddSessionRegistrationDetails"
+          }
+        }
+      },
+      {
+        "session_capacity_management": {
+          "status": "⏳ Not Started",
+          "backend_changes": {
+            "get_sessions_endpoint": {
+              "add_fields": [
+                "SpotsLeft (calculated: MaxPlayers - registration count)",
+                "RegistrationCount (total registrations for session)",
+                "IsFull (boolean: SpotsLeft <= 0)"
+              ],
+              "query_optimization": "Include registration count in single query"
+            },
+            "register_endpoint_validation": {
+              "checks": [
+                "Session exists and IsActive = true",
+                "Registration window is open (between OpenDate and CloseDate)",
+                "Session is not full (RegistrationCount < MaxPlayers)",
+                "User not already registered for this session"
+              ],
+              "error_responses": [
+                "400: Session is full",
+                "400: Registration is closed",
+                "409: Already registered"
+              ]
+            }
+          },
+          "frontend_updates": {
+            "session_list_page": {
+              "spots_display": "Show 'X spots left' badge on each session card",
+              "full_badge": "Show 'Session Full' danger badge when spots = 0",
+              "disable_register": "Disable Register button when full or registration closed",
+              "visual_cue": "Reduce opacity or gray out full sessions"
+            },
+            "session_detail_modal": {
+              "capacity_bar": "Optional: Progress bar showing filled spots",
+              "registration_status": "Clear messaging about availability"
+            }
+          }
+        }
+      },
+      {
+        "backend_registration_enhancements": {
+          "status": "⏳ Not Started",
+          "session_registration_model": {
+            "new_fields": [
+              "int SessionId (required)",
+              "string Name (required, max 100 chars)",
+              "string Address (optional, max 200 chars)",
+              "string City (optional, max 100 chars)",
+              "string State (optional, max 50 chars)",
+              "string ZipCode (optional, max 20 chars)",
+              "string Phone (optional, validated format)",
+              "string Email (required, validated email)",
+              "DateTime DateOfBirth (required, age >= 18)",
+              "string Position (optional, Forward/Defense/Forward/Defense/Goalie)",
+              "PaymentInfo payment details (card info)"
+            ],
+            "validation_attributes": [
+              "[Required], [StringLength], [EmailAddress], [Phone], [Range]"
+            ]
+          },
+          "sessions_controller_updates": {
+            "register_endpoint": "POST /api/sessions/register",
+            "process": [
+              "1. Validate model and user authentication",
+              "2. Check session capacity and active status",
+              "3. Check registration window dates",
+              "4. Calculate amount (early bird or regular price)",
+              "5. Process payment via MockStripeService",
+              "6. Create SessionRegistration with all details",
+              "7. Create Payment record",
+              "8. Return success with session details"
+            ]
+          }
         }
       },
       {
         "admin_session_management_enhancements": {
+          "status": "⏳ Not Started",
           "delete_confirmation_modal": {
-            "description": "Bootstrap modal to confirm before marking session inactive",
-            "buttons": ["Cancel", "Confirm Delete"],
-            "action": "Set IsActive = false instead of DELETE"
+            "description": "Bootstrap modal to confirm before deactivating session",
+            "trigger": "Click Delete/Deactivate button in sessions table",
+            "modal_content": "Warning: This will mark the session as inactive. Confirm?",
+            "buttons": ["Cancel (secondary)", "Deactivate (danger)"],
+            "action": "PUT /api/admin/sessions/{id} with IsActive = false"
           },
-          "session_filter": {
-            "type": "Dropdown above sessions table",
-            "options": ["All", "Active", "Inactive"],
-            "default": "All",
-            "visual_distinction": "Inactive sessions grayed out with opacity: 0.6"
+          "session_filter_dropdown": {
+            "location": "Above sessions table in admin dashboard",
+            "options": ["All Sessions", "Active Only", "Inactive Only"],
+            "default": "Active Only",
+            "visual_distinction": "Inactive sessions shown with opacity: 0.6 and gray badge"
           },
-          "max_players_field": {
-            "description": "Add MaxPlayers input to Create/Edit Session modal",
-            "validation": "Min: 1, Max: 50, Default: 20"
-          }
-        }
-      },
-      {
-        "frontend_components": {
-          "register_session": {
-            "route": "/sessions/:id/register",
-            "guard": "AuthGuard (must be logged in)",
-            "form": "ReactiveFormsModule with validation",
-            "api_endpoint": "POST /api/sessions/{id}/register"
-          },
-          "sessions_list_updates": {
-            "display_spots_left": "Calculate from MaxPlayers - current registration count",
-            "session_full_badge": "Bootstrap badge-danger when spots = 0",
-            "disable_register_button": "When session full or registration closed"
-          }
-        }
-      },
-      {
-        "backend_enhancements": {
-          "sessions_controller": {
-            "get_sessions_endpoint": "Include SpotsLeft calculation in response",
-            "register_endpoint": "Validate MaxPlayers capacity, check IsActive status"
-          },
-          "admin_controller": {
-            "soft_delete": "UpdateSession to set IsActive = false",
-            "create_session": "Add MaxPlayers field to CreateSessionModel"
-          }
-        }
-      },
-      {
-        "overflow_from_week_3": [
-          "Complete hockey-themed branding (CSS variables for colors)",
-          "Comprehensive frontend unit tests (AuthService, DataService, components)",
-          "Enhanced error handling (global interceptor, toast notifications)"
-        ]
-      }
-    ]
-  },
-  "week_6": {
-    "status": "Not Started",
-    "focus": "Early Bird Registration & Admin Analytics",
-    "estimated_hours": "10 hours",
-    "deliverables": [
-      {
-        "early_bird_registration": {
-          "description": "Dynamic pricing with percentage-based discounts for early registrations",
-          "database_migrations": {
-            "sessions_table": [
-              "RegistrationOpenDate DATETIME2 NULL (when registration opens)",
-              "RegistrationCloseDate DATETIME2 NULL (when registration closes)",
-              "EarlyBirdEndDate DATETIME2 NULL (discount valid until this date)",
-              "EarlyBirdDiscountPercent DECIMAL(5,2) NULL (e.g., 15.00 for 15% off)"
-            ]
-          },
-          "admin_create_session": {
-            "new_fields": [
-              "Registration Open Date (datetime picker)",
-              "Registration Close Date (datetime picker)",
-              "Early Bird End Date (datetime picker)",
-              "Early Bird Discount % (number input, 0-100)"
+          "registrations_view": {
+            "description": "View all registrations for a specific session",
+            "trigger": "Click 'View Registrations' link/button in sessions table",
+            "display": "Modal or separate page showing registrant details",
+            "columns": [
+              "Name",
+              "Email",
+              "Phone",
+              "Position",
+              "Registration Date",
+              "Amount Paid"
             ],
-            "validation": "Open < EarlyBird < Close < SessionDate"
+            "endpoint": "GET /api/admin/sessions/{id}/registrations"
           },
-          "session_display_logic": {
-            "registration_not_open": "Show 'Registration Opens [Date]' badge, disable Register button",
-            "registration_open_early_bird": "Show 'Early Bird: X% off until [Date]' badge in green",
-            "registration_closing_soon": "Show 'Registration Closing Soon' badge when 5 days before close date",
-            "registration_closed": "Show 'Registration Closed' badge, hide Register button"
-          },
-          "pricing_display": {
-            "early_bird_active": "Show original price strikethrough, discounted price in green, savings amount",
-            "regular_price": "Show standard session fee",
-            "cart_breakdown": "Line items: Session Fee, Early Bird Discount (-X%), Total"
-          },
-          "backend_calculation": {
-            "endpoint": "GET /api/sessions/{id} includes calculated price based on current date",
-            "logic": "If now <= EarlyBirdEndDate, apply discount; else return regular fee"
+          "manual_registration_management": {
+            "description": "Admin can manually add or remove users from sessions",
+            "add_user_to_session": {
+              "trigger": "Button in session registrations view or sessions table",
+              "modal": "Add User to Session modal",
+              "fields": [
+                "User dropdown/search (select existing user by email/name)",
+                "Or manual entry: Name, Email, Phone, Address, DOB",
+                "Position (dropdown: Forward, Defense, Forward/Defense, Goalie)",
+                "Payment Status (Paid/Pending/Comped)",
+                "Amount Paid (editable, defaults to session price)"
+              ],
+              "validation": [
+                "Check session capacity before adding",
+                "Prevent duplicate registrations",
+                "Validate all required fields"
+              ],
+              "endpoint": "POST /api/admin/sessions/{id}/registrations/manual",
+              "use_case": "Offline registrations, phone sign-ups, admin comps"
+            },
+            "remove_user_from_session": {
+              "trigger": "Delete/Remove button next to each registrant in registrations view",
+              "confirmation": "Modal: 'Remove [Name] from [Session]? This will mark their registration as cancelled.'",
+              "action": "Soft delete: Set status to 'Cancelled' or hard delete registration and payment records",
+              "options": [
+                "Keep registration record with Cancelled status (recommended for audit trail)",
+                "Fully delete registration and payment records (cascade delete)"
+              ],
+              "refund_note": "Display note: 'Refunds must be processed manually outside the system'",
+              "endpoint": "DELETE /api/admin/sessions/{sessionId}/registrations/{registrationId}",
+              "use_case": "User cancellations, duplicate registrations, refunds"
+            }
           }
         }
       },
       {
         "admin_dashboard_analytics": {
+          "status": "⏳ Not Started",
           "todays_registrations_card": {
             "title": "Today's Registrations",
             "metric": "Count of registrations where RegistrationDate = UTC today",
-            "display": "Large number with trend icon (up/down vs yesterday)",
-            "api_endpoint": "GET /api/admin/dashboard/registrations/today"
+            "display": "Large number with trend indicator (up/down vs yesterday)",
+            "icon": "Calendar or user icon",
+            "api_endpoint": "GET /api/admin/dashboard/stats/registrations-today"
           },
-          "registrations_per_session_card": {
-            "title": "Registrations by Session",
-            "metric": "Table showing each session with total registration count",
-            "columns": ["Session Name", "Date", "Total Registrations", "Max Players", "Spots Left"],
-            "sorting": "Sort by date descending (most recent first)",
-            "api_endpoint": "GET /api/admin/dashboard/registrations/by-session"
+          "registrations_per_session_table": {
+            "title": "Session Registration Status",
+            "location": "New card on admin dashboard",
+            "columns": [
+              "Session Name",
+              "Date & Time",
+              "League",
+              "Registrations",
+              "Max Players",
+              "Spots Left",
+              "Status"
+            ],
+            "sorting": "Sort by date descending (upcoming sessions first)",
+            "visual_indicators": [
+              "Green badge for sessions with >5 spots",
+              "Yellow badge for 1-5 spots left",
+              "Red badge for full sessions"
+            ],
+            "api_endpoint": "GET /api/admin/dashboard/sessions/registration-status"
           },
-          "revenue_overview": {
-            "title": "Registration Revenue",
+          "revenue_overview_card": {
+            "title": "Revenue Summary",
             "metrics": [
-              "Total revenue (sum of AmountPaid)",
-              "Today's revenue",
-              "Early bird discounts given (tracked amount)"
+              "Total Revenue All-Time (sum of all AmountPaid)",
+              "Today's Revenue (sum where RegistrationDate = today)",
+              "This Month's Revenue (sum where RegistrationDate in current month)",
+              "Average Registration Fee"
             ],
-            "optional": "Chart showing revenue over time (last 30 days)"
-          }
-        }
-      },
-      {
-        "backend_enhancements": {
-          "admin_dashboard_controller": {
-            "new_endpoints": [
-              "GET /api/admin/dashboard/registrations/today",
-              "GET /api/admin/dashboard/registrations/by-session",
-              "GET /api/admin/dashboard/revenue"
-            ],
+            "display": "Card with 2x2 grid of metric boxes",
+            "optional_chart": "Line chart showing daily revenue for last 30 days",
+            "api_endpoint": "GET /api/admin/dashboard/stats/revenue"
+          },
+          "implementation_notes": {
+            "new_controller": "AdminDashboardController.cs",
             "authorization": "[Authorize(Roles = \"Admin\")]",
-            "timezone": "All date calculations use UTC"
-          },
-          "sessions_controller_updates": {
-            "get_session_details": "Include IsRegistrationOpen, IsEarlyBird, CalculatedFee properties",
-            "register_validation": "Check RegistrationOpenDate and RegistrationCloseDate before allowing registration"
+            "timezone_handling": "All date calculations use UTC",
+            "caching": "Consider caching stats for 5 minutes to reduce DB load"
           }
         }
       },
       {
-        "frontend_components": {
-          "admin_dashboard_updates": {
-            "new_cards": [
-              "TodaysRegistrationsComponent (card with metric)",
-              "SessionRegistrationsTableComponent (table card)"
+        "testing_and_quality": {
+          "status": "⏳ Not Started",
+          "unit_tests": {
+            "backend": [
+              "Session capacity validation tests",
+              "Registration window date logic tests",
+              "Early bird price calculation tests",
+              "Admin analytics queries accuracy",
+              "Payment processing with new fields"
             ],
-            "styling": "Consistent with existing dashboard cards"
+            "frontend": [
+              "Registration form validation (all fields)",
+              "Spots left calculation display",
+              "Session full state handling",
+              "Price display logic (early bird vs regular)",
+              "Form submission and error handling"
+            ]
           },
-          "session_card_enhancements": {
-            "badges": [
-              "Registration Opens [Date] (info badge)",
-              "Early Bird Active (success badge)",
-              "Registration Closing Soon (warning badge)",
-              "Registration Closed (secondary badge)",
-              "Session Full (danger badge)"
-            ],
-            "price_display": "Conditional rendering with strikethrough and discount highlight"
-          }
-        }
-      },
-      {
-        "testing": {
-          "unit_tests": [
-            "Early bird discount calculation logic",
-            "Registration date validation",
-            "Session capacity checks",
-            "Admin analytics endpoint responses"
-          ],
           "integration_tests": [
-            "Full registration flow with early bird pricing",
+            "Complete registration flow end-to-end",
+            "Capacity enforcement (prevent over-registration)",
+            "Registration window enforcement",
             "Admin dashboard data accuracy",
-            "Session state transitions (open → early bird → regular → closing soon → closed)"
+            "Session status auto-updates"
           ],
-          "manual_testing": [
-            "Create session with early bird dates",
-            "Register during early bird period, verify discount applied",
-            "Test registration close date enforcement",
-            "Verify admin dashboard metrics update correctly"
+          "manual_testing_checklist": [
+            "Register for session with all form fields",
+            "Try registering when session is full (should fail)",
+            "Try registering outside registration window (should fail)",
+            "Verify early bird pricing applied correctly",
+            "Admin: View session registrations list",
+            "Admin: Manually add user to session",
+            "Admin: Remove user from session (verify confirmation)",
+            "Admin: Try adding user when session is full (should fail)",
+            "Admin: Check analytics dashboard metrics",
+            "Admin: Filter sessions by active/inactive",
+            "Admin: Deactivate session with confirmation modal"
           ]
         }
       },
       {
-        "optional_enhancements": [
-          "Email notifications when registration opens for favorite leagues",
-          "Admin report export (CSV of all registrations)",
-          "Dark mode toggle for UI",
-          "Performance optimization for large session lists"
-        ]
+        "optional_enhancements": {
+          "status": "Deferred",
+          "items": [
+            "Email notifications when registration opens for favorite leagues",
+            "Admin report export (CSV of all registrations)",
+            "Dark mode toggle for UI",
+            "Performance optimization for large session lists",
+            "Hockey-themed success animations on registration",
+            "Comprehensive frontend unit test coverage (AuthService, DataService, all components)",
+            "Global error interceptor with toast notifications"
+          ]
+        }
       }
+    ],
+    "priority_order": [
+      "1. Database migration for SessionRegistrations table with new fields",
+      "2. Backend: Update SessionRegistration model and validation",
+      "3. Backend: Session capacity checking in register endpoint",
+      "4. Backend: Add SpotsLeft to GetSessions response",
+      "5. Frontend: Build comprehensive registration form component",
+      "6. Frontend: Display spots left on session cards",
+      "7. Frontend: Disable registration for full sessions",
+      "8. Admin: Delete confirmation modal for sessions",
+      "9. Admin: Session filter (active/inactive)",
+      "10. Admin: View registrations for a session",
+      "11. Admin: Manually add user to session (modal form)",
+      "12. Admin: Remove user from session (with confirmation)",
+      "13. Admin: Dashboard analytics (registrations today, revenue)",
+      "14. Testing: Unit and integration tests for new features"
     ]
   },
   "database_schema_updates": {
@@ -504,6 +617,493 @@
       ],
       "migration_order": "Week 5"
     }
+  },
+  "week_7": {
+    "status": "📋 Planned - December 2025",
+    "focus": "Payment Integration, User Profile Management & Session History",
+    "estimated_hours": "12-15 hours",
+    "deliverables": [
+      {
+        "mock_payment_form": {
+          "status": "⏳ Not Started",
+          "description": "Mock credit card form for session registration (not connected to Stripe)",
+          "location": "Session registration page (/sessions/:id/register)",
+          "form_fields": {
+            "card_number": {
+              "label": "Card Number",
+              "format": "XXXX XXXX XXXX XXXX",
+              "validation": [
+                "16 digits required",
+                "Auto-format with spaces every 4 digits",
+                "Test card: 4242 4242 4242 4242 (always succeeds)",
+                "Test card: 4000 0000 0000 0002 (always fails)"
+              ],
+              "max_length": 19
+            },
+            "expiry_date": {
+              "label": "Expiry Date",
+              "format": "MM/YY",
+              "validation": [
+                "Must be future date",
+                "Month: 01-12",
+                "Year: Current year or later"
+              ],
+              "auto_format": "Add / after 2 digits"
+            },
+            "cvv": {
+              "label": "CVV",
+              "format": "XXX or XXXX",
+              "validation": ["3-4 digits", "Numeric only"],
+              "type": "password"
+            },
+            "cardholder_name": {
+              "label": "Cardholder Name",
+              "validation": "Required, min 3 characters",
+              "placeholder": "Name as it appears on card"
+            }
+          },
+          "mock_processing": {
+            "service": "MockPaymentService (backend)",
+            "behavior": [
+              "Card 4242 4242 4242 4242 → Success with transaction ID",
+              "Card 4000 0000 0000 0002 → Decline with error message",
+              "All other valid formats → Success",
+              "Generate mock transaction ID: 'MOCK_TXN_' + Guid"
+            ],
+            "processing_time": "Add 1-2 second delay to simulate real processing",
+            "response_fields": [
+              "success (boolean)",
+              "transactionId (string)",
+              "errorMessage (string, if failed)",
+              "processedAt (DateTime)"
+            ]
+          },
+          "ui_components": {
+            "payment_section_card": "Bootstrap card with lock icon and 'Secure Payment' header",
+            "submit_button_states": [
+              "Default: 'Complete Registration'",
+              "Processing: 'Processing Payment...' with spinner",
+              "Success: Briefly show checkmark before redirect"
+            ],
+            "error_display": "Show payment errors in red alert above form",
+            "card_type_icon": "Optional: Show Visa/MC/Amex icon based on first digit"
+          },
+          "success_flow": {
+            "on_success": [
+              "1. Create SessionRegistration with all form data",
+              "2. Create Payment record with mock transaction ID",
+              "3. Show success toast: 'Registration successful!'",
+              "4. Redirect to /dashboard or /profile after 2 seconds"
+            ]
+          },
+          "validation_summary": [
+            "All personal info fields validated (name, email, DOB, address, phone)",
+            "Payment fields validated before submission",
+            "Check session capacity before processing payment",
+            "Display clear error messages for each validation failure"
+          ]
+        }
+      },
+      {
+        "manual_registration_password_setup": {
+          "status": "⏳ Not Started",
+          "description": "Allow manually registered users to set password and fully activate account",
+          "problem": "Users added manually by admin don't have passwords and can't log in",
+          "solution_approach": "Email-based password setup flow",
+          "database_changes": {
+            "application_user_updates": [
+              "Add 'IsManuallyRegistered' boolean field (default false)",
+              "Add 'PasswordSetupToken' string field (nullable, for one-time setup)",
+              "Add 'PasswordSetupTokenExpiry' DateTime field (nullable)"
+            ],
+            "migration_name": "AddManualRegistrationFields"
+          },
+          "backend_implementation": {
+            "admin_manual_registration_endpoint": {
+              "endpoint": "POST /api/admin/sessions/{sessionId}/registrations/manual",
+              "process": [
+                "1. Admin enters user email, name, phone, address, DOB, position",
+                "2. Check if user exists by email",
+                "3a. If user exists: Add them to session with existing profile",
+                "3b. If user doesn't exist: Create ApplicationUser with IsManuallyRegistered = true",
+                "4. Generate secure PasswordSetupToken (Guid)",
+                "5. Set token expiry to 7 days from now",
+                "6. Create SessionRegistration record",
+                "7. Send email with password setup link (optional for MVP, can log to console)",
+                "8. Return success message"
+              ],
+              "request_model": {
+                "fields": [
+                  "string Email (required)",
+                  "string Name (required)",
+                  "string Phone (optional)",
+                  "string Address (optional)",
+                  "string City (optional)",
+                  "string State (optional)",
+                  "string ZipCode (optional)",
+                  "DateTime DateOfBirth (required, age >= 18)",
+                  "string Position (optional)",
+                  "decimal AmountPaid (required)",
+                  "string PaymentStatus (Paid/Pending/Comped)"
+                ]
+              }
+            },
+            "password_setup_endpoints": {
+              "validate_token": "GET /api/auth/setup-password/{token}",
+              "validate_response": {
+                "valid": "Return user email and token validity",
+                "invalid": "Return 400 with error message"
+              },
+              "set_password": "POST /api/auth/setup-password",
+              "set_password_request": {
+                "token": "string (required)",
+                "password": "string (required, min 6 chars)",
+                "confirmPassword": "string (must match password)"
+              },
+              "process": [
+                "1. Validate token exists and not expired",
+                "2. Find user by token",
+                "3. Set user password using UserManager",
+                "4. Mark IsManuallyRegistered = false",
+                "5. Clear PasswordSetupToken and expiry",
+                "6. Set EmailConfirmed = true",
+                "7. Return success message"
+              ]
+            }
+          },
+          "frontend_implementation": {
+            "setup_password_page": {
+              "route": "/setup-password/:token",
+              "component": "SetupPasswordComponent",
+              "no_auth_required": true,
+              "form_fields": [
+                "Email (display only, fetched from token)",
+                "Password (input, password type, min 6 chars)",
+                "Confirm Password (input, must match)"
+              ],
+              "validation": [
+                "Password minimum 6 characters",
+                "Passwords must match",
+                "Show strength indicator (optional)"
+              ],
+              "on_success": [
+                "Show success message: 'Password set successfully! You can now log in.'",
+                "Redirect to /login after 2 seconds"
+              ],
+              "on_token_invalid": "Show error: 'This link is invalid or expired. Please contact admin.'"
+            },
+            "admin_manual_registration_modal": {
+              "improvements": [
+                "Add checkbox: 'Send password setup email' (checked by default)",
+                "Show message after success: 'User registered. Password setup link sent to [email]' or 'User registered. Password setup link: [copy link]'",
+                "Display password setup link in modal for admin to manually share if email fails"
+              ]
+            }
+          },
+          "email_notification": {
+            "priority": "Optional for MVP (can log link to console)",
+            "subject": "Complete Your Hockey Rink Registration",
+            "body_template": "Hi [Name], You've been registered for [Session Name] by an administrator. To access your account, please set your password: [Link]. This link expires in 7 days.",
+            "implementation_note": "Can use IEmailSender or log to console/file for MVP"
+          }
+        }
+      },
+      {
+        "user_profile_enhancements": {
+          "status": "⏳ Not Started",
+          "description": "Allow users to edit personal information from registration",
+          "current_profile_page": "/profile",
+          "database_updates": {
+            "application_user_model": {
+              "add_fields": [
+                "string? Address (street address)",
+                "string? City",
+                "string? State",
+                "string? ZipCode",
+                "string? Phone (formatted: (XXX) XXX-XXXX)",
+                "DateTime? DateOfBirth",
+                "string? Position (Forward/Defense/Forward/Defense/Goalie)",
+                "string? PreferredLeagueName (display only, from League relationship)"
+              ],
+              "migration_name": "AddUserProfileFields"
+            },
+            "sync_with_registrations": "When user registers for first session, copy their registration info to ApplicationUser profile"
+          },
+          "backend_implementation": {
+            "get_profile_endpoint": {
+              "endpoint": "GET /api/users/profile",
+              "add_fields_to_response": [
+                "Address, City, State, ZipCode",
+                "Phone, DateOfBirth, Position",
+                "LeagueName (from League navigation property)",
+                "CurrentSessionsCount",
+                "TotalSessionsCount"
+              ]
+            },
+            "update_profile_endpoint": {
+              "endpoint": "PUT /api/users/profile",
+              "request_model": {
+                "firstName": "string (optional)",
+                "lastName": "string (optional)",
+                "address": "string (optional)",
+                "city": "string (optional)",
+                "state": "string (optional)",
+                "zipCode": "string (optional)",
+                "phone": "string (optional, validated format)",
+                "dateOfBirth": "DateTime (optional, age >= 18)",
+                "position": "string (optional)",
+                "leagueId": "int? (optional, user's preferred league)"
+              },
+              "validation": [
+                "Phone format: (XXX) XXX-XXXX",
+                "DateOfBirth: Must be 18+ years old",
+                "Position: Forward/Defense/Forward/Defense/Goalie only",
+                "ZipCode: Valid US format (optional)"
+              ],
+              "process": [
+                "1. Get authenticated user",
+                "2. Update user properties",
+                "3. Set UpdatedAt = DateTime.UtcNow",
+                "4. Save to database",
+                "5. Return updated profile"
+              ]
+            }
+          },
+          "frontend_implementation": {
+            "profile_page_sections": {
+              "personal_information_card": {
+                "title": "Personal Information",
+                "fields_displayed": [
+                  "Name (FirstName + LastName) - editable",
+                  "Email - read-only (from Identity)",
+                  "Phone - editable",
+                  "Date of Birth - editable",
+                  "Address (full: street, city, state, zip) - editable",
+                  "Position - dropdown editable",
+                  "Preferred League - dropdown editable (from leagues list)"
+                ],
+                "edit_mode": "Toggle between view/edit with 'Edit Profile' button",
+                "buttons": [
+                  "'Edit Profile' → Switches to edit mode",
+                  "'Save Changes' → Submits form, switches back to view mode",
+                  "'Cancel' → Discards changes, returns to view mode"
+                ],
+                "validation": "Show inline errors for invalid fields"
+              },
+              "account_information_card": {
+                "title": "Account Information",
+                "fields_displayed": [
+                  "Email Confirmed: Yes/No badge",
+                  "Account Created: [Date]",
+                  "Last Updated: [Date]",
+                  "Is Sub Available: Toggle switch (allow users to mark if available as sub)"
+                ],
+                "change_password_button": "Link to /change-password page or modal"
+              },
+              "session_information_card": {
+                "title": "My Sessions",
+                "description": "Current and upcoming sessions you're registered for",
+                "move_to_dashboard": "This will be expanded on dashboard (see below)"
+              }
+            }
+          }
+        }
+      },
+      {
+        "user_dashboard_session_history": {
+          "status": "⏳ Not Started",
+          "description": "Show current/upcoming and past sessions on user dashboard",
+          "route": "/dashboard",
+          "component": "DashboardComponent (user's landing page after login)",
+          "database_queries": {
+            "current_upcoming_sessions": {
+              "description": "Sessions user is registered for with StartDate >= Today",
+              "query": "JOIN SessionRegistrations ON UserId, JOIN Sessions WHERE StartDate >= UTC Today, ORDER BY StartDate ASC",
+              "display_limit": "Show all upcoming sessions"
+            },
+            "past_sessions": {
+              "description": "Sessions user attended with StartDate < Today",
+              "query": "JOIN SessionRegistrations ON UserId, JOIN Sessions WHERE StartDate < UTC Today, ORDER BY StartDate DESC",
+              "display_limit": "Show last 10 sessions, with 'View All' link"
+            }
+          },
+          "backend_implementation": {
+            "new_endpoint": "GET /api/users/my-sessions",
+            "query_parameters": [
+              "status (optional): 'upcoming' | 'past' | 'all' (default: all)",
+              "limit (optional): number of results (default: 10 for past, unlimited for upcoming)"
+            ],
+            "response_model": {
+              "upcoming": [
+                {
+                  "sessionId": "int",
+                  "sessionName": "string",
+                  "leagueName": "string",
+                  "startDate": "DateTime",
+                  "endDate": "DateTime",
+                  "location": "string (optional)",
+                  "registrationDate": "DateTime (when user registered)",
+                  "amountPaid": "decimal",
+                  "position": "string (user's position for this session)"
+                }
+              ],
+              "past": "[same structure as upcoming]",
+              "totalUpcoming": "int",
+              "totalPast": "int"
+            }
+          },
+          "frontend_implementation": {
+            "dashboard_layout": {
+              "welcome_section": "Welcome back, [FirstName]!",
+              "upcoming_sessions_card": {
+                "title": "Upcoming Sessions",
+                "empty_state": "You're not registered for any upcoming sessions. Browse sessions to get started!",
+                "display": [
+                  "List or cards showing each session",
+                  "Session name, league, date/time",
+                  "Location (if available)",
+                  "Days until session (e.g., 'In 5 days')",
+                  "'View Details' button → Opens session detail modal or navigates to sessions page"
+                ],
+                "sorting": "Chronological (soonest first)",
+                "highlight_next_session": "First session has distinct styling (e.g., primary border)"
+              },
+              "past_sessions_card": {
+                "title": "Session History",
+                "empty_state": "No past sessions yet.",
+                "display": [
+                  "Table or list of past sessions",
+                  "Columns: Session Name, League, Date, Position, Amount Paid",
+                  "Show last 10 sessions by default"
+                ],
+                "view_all_link": "Link to /my-sessions page with full history (optional)"
+              },
+              "quick_stats_section": {
+                "optional_metrics": [
+                  "Total Sessions Attended: [count]",
+                  "Current League: [league name from profile]",
+                  "Member Since: [account creation date]"
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "additional_features": {
+          "status": "📋 Planned",
+          "items": [
+            {
+              "league_association_display": {
+                "description": "Show user's preferred league throughout the app",
+                "locations": [
+                  "Profile page: Display league name and allow editing",
+                  "Dashboard: Show 'Your League: [Name]' badge",
+                  "Sessions page: Highlight or filter sessions from user's league by default"
+                ],
+                "implementation": "Use LeagueId field already in ApplicationUser model"
+              }
+            },
+            {
+              "session_cancellation": {
+                "description": "Allow users to cancel their registration",
+                "user_flow": [
+                  "User clicks 'Cancel Registration' on dashboard or session detail",
+                  "Confirmation modal: 'Are you sure? Refunds must be requested separately.'",
+                  "On confirm: Soft delete registration (set Status = 'Cancelled') or hard delete",
+                  "Show success message",
+                  "Optionally: Set cancellation deadline (e.g., 24 hours before session)"
+                ],
+                "backend_endpoint": "DELETE /api/sessions/{sessionId}/my-registration",
+                "validation": [
+                  "Only allow cancellation if StartDate > 24 hours away",
+                  "Return 400 if too close to session start"
+                ]
+              }
+            },
+            {
+              "change_password_page": {
+                "route": "/change-password",
+                "auth_required": true,
+                "form_fields": [
+                  "Current Password (required, validated against user's password)",
+                  "New Password (required, min 6 chars)",
+                  "Confirm New Password (must match)"
+                ],
+                "backend_endpoint": "POST /api/users/change-password",
+                "process": [
+                  "Validate current password using UserManager.CheckPasswordAsync",
+                  "Update password using UserManager.ChangePasswordAsync",
+                  "Return success or validation errors"
+                ]
+              }
+            },
+            {
+              "responsive_improvements": {
+                "description": "Ensure all new forms work well on mobile",
+                "focus_areas": [
+                  "Payment form: Stack fields vertically on mobile",
+                  "Profile edit form: Full-width inputs on mobile",
+                  "Dashboard session cards: Stack on mobile, grid on desktop"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "testing_and_validation": {
+          "status": "⏳ Not Started",
+          "backend_tests": [
+            "Mock payment service: Test success and failure scenarios",
+            "Manual registration: Test user creation and password setup token generation",
+            "Password setup: Test token validation and expiry",
+            "Profile update: Test all field validations",
+            "My sessions endpoint: Test upcoming/past filtering"
+          ],
+          "frontend_tests": [
+            "Payment form validation: Test card number, expiry, CVV formats",
+            "Profile edit form: Test validation and save/cancel",
+            "Dashboard: Test session display for users with/without sessions",
+            "Setup password page: Test password matching validation"
+          ],
+          "integration_tests": [
+            "Complete registration flow with mock payment",
+            "Manual registration → Password setup → Login flow",
+            "Profile update → Verify changes persist",
+            "Session registration → Verify appears in dashboard"
+          ],
+          "manual_testing_checklist": [
+            "Register for session with mock credit card (success and failure)",
+            "Admin manually registers user → User receives setup link → Sets password → Logs in",
+            "User edits profile → Saves changes → Verifies data persisted",
+            "User views upcoming sessions on dashboard",
+            "User views past sessions on dashboard",
+            "User changes password successfully",
+            "User cancels session registration (if implemented)",
+            "Mobile responsive testing for all new forms"
+          ]
+        }
+      }
+    ],
+    "priority_order": [
+      "1. Database migrations: Add profile fields to ApplicationUser, manual registration fields",
+      "2. Backend: MockPaymentService implementation",
+      "3. Frontend: Mock payment form on registration page",
+      "4. Backend: Complete session registration endpoint with payment processing",
+      "5. Frontend: Registration form integration with payment",
+      "6. Backend: Manual registration endpoint with user creation",
+      "7. Backend: Password setup token generation and validation endpoints",
+      "8. Frontend: Setup password page",
+      "9. Backend: Update profile endpoint with new fields",
+      "10. Frontend: Enhanced profile page with edit mode",
+      "11. Backend: My sessions endpoint (upcoming/past)",
+      "12. Frontend: Dashboard with session history",
+      "13. Additional features: Change password, session cancellation",
+      "14. Testing: Unit and integration tests",
+      "15. Mobile responsive polish"
+    ],
+    "estimated_completion": "End of Week 7 (mid-December 2025)"
   },
   "repo": "https://github.com/Dean92/hockey-rink-website"
 }

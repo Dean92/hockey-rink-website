@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -78,7 +79,7 @@ public class SessionsController : ControllerBase
                 return Unauthorized(new { message = "Authentication required" });
             }
 
-            var sessionsQuery = _dbContext.Sessions.Include(s => s.League).AsQueryable();
+            var sessionsQuery = _dbContext.Sessions.Include(s => s.League).Include(s => s.Registrations).AsQueryable();
 
             if (leagueId.HasValue)
             {
@@ -92,68 +93,46 @@ public class SessionsController : ControllerBase
 
             var sessions = await sessionsQuery.ToListAsync();
 
-            // Auto-update session status based on dates
+            // Auto-deactivate sessions where dates have passed, but respect manual overrides
             var now = DateTime.UtcNow;
             bool hasChanges = false;
             foreach (var session in sessions)
             {
-                bool originalStatus = session.IsActive;
+                // Only auto-deactivate if:
+                // 1. Session is currently active
+                // 2. Dates have passed
+                // 3. Session hasn't been manually modified after the dates passed
 
-                // Deactivate if session end date has passed
-                if (session.IsActive && session.EndDate.Date < now.Date)
-                {
-                    session.IsActive = false;
-                    hasChanges = true;
-                    _logger.LogInformation(
-                        "Auto-deactivated expired session: {SessionName} (ID: {SessionId})",
-                        session.Name,
-                        session.Id
-                    );
-                }
-                // Deactivate if registration close date has passed
-                else if (
-                    session.IsActive
-                    && session.RegistrationCloseDate.HasValue
-                    && session.RegistrationCloseDate.Value < now
-                )
-                {
-                    session.IsActive = false;
-                    hasChanges = true;
-                    _logger.LogInformation(
-                        "Auto-deactivated session (registration closed): {SessionName} (ID: {SessionId})",
-                        session.Name,
-                        session.Id
-                    );
-                }
-                // Activate if registration open date has arrived (and registration hasn't closed yet)
-                else if (
-                    !session.IsActive
-                    && session.RegistrationOpenDate.HasValue
-                    && session.RegistrationOpenDate.Value <= now
-                )
-                {
-                    // Only activate if registration close date hasn't passed and session end date hasn't passed
-                    bool canActivate = true;
-                    if (
-                        session.RegistrationCloseDate.HasValue
-                        && session.RegistrationCloseDate.Value < now
-                    )
-                    {
-                        canActivate = false;
-                    }
-                    if (session.EndDate.Date < now.Date)
-                    {
-                        canActivate = false;
-                    }
+                bool shouldAutoDeactivate = false;
+                DateTime? criticalDate = null;
 
-                    if (canActivate)
+                // Check registration close date
+                if (session.RegistrationCloseDate.HasValue && session.RegistrationCloseDate.Value < now)
+                {
+                    criticalDate = session.RegistrationCloseDate.Value;
+                    shouldAutoDeactivate = true;
+                }
+                // Check session end date
+                else if (session.EndDate < now)
+                {
+                    criticalDate = session.EndDate;
+                    shouldAutoDeactivate = true;
+                }
+
+                // Only deactivate if session is active and either:
+                // - Never been manually modified, OR
+                // - Last modified before the critical date passed
+                if (shouldAutoDeactivate && session.IsActive && criticalDate.HasValue)
+                {
+                    if (!session.LastModified.HasValue || session.LastModified.Value < criticalDate.Value)
                     {
-                        session.IsActive = true;
+                        session.IsActive = false;
                         hasChanges = true;
                         _logger.LogInformation(
-                            "Auto-activated session (registration opened): {SessionName} (ID: {SessionId})",
+                            "Auto-deactivated session: {SessionName} (ID: {SessionId}) - Critical date: {CriticalDate}",
                             session.Name,
-                            session.Id
+                            session.Id,
+                            criticalDate
                         );
                     }
                 }
@@ -164,9 +143,43 @@ public class SessionsController : ControllerBase
                 await _dbContext.SaveChangesAsync();
             }
 
+            // Calculate registration counts and spots left for each session
+            var sessionDtos = sessions.Select(s => new
+            {
+                s.Id,
+                s.Name,
+                s.StartDate,
+                s.EndDate,
+                s.Fee,
+                s.IsActive,
+                s.MaxPlayers,
+                s.RegistrationOpenDate,
+                s.RegistrationCloseDate,
+                s.EarlyBirdPrice,
+                s.EarlyBirdEndDate,
+                s.RegularPrice,
+                s.CreatedAt,
+                s.LeagueId,
+                League = s.League == null ? null : new
+                {
+                    s.League.Id,
+                    s.League.Name,
+                    s.League.Description,
+                    s.League.StartDate,
+                    s.League.EarlyBirdPrice,
+                    s.League.EarlyBirdEndDate,
+                    s.League.RegularPrice,
+                    s.League.RegistrationOpenDate,
+                    s.League.RegistrationCloseDate
+                },
+                RegistrationCount = s.Registrations.Count,
+                SpotsLeft = s.MaxPlayers - s.Registrations.Count,
+                IsFull = s.Registrations.Count >= s.MaxPlayers
+            }).ToList();
+
             _logger.LogInformation("Found {Count} sessions", sessions.Count);
 
-            return Ok(sessions);
+            return Ok(sessionDtos);
         }
         catch (Exception ex)
         {
@@ -241,6 +254,38 @@ public class SessionsController : ControllerBase
                 return NotFound(new { message = "Session not found" });
             }
 
+            // Check if session is active
+            if (!session.IsActive)
+            {
+                _logger.LogWarning("Session {SessionId} is not active", model.SessionId);
+                return BadRequest(new { message = "This session is not accepting registrations" });
+            }
+
+            // Check registration window
+            var now = DateTime.UtcNow;
+            if (session.RegistrationOpenDate.HasValue && session.RegistrationOpenDate.Value > now)
+            {
+                _logger.LogWarning("Registration not yet open for session {SessionId}", model.SessionId);
+                return BadRequest(new { message = "Registration for this session has not opened yet" });
+            }
+
+            if (session.RegistrationCloseDate.HasValue && session.RegistrationCloseDate.Value < now)
+            {
+                _logger.LogWarning("Registration closed for session {SessionId}", model.SessionId);
+                return BadRequest(new { message = "Registration for this session has closed" });
+            }
+
+            // Check capacity
+            var currentRegistrationCount = await _dbContext.SessionRegistrations
+                .CountAsync(sr => sr.SessionId == model.SessionId);
+
+            if (currentRegistrationCount >= session.MaxPlayers)
+            {
+                _logger.LogWarning("Session {SessionId} is full ({CurrentCount}/{MaxPlayers})",
+                    model.SessionId, currentRegistrationCount, session.MaxPlayers);
+                return BadRequest(new { message = "This session is full" });
+            }
+
             // Check if user is already registered for this session
             var existingRegistration = await _dbContext.SessionRegistrations.FirstOrDefaultAsync(
                 sr => sr.UserId == userId && sr.SessionId == model.SessionId
@@ -256,10 +301,43 @@ public class SessionsController : ControllerBase
                 return BadRequest(new { message = "You are already registered for this session" });
             }
 
+            // Calculate the amount to charge based on early bird pricing
+            var registrationDate = DateTime.UtcNow;
+            decimal amountToCharge = session.RegularPrice ?? session.Fee;
+
+            if (session.EarlyBirdPrice.HasValue &&
+                session.EarlyBirdEndDate.HasValue &&
+                registrationDate <= session.EarlyBirdEndDate.Value)
+            {
+                amountToCharge = session.EarlyBirdPrice.Value;
+                _logger.LogInformation("Applying early bird price: {EarlyBirdPrice}", amountToCharge);
+            }
+
+            // Validate age requirement (must be 18+)
+            var age = DateTime.UtcNow.Year - model.DateOfBirth.Year;
+            if (model.DateOfBirth > DateTime.UtcNow.AddYears(-age)) age--;
+
+            if (age < 18)
+            {
+                _logger.LogWarning("User age {Age} below minimum requirement", age);
+                return BadRequest(new { message = "You must be at least 18 years old to register" });
+            }
+
             var registration = new SessionRegistration
             {
                 UserId = userId,
                 SessionId = model.SessionId,
+                Name = model.Name,
+                Address = model.Address,
+                City = model.City,
+                State = model.State,
+                ZipCode = model.ZipCode,
+                Phone = model.Phone,
+                Email = model.Email,
+                DateOfBirth = model.DateOfBirth,
+                Position = model.Position,
+                RegistrationDate = registrationDate,
+                AmountPaid = amountToCharge,
                 PaymentStatus = "Pending",
                 CreatedAt = DateTime.UtcNow,
             };
@@ -267,11 +345,11 @@ public class SessionsController : ControllerBase
             await _dbContext.SaveChangesAsync();
 
             // Process payment
-            var transactionId = await _stripeService.ProcessPayment(session.Fee);
+            var transactionId = await _stripeService.ProcessPayment(amountToCharge);
             var payment = new Payment
             {
                 SessionRegistrationId = registration.Id,
-                Amount = session.Fee,
+                Amount = amountToCharge,
                 TransactionId = transactionId,
                 Status = "Success",
                 CreatedAt = DateTime.UtcNow,
@@ -281,12 +359,18 @@ public class SessionsController : ControllerBase
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation(
-                "User {Email} registered for session {SessionId} with transaction {TransactionId}",
+                "User {Email} registered for session {SessionId} with transaction {TransactionId}, amount: {Amount}",
                 user.Email,
                 model.SessionId,
-                transactionId
+                transactionId,
+                amountToCharge
             );
-            return Ok(new { message = "Registered for session successfully" });
+            return Ok(new
+            {
+                message = "Registered for session successfully",
+                amountPaid = amountToCharge,
+                transactionId = transactionId
+            });
         }
         catch (Exception ex)
         {
@@ -366,5 +450,37 @@ public class SessionsController : ControllerBase
 
 public class SessionRegistrationModel
 {
+    [Required]
     public int SessionId { get; set; }
+
+    [Required]
+    [StringLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [StringLength(200)]
+    public string? Address { get; set; }
+
+    [StringLength(100)]
+    public string? City { get; set; }
+
+    [StringLength(50)]
+    public string? State { get; set; }
+
+    [StringLength(20)]
+    public string? ZipCode { get; set; }
+
+    [Phone]
+    [StringLength(20)]
+    public string? Phone { get; set; }
+
+    [Required]
+    [EmailAddress]
+    [StringLength(100)]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    public DateTime DateOfBirth { get; set; }
+
+    [StringLength(20)]
+    public string? Position { get; set; } // Forward, Defense, Forward/Defense, Goalie
 }

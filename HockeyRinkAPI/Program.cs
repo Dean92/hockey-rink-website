@@ -33,22 +33,32 @@ public class Program
         builder.Services.AddApplicationInsightsTelemetry();
 
         // Configure database context
-        builder.Services.AddDbContext<AppDbContext>(options =>
+        if (builder.Environment.IsEnvironment("Testing"))
         {
-            var connectionString =
-                Environment.GetEnvironmentVariable("DefaultConnection")
-                ?? builder.Configuration.GetConnectionString("DefaultConnection");
+            // Use InMemory database for testing
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase("TestDatabase"));
+        }
+        else
+        {
+            // Use SQL Server for development and production
+            builder.Services.AddDbContext<AppDbContext>(options =>
+            {
+                var connectionString =
+                    Environment.GetEnvironmentVariable("DefaultConnection")
+                    ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-            options.UseSqlServer(
-                connectionString,
-                sqlServerOptions =>
-                    sqlServerOptions.EnableRetryOnFailure(
-                        maxRetryCount: 3,
-                        maxRetryDelay: TimeSpan.FromSeconds(5),
-                        errorNumbersToAdd: null
-                    )
-            );
-        });
+                options.UseSqlServer(
+                    connectionString,
+                    sqlServerOptions =>
+                        sqlServerOptions.EnableRetryOnFailure(
+                            maxRetryCount: 3,
+                            maxRetryDelay: TimeSpan.FromSeconds(5),
+                            errorNumbersToAdd: null
+                        )
+                );
+            });
+        }
 
         // Configure Identity
         builder
@@ -203,70 +213,73 @@ public class Program
         app.MapControllers();
         app.MapGet("/health", () => new { status = "healthy", timestamp = DateTime.UtcNow });
 
-        // Apply migrations and seed data
-        using (var scope = app.Services.CreateScope())
+        // Apply migrations and seed data (skip in Testing environment)
+        if (!app.Environment.IsEnvironment("Testing"))
         {
-            var services = scope.ServiceProvider;
-            var logger = services.GetRequiredService<ILogger<Program>>();
-
-            try
+            using (var scope = app.Services.CreateScope())
             {
-                var db = services.GetRequiredService<AppDbContext>();
-                await db.Database.MigrateAsync();
-                logger.LogInformation("Database migrations applied successfully");
+                var services = scope.ServiceProvider;
+                var logger = services.GetRequiredService<ILogger<Program>>();
 
-                var leagueCount = await db.Leagues.CountAsync();
-                logger.LogInformation("Current league count in database: {LeagueCount}", leagueCount);
-
-                // Seed roles and admin user
-                var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-                var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-
-                // Create Admin role if it doesn't exist
-                if (!await roleManager.RoleExistsAsync("Admin"))
+                try
                 {
-                    await roleManager.CreateAsync(new IdentityRole("Admin"));
-                    logger.LogInformation("Admin role created");
-                }
+                    var db = services.GetRequiredService<AppDbContext>();
+                    await db.Database.MigrateAsync();
+                    logger.LogInformation("Database migrations applied successfully");
 
-                // Create User role if it doesn't exist
-                if (!await roleManager.RoleExistsAsync("User"))
-                {
-                    await roleManager.CreateAsync(new IdentityRole("User"));
-                    logger.LogInformation("User role created");
-                }
+                    var leagueCount = await db.Leagues.CountAsync();
+                    logger.LogInformation("Current league count in database: {LeagueCount}", leagueCount);
 
-                // Create admin user if it doesn't exist
-                var adminEmail = "admin@hockeyrink.com";
-                var adminUser = await userManager.FindByEmailAsync(adminEmail);
-                if (adminUser == null)
-                {
-                    adminUser = new ApplicationUser
+                    // Seed roles and admin user
+                    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+                    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+
+                    // Create Admin role if it doesn't exist
+                    if (!await roleManager.RoleExistsAsync("Admin"))
                     {
-                        UserName = adminEmail,
-                        Email = adminEmail,
-                        FirstName = "Admin",
-                        LastName = "User",
-                        EmailConfirmed = true
-                    };
-
-                    var result = await userManager.CreateAsync(adminUser, "Admin123!");
-                    if (result.Succeeded)
-                    {
-                        await userManager.AddToRoleAsync(adminUser, "Admin");
-                        logger.LogInformation("Admin user created: {Email}", adminEmail);
+                        await roleManager.CreateAsync(new IdentityRole("Admin"));
+                        logger.LogInformation("Admin role created");
                     }
-                    else
+
+                    // Create User role if it doesn't exist
+                    if (!await roleManager.RoleExistsAsync("User"))
                     {
-                        logger.LogError("Failed to create admin user: {Errors}",
-                            string.Join(", ", result.Errors.Select(e => e.Description)));
+                        await roleManager.CreateAsync(new IdentityRole("User"));
+                        logger.LogInformation("User role created");
+                    }
+
+                    // Create admin user if it doesn't exist
+                    var adminEmail = "admin@hockeyrink.com";
+                    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+                    if (adminUser == null)
+                    {
+                        adminUser = new ApplicationUser
+                        {
+                            UserName = adminEmail,
+                            Email = adminEmail,
+                            FirstName = "Admin",
+                            LastName = "User",
+                            EmailConfirmed = true
+                        };
+
+                        var result = await userManager.CreateAsync(adminUser, "Admin123!");
+                        if (result.Succeeded)
+                        {
+                            await userManager.AddToRoleAsync(adminUser, "Admin");
+                            logger.LogInformation("Admin user created: {Email}", adminEmail);
+                        }
+                        else
+                        {
+                            logger.LogError("Failed to create admin user: {Errors}",
+                                string.Join(", ", result.Errors.Select(e => e.Description)));
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                var log = services.GetRequiredService<ILogger<Program>>();
-                log.LogError(ex, "An error occurred while applying database migrations or seeding data");
+                catch (Exception ex)
+                {
+                    var log = services.GetRequiredService<ILogger<Program>>();
+                    log.LogError(ex, "An error occurred while applying database migrations or seeding data");
+                }
             }
         }
 

@@ -42,6 +42,8 @@ public class Session
     [Required]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public DateTime? LastModified { get; set; }
+
     public int? LeagueId { get; set; } // Nullable temporarily
 
     public League? League { get; set; }
