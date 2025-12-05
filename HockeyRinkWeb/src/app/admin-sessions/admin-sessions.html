@@ -6,6 +6,39 @@
     </button>
   </div>
 
+  <!-- Filter Buttons -->
+  <div class="mb-3">
+    <div class="btn-group" role="group" aria-label="Session filter">
+      <button
+        type="button"
+        class="btn"
+        [class.btn-primary]="activeFilter() === 'all'"
+        [class.btn-outline-primary]="activeFilter() !== 'all'"
+        (click)="setFilter('all')"
+      >
+        All Sessions
+      </button>
+      <button
+        type="button"
+        class="btn"
+        [class.btn-success]="activeFilter() === 'active'"
+        [class.btn-outline-success]="activeFilter() !== 'active'"
+        (click)="setFilter('active')"
+      >
+        Active
+      </button>
+      <button
+        type="button"
+        class="btn"
+        [class.btn-secondary]="activeFilter() === 'inactive'"
+        [class.btn-outline-secondary]="activeFilter() !== 'inactive'"
+        (click)="setFilter('inactive')"
+      >
+        Inactive
+      </button>
+    </div>
+  </div>
+
   @if (errorMessage()) {
   <div class="alert alert-danger alert-dismissible fade show" role="alert">
     {{ errorMessage() }}
@@ -48,7 +81,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (session of sessions(); track session.id) {
+        @for (session of filteredSessions(); track session.id) {
         <tr>
           <td>{{ session.name }}</td>
           <td>{{ session.leagueName || "N/A" }}</td>

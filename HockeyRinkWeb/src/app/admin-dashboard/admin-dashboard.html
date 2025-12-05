@@ -1,7 +1,5 @@
-<div class="container mt-5">
-  <h2 class="text-primary mb-4">
-    <i class="bi bi-speedometer2"></i> Admin Dashboard
-  </h2>
+<div class="container mt-4">
+  <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
 
   @if (isLoading()) {
   <div class="text-center">
@@ -11,40 +9,74 @@
   </div>
   } @if (errorMessage()) {
   <div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
     {{ errorMessage() }}
   </div>
   } @if (dashboardData() && !isLoading()) {
+
   <!-- Stats Cards -->
   <div class="row mb-4">
     <div class="col-md-3 mb-3">
-      <div class="card stats-card bg-primary text-white shadow">
+      <div class="card stats-card bg-primary text-white shadow-sm">
         <div class="card-body">
-          <h6 class="card-title">Total Users</h6>
-          <h2 class="mb-0">{{ dashboardData()!.totalUsers }}</h2>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title text-white-50 mb-1">
+                Today's Registrations
+              </h6>
+              <h2 class="mb-0">
+                {{ dashboardData()!.todaysRegistrationsCount }}
+              </h2>
+            </div>
+            <i class="bi bi-person-plus-fill fs-1 opacity-50"></i>
+          </div>
         </div>
       </div>
     </div>
     <div class="col-md-3 mb-3">
-      <div class="card stats-card bg-success text-white shadow">
+      <div class="card stats-card bg-success text-white shadow-sm">
         <div class="card-body">
-          <h6 class="card-title">Total Sessions</h6>
-          <h2 class="mb-0">{{ dashboardData()!.totalSessions }}</h2>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title text-white-50 mb-1">Active Sessions</h6>
+              <h2 class="mb-0">{{ dashboardData()!.activeSessionsCount }}</h2>
+            </div>
+            <i class="bi bi-calendar-check-fill fs-1 opacity-50"></i>
+          </div>
         </div>
       </div>
     </div>
     <div class="col-md-3 mb-3">
-      <div class="card stats-card bg-info text-white shadow">
+      <div class="card stats-card bg-info text-white shadow-sm">
         <div class="card-body">
-          <h6 class="card-title">Total Registrations</h6>
-          <h2 class="mb-0">{{ dashboardData()!.totalRegistrations }}</h2>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title text-white-50 mb-1">
+                Active Registrations
+              </h6>
+              <h2 class="mb-0">
+                {{ dashboardData()!.activeRegistrationsCount }}
+              </h2>
+            </div>
+            <i class="bi bi-people-fill fs-1 opacity-50"></i>
+          </div>
         </div>
       </div>
     </div>
     <div class="col-md-3 mb-3">
-      <div class="card stats-card bg-warning text-dark shadow">
+      <div class="card stats-card bg-warning text-dark shadow-sm">
         <div class="card-body">
-          <h6 class="card-title">Total Revenue</h6>
-          <h2 class="mb-0">{{ dashboardData()!.totalRevenue | currency }}</h2>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title text-dark mb-1 opacity-75">
+                Month Revenue
+              </h6>
+              <h2 class="mb-0">
+                {{ dashboardData()!.monthRevenue | currency }}
+              </h2>
+            </div>
+            <i class="bi bi-currency-dollar fs-1 opacity-50"></i>
+          </div>
         </div>
       </div>
     </div>
@@ -53,21 +85,20 @@
   <!-- Quick Actions -->
   <div class="row mb-4">
     <div class="col-12">
-      <div class="card shadow">
+      <div class="card shadow-sm bg-light">
         <div class="card-body">
-          <h5 class="card-title">Quick Actions</h5>
+          <h5 class="card-title mb-3">
+            <i class="bi bi-lightning-fill me-2"></i>Quick Actions
+          </h5>
           <div class="d-flex gap-2 flex-wrap">
-            <a routerLink="/admin/users" class="btn btn-primary">
-              <i class="bi bi-people"></i> Manage Users
+            <a routerLink="/admin/sessions" class="btn btn-outline-primary">
+              <i class="bi bi-calendar-plus me-2"></i>Manage Sessions
             </a>
-            <a routerLink="/admin/sessions" class="btn btn-success">
-              <i class="bi bi-calendar-event"></i> Manage Sessions
+            <a routerLink="/admin/leagues" class="btn btn-outline-success">
+              <i class="bi bi-trophy me-2"></i>Manage Leagues
             </a>
-            <a routerLink="/admin/leagues" class="btn btn-warning">
-              <i class="bi bi-trophy"></i> Manage Leagues
-            </a>
-            <a routerLink="/admin/registrations" class="btn btn-info">
-              <i class="bi bi-list-check"></i> View Registrations
+            <a routerLink="/admin/users" class="btn btn-outline-info">
+              <i class="bi bi-people me-2"></i>View Users
             </a>
           </div>
         </div>
@@ -75,47 +106,121 @@
     </div>
   </div>
 
-  <!-- Recent Registrations -->
+  <!-- Two Column Layout -->
   <div class="row">
-    <div class="col-12">
-      <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">Recent Registrations</h5>
+    <!-- Left Column: Active Sessions & Upcoming Sessions -->
+    <div class="col-lg-8 mb-4">
+      <!-- Active Sessions Table -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">
+            <i class="bi bi-list-check me-2"></i>Active Sessions Status
+          </h5>
         </div>
-        <div class="card-body">
-          @if (dashboardData()!.recentRegistrations.length === 0) {
-          <p class="text-muted">No recent registrations</p>
+        <div class="card-body p-0">
+          @if (dashboardData()!.activeSessions.length === 0) {
+          <div class="p-3 text-center text-muted">No active sessions</div>
           } @else {
           <div class="table-responsive">
-            <table class="table table-hover">
-              <thead>
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
                 <tr>
-                  <th>User</th>
-                  <th>Email</th>
                   <th>Session</th>
-                  <th>Payment Status</th>
-                  <th>Date</th>
+                  <th>League</th>
+                  <th>Start Date</th>
+                  <th class="text-center">Registered</th>
+                  <th class="text-center">Spots Left</th>
+                  <th class="text-end">Revenue</th>
                 </tr>
               </thead>
               <tbody>
-                @for (reg of dashboardData()!.recentRegistrations; track reg.id)
-                {
+                @for (session of dashboardData()!.activeSessions; track
+                session.id) {
                 <tr>
-                  <td>{{ reg.userName }}</td>
-                  <td>{{ reg.userEmail }}</td>
-                  <td>{{ reg.sessionName }}</td>
                   <td>
+                    <strong>{{ session.name }}</strong>
+                  </td>
+                  <td>{{ session.leagueName || "N/A" }}</td>
+                  <td>{{ session.startDate | date : "short" }}</td>
+                  <td class="text-center">
                     <span
-                      [class]="
-                        reg.paymentStatus === 'Paid'
-                          ? 'badge bg-success'
-                          : 'badge bg-warning'
+                      class="badge"
+                      [class.bg-success]="
+                        session.registeredCount >= session.maxPlayers * 0.8
+                      "
+                      [class.bg-warning]="
+                        session.registeredCount >= session.maxPlayers * 0.5 &&
+                        session.registeredCount < session.maxPlayers * 0.8
+                      "
+                      [class.bg-secondary]="
+                        session.registeredCount < session.maxPlayers * 0.5
                       "
                     >
-                      {{ reg.paymentStatus }}
+                      {{ session.registeredCount }} / {{ session.maxPlayers }}
                     </span>
                   </td>
-                  <td>{{ reg.createdAt | date : "short" }}</td>
+                  <td class="text-center">
+                    <span
+                      [class.text-danger]="session.spotsRemaining === 0"
+                      [class.text-warning]="
+                        session.spotsRemaining > 0 &&
+                        session.spotsRemaining <= 5
+                      "
+                      [class.text-success]="session.spotsRemaining > 5"
+                    >
+                      {{ session.spotsRemaining }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    {{ session.totalRevenue | currency }}
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Upcoming Sessions -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">
+            <i class="bi bi-calendar-event me-2"></i>Upcoming Sessions (Next 7
+            Days)
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          @if (dashboardData()!.upcomingSessions.length === 0) {
+          <div class="p-3 text-center text-muted">
+            No upcoming sessions in the next 7 days
+          </div>
+          } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Session</th>
+                  <th>League</th>
+                  <th>Start Date</th>
+                  <th class="text-center">Registered</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (session of dashboardData()!.upcomingSessions; track
+                session.id) {
+                <tr>
+                  <td>
+                    <strong>{{ session.name }}</strong>
+                  </td>
+                  <td>{{ session.leagueName || "N/A" }}</td>
+                  <td>{{ session.startDate | date : "short" }}</td>
+                  <td class="text-center">
+                    <span class="badge bg-info">
+                      {{ session.registeredCount }} / {{ session.maxPlayers }}
+                    </span>
+                  </td>
                 </tr>
                 }
               </tbody>
@@ -125,6 +230,69 @@
         </div>
       </div>
     </div>
+
+    <!-- Right Column: Recent Registrations & Revenue Summary -->
+    <div class="col-lg-4 mb-4">
+      <!-- Revenue Summary Card -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">
+            <i class="bi bi-cash-stack me-2"></i>Revenue Summary
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3 pb-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted">Total Revenue</span>
+              <h4 class="mb-0 text-success">
+                {{ dashboardData()!.totalRevenue | currency }}
+              </h4>
+            </div>
+          </div>
+          <div class="mb-2">
+            <div class="d-flex justify-content-between">
+              <span class="text-muted">This Month</span>
+              <strong>{{ dashboardData()!.monthRevenue | currency }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Registrations -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">
+            <i class="bi bi-clock-history me-2"></i>Today's Registrations
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          @if (dashboardData()!.recentRegistrations.length === 0) {
+          <div class="p-3 text-center text-muted">No registrations today</div>
+          } @else {
+          <div class="list-group list-group-flush">
+            @for (reg of dashboardData()!.recentRegistrations; track reg.id) {
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="mb-1">{{ reg.name }}</h6>
+                  <small class="text-muted">{{ reg.email }}</small>
+                </div>
+                <span class="badge bg-success">{{
+                  reg.amountPaid | currency
+                }}</span>
+              </div>
+              <small class="text-muted">
+                <i class="bi bi-clock me-1"></i
+                >{{ reg.registrationDate | date : "short" }}
+              </small>
+            </div>
+            }
+          </div>
+          }
+        </div>
+      </div>
+    </div>
   </div>
+
   }
 </div>

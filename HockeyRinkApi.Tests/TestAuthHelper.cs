@@ -30,8 +30,8 @@ public class TestAuthHelper
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<TestAuthHelper>>();
 
-        await db.Database.EnsureDeletedAsync();
-        await db.Database.EnsureCreatedAsync();
+        // Don't call EnsureDeletedAsync or EnsureCreatedAsync for InMemory database
+        // The database is already created by the test factory
 
         // Ensure Leisure league exists
         var leisureLeague = await db.Leagues.FirstOrDefaultAsync(l => l.Name == "Leisure");

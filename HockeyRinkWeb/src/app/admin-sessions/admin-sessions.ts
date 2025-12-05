@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -20,6 +20,14 @@ import { Session, League } from '../models';
 })
 export class AdminSessions implements OnInit {
   sessions = signal<Session[]>([]);
+  activeFilter = signal<'all' | 'active' | 'inactive'>('all');
+  filteredSessions = computed(() => {
+    const filter = this.activeFilter();
+    const allSessions = this.sessions();
+    if (filter === 'all') return allSessions;
+    if (filter === 'active') return allSessions.filter((s) => s.isActive);
+    return allSessions.filter((s) => !s.isActive);
+  });
   leagues = signal<League[]>([]);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
@@ -316,6 +324,10 @@ export class AdminSessions implements OnInit {
     return new Date(dateString).toLocaleDateString();
   }
 
+  setFilter(filter: 'all' | 'active' | 'inactive'): void {
+    this.activeFilter.set(filter);
+  }
+
   // View Registrations
   viewRegistrations(session: Session): void {
     this.isLoading.set(true);
@@ -386,12 +398,14 @@ export class AdminSessions implements OnInit {
           next: () => {
             this.successMessage.set('Registration updated successfully');
             this.closeAddRegistrationModal();
-            this.loadSessions();
-            // Reload registrations if modal is open
+            // Reload registrations if modal is open, then reload sessions
             if (this.showRegistrationsModal()) {
               const current = this.currentSession();
-              if (current) this.viewRegistrations(current);
+              if (current) {
+                this.viewRegistrations(current);
+              }
             }
+            this.loadSessions();
             this.isLoading.set(false);
           },
           error: (err) => {
@@ -410,12 +424,14 @@ export class AdminSessions implements OnInit {
           next: () => {
             this.successMessage.set('User successfully added to session');
             this.closeAddRegistrationModal();
-            this.loadSessions();
-            // Reload registrations if modal is open
+            // Reload registrations if modal is open, then reload sessions
             if (this.showRegistrationsModal()) {
               const current = this.currentSession();
-              if (current) this.viewRegistrations(current);
+              if (current) {
+                this.viewRegistrations(current);
+              }
             }
+            this.loadSessions();
             this.isLoading.set(false);
           },
           error: (err) => {
@@ -476,10 +492,12 @@ export class AdminSessions implements OnInit {
           `${regToRemove.name} successfully removed from ${current.name}`
         );
         this.closeRemoveConfirmModal();
-        this.loadSessions();
-        // Reload registrations
+        // Reload registrations first to update the modal, then reload sessions
         const updatedSession = this.currentSession();
-        if (updatedSession) this.viewRegistrations(updatedSession);
+        if (updatedSession) {
+          this.viewRegistrations(updatedSession);
+        }
+        this.loadSessions();
         this.isLoading.set(false);
       },
       error: (err) => {

@@ -97,57 +97,6 @@ public class AdminController : ControllerBase
         }
     }
 
-    [HttpGet("dashboard")]
-    public async Task<IActionResult> GetAdminDashboard()
-    {
-        try
-        {
-            if (!await IsAdminAsync())
-            {
-                return Forbid();
-            }
-
-            var totalUsers = await _dbContext.Users.CountAsync();
-            var totalSessions = await _dbContext.Sessions.CountAsync();
-            var totalRegistrations = await _dbContext.SessionRegistrations.CountAsync();
-            var totalRevenue = await _dbContext
-                .Payments.Where(p => p.Status == "Success")
-                .SumAsync(p => p.Amount);
-
-            var recentRegistrations = await _dbContext
-                .SessionRegistrations.Include(r => r.User)
-                .Include(r => r.Session)
-                .OrderByDescending(r => r.CreatedAt)
-                .Take(10)
-                .Select(r => new
-                {
-                    r.Id,
-                    UserName = $"{r.User!.FirstName} {r.User.LastName}",
-                    UserEmail = r.User.Email,
-                    SessionName = r.Session!.Name,
-                    r.PaymentStatus,
-                    r.CreatedAt,
-                })
-                .ToListAsync();
-
-            return Ok(
-                new
-                {
-                    totalUsers,
-                    totalSessions,
-                    totalRegistrations,
-                    totalRevenue,
-                    recentRegistrations,
-                }
-            );
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching admin dashboard");
-            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
-        }
-    }
-
     [HttpGet("users")]
     public async Task<IActionResult> GetAllUsers()
     {
@@ -706,6 +655,107 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error removing registration");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    // Get admin dashboard analytics
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetDashboardAnalytics()
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var today = DateTime.UtcNow.Date;
+            var tomorrow = today.AddDays(1);
+
+            // Get today's registrations
+            var todaysRegistrations = await _dbContext.SessionRegistrations
+                .Where(r => r.RegistrationDate >= today && r.RegistrationDate < tomorrow)
+                .ToListAsync();
+
+            // Get all active sessions with registration details
+            var activeSessions = await _dbContext.Sessions
+                .Include(s => s.League)
+                .Include(s => s.Registrations)
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.StartDate)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Name,
+                    LeagueName = s.League != null ? s.League.Name : null,
+                    s.StartDate,
+                    s.EndDate,
+                    s.MaxPlayers,
+                    RegisteredCount = s.Registrations.Count,
+                    SpotsRemaining = s.MaxPlayers - s.Registrations.Count,
+                    TotalRevenue = s.Registrations.Sum(r => r.AmountPaid),
+                    s.RegularPrice
+                })
+                .ToListAsync();
+
+            // Calculate overall revenue
+            var totalRevenue = await _dbContext.SessionRegistrations
+                .SumAsync(r => r.AmountPaid);
+
+            var thisMonthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+            var monthRevenue = await _dbContext.SessionRegistrations
+                .Where(r => r.RegistrationDate >= thisMonthStart)
+                .SumAsync(r => r.AmountPaid);
+
+            // Get total active registrations
+            var activeRegistrationsCount = await _dbContext.SessionRegistrations
+                .CountAsync(r => r.Session != null && r.Session.IsActive);
+
+            // Get upcoming sessions (next 7 days)
+            var nextWeek = DateTime.UtcNow.AddDays(7);
+            var upcomingSessions = await _dbContext.Sessions
+                .Include(s => s.League)
+                .Where(s => s.StartDate >= DateTime.UtcNow && s.StartDate <= nextWeek)
+                .OrderBy(s => s.StartDate)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Name,
+                    LeagueName = s.League != null ? s.League.Name : null,
+                    s.StartDate,
+                    RegisteredCount = s.Registrations.Count,
+                    s.MaxPlayers
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                todaysRegistrationsCount = todaysRegistrations.Count,
+                activeSessionsCount = activeSessions.Count,
+                activeRegistrationsCount,
+                totalRevenue,
+                monthRevenue,
+                activeSessions,
+                upcomingSessions,
+                recentRegistrations = todaysRegistrations
+                    .OrderByDescending(r => r.RegistrationDate)
+                    .Take(10)
+                    .Select(r => new
+                    {
+                        r.Id,
+                        r.Name,
+                        r.Email,
+                        r.SessionId,
+                        r.RegistrationDate,
+                        r.AmountPaid
+                    })
+                    .ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching dashboard analytics");
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
     }

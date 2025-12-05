@@ -24,70 +24,15 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Testing");
+
         builder.ConfigureAppConfiguration((context, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                { "ConnectionStrings:DefaultConnection", null },
-                { "ASPNETCORE_ENVIRONMENT", "Development" },
+                { "ConnectionStrings:DefaultConnection", "" },
                 { "Kestrel:Endpoints:Https:Url", null }
             });
-        });
-
-        builder.ConfigureServices(services =>
-        {
-            services.RemoveAll<DbContextOptions<AppDbContext>>();
-            services.RemoveAll<IConfigureOptions<AuthenticationOptions>>();
-            services.RemoveAll<IConfigureOptions<CookieAuthenticationOptions>>();
-
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseInMemoryDatabase("TestDatabase"));
-
-            services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-            {
-                options.SignIn.RequireConfirmedEmail = true;
-                options.Password.RequireDigit = true;
-                options.Password.RequiredLength = 8;
-            })
-            .AddEntityFrameworkStores<AppDbContext>()
-            .AddDefaultTokenProviders();
-
-            services.ConfigureApplicationCookie(options =>
-            {
-                options.LoginPath = "/api/auth/login";
-                options.AccessDeniedPath = "/api/auth/access-denied";
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.None;
-            });
-
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie();
-
-            services.Configure<MvcOptions>(options =>
-            {
-                options.Filters.Remove(new RequireHttpsAttribute());
-            });
-
-            services.AddControllers()
-                .AddApplicationPart(typeof(AuthController).Assembly);
-        });
-
-        builder.Configure(app =>
-        {
-            app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
-
-            var endpointDataSource = app.ApplicationServices.GetRequiredService<EndpointDataSource>();
-            foreach (var endpoint in endpointDataSource.Endpoints)
-            {
-                Console.WriteLine($"Registered endpoint: {endpoint.DisplayName}");
-            }
         });
     }
 }

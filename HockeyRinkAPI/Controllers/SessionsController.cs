@@ -79,7 +79,7 @@ public class SessionsController : ControllerBase
                 return Unauthorized(new { message = "Authentication required" });
             }
 
-            var sessionsQuery = _dbContext.Sessions.Include(s => s.League).AsQueryable();
+            var sessionsQuery = _dbContext.Sessions.Include(s => s.League).Include(s => s.Registrations).AsQueryable();
 
             if (leagueId.HasValue)
             {
@@ -102,10 +102,10 @@ public class SessionsController : ControllerBase
                 // 1. Session is currently active
                 // 2. Dates have passed
                 // 3. Session hasn't been manually modified after the dates passed
-                
+
                 bool shouldAutoDeactivate = false;
                 DateTime? criticalDate = null;
-                
+
                 // Check registration close date
                 if (session.RegistrationCloseDate.HasValue && session.RegistrationCloseDate.Value < now)
                 {
@@ -118,7 +118,7 @@ public class SessionsController : ControllerBase
                     criticalDate = session.EndDate;
                     shouldAutoDeactivate = true;
                 }
-                
+
                 // Only deactivate if session is active and either:
                 // - Never been manually modified, OR
                 // - Last modified before the critical date passed
@@ -278,10 +278,10 @@ public class SessionsController : ControllerBase
             // Check capacity
             var currentRegistrationCount = await _dbContext.SessionRegistrations
                 .CountAsync(sr => sr.SessionId == model.SessionId);
-            
+
             if (currentRegistrationCount >= session.MaxPlayers)
             {
-                _logger.LogWarning("Session {SessionId} is full ({CurrentCount}/{MaxPlayers})", 
+                _logger.LogWarning("Session {SessionId} is full ({CurrentCount}/{MaxPlayers})",
                     model.SessionId, currentRegistrationCount, session.MaxPlayers);
                 return BadRequest(new { message = "This session is full" });
             }
@@ -304,9 +304,9 @@ public class SessionsController : ControllerBase
             // Calculate the amount to charge based on early bird pricing
             var registrationDate = DateTime.UtcNow;
             decimal amountToCharge = session.RegularPrice ?? session.Fee;
-            
-            if (session.EarlyBirdPrice.HasValue && 
-                session.EarlyBirdEndDate.HasValue && 
+
+            if (session.EarlyBirdPrice.HasValue &&
+                session.EarlyBirdEndDate.HasValue &&
                 registrationDate <= session.EarlyBirdEndDate.Value)
             {
                 amountToCharge = session.EarlyBirdPrice.Value;
@@ -316,7 +316,7 @@ public class SessionsController : ControllerBase
             // Validate age requirement (must be 18+)
             var age = DateTime.UtcNow.Year - model.DateOfBirth.Year;
             if (model.DateOfBirth > DateTime.UtcNow.AddYears(-age)) age--;
-            
+
             if (age < 18)
             {
                 _logger.LogWarning("User age {Age} below minimum requirement", age);
@@ -365,7 +365,8 @@ public class SessionsController : ControllerBase
                 transactionId,
                 amountToCharge
             );
-            return Ok(new { 
+            return Ok(new
+            {
                 message = "Registered for session successfully",
                 amountPaid = amountToCharge,
                 transactionId = transactionId
@@ -451,35 +452,35 @@ public class SessionRegistrationModel
 {
     [Required]
     public int SessionId { get; set; }
-    
+
     [Required]
     [StringLength(100)]
     public string Name { get; set; } = string.Empty;
-    
+
     [StringLength(200)]
     public string? Address { get; set; }
-    
+
     [StringLength(100)]
     public string? City { get; set; }
-    
+
     [StringLength(50)]
     public string? State { get; set; }
-    
+
     [StringLength(20)]
     public string? ZipCode { get; set; }
-    
+
     [Phone]
     [StringLength(20)]
     public string? Phone { get; set; }
-    
+
     [Required]
     [EmailAddress]
     [StringLength(100)]
     public string Email { get; set; } = string.Empty;
-    
+
     [Required]
     public DateTime DateOfBirth { get; set; }
-    
+
     [StringLength(20)]
     public string? Position { get; set; } // Forward, Defense, Forward/Defense, Goalie
 }

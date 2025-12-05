@@ -1,5 +1,11 @@
 ﻿using HockeyRinkAPI;
+using HockeyRinkAPI.Data;
+using HockeyRinkAPI.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -54,8 +60,37 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         var authHelper = new TestAuthHelper(client, _factory.Services);
         await authHelper.LoginAsync(email, "Test123!");
 
+        // Create an active session with future dates
+        int sessionId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var league = await db.Leagues.FirstOrDefaultAsync();
+            var session = new Session
+            {
+                Name = "Future Session",
+                StartDate = DateTime.UtcNow.AddDays(30),
+                EndDate = DateTime.UtcNow.AddDays(60),
+                Fee = 100.00m,
+                IsActive = true,
+                MaxPlayers = 20,
+                CreatedAt = DateTime.UtcNow,
+                LeagueId = league?.Id
+            };
+            db.Sessions.Add(session);
+            await db.SaveChangesAsync();
+            sessionId = session.Id;
+        }
+
         // Act
-        var response = await client.PostAsJsonAsync("/api/sessions/register", new { sessionId = 1 });
+        var registrationData = new
+        {
+            sessionId = sessionId,
+            name = "Test User",
+            email = email,
+            dateOfBirth = new DateTime(1990, 1, 1)
+        };
+        var response = await client.PostAsJsonAsync("/api/sessions/register", registrationData);
 
         // Assert
         if (response.StatusCode == HttpStatusCode.Found)
