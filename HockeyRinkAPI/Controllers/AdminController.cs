@@ -147,19 +147,54 @@ public class AdminController : ControllerBase
                 .Include(s => s.Registrations)
                 .ToListAsync();
 
-            // Auto-deactivate sessions where dates have passed, but respect manual overrides
+            // Auto-activate/deactivate sessions based on dates
             var now = DateTime.UtcNow;
             bool hasChanges = false;
             foreach (var session in sessions)
             {
-                // Only auto-deactivate if:
-                // 1. Session is currently active
-                // 2. Dates have passed
-                // 3. Session hasn't been manually modified after the dates passed
-                
+                _logger.LogDebug(
+                    "Checking session {SessionId} '{SessionName}': IsActive={IsActive}, RegOpenDate={RegOpenDate}, Now={Now}, LastModified={LastModified}",
+                    session.Id,
+                    session.Name,
+                    session.IsActive,
+                    session.RegistrationOpenDate,
+                    now,
+                    session.LastModified
+                );
+
+                // Auto-activate if registration open date has passed and session is inactive
+                if (session.RegistrationOpenDate.HasValue &&
+                    session.RegistrationOpenDate.Value <= now &&
+                    !session.IsActive)
+                {
+                    // Auto-activate unless the admin manually deactivated it AFTER the registration opened
+                    bool manuallyDeactivatedAfterOpen = session.LastModified.HasValue &&
+                                                       session.LastModified.Value > session.RegistrationOpenDate.Value;
+
+                    _logger.LogInformation(
+                        "Session {SessionId} eligible for auto-activation. ManuallyDeactivatedAfterOpen={ManuallyDeactivated}",
+                        session.Id,
+                        manuallyDeactivatedAfterOpen
+                    );
+
+                    if (!manuallyDeactivatedAfterOpen)
+                    {
+                        session.IsActive = true;
+                        hasChanges = true;
+                        _logger.LogInformation(
+                            "Auto-activated session: {SessionName} (ID: {SessionId}) - Registration opened at: {OpenDate}, Current time: {Now}",
+                            session.Name,
+                            session.Id,
+                            session.RegistrationOpenDate,
+                            now
+                        );
+                    }
+                }
+
+                // Auto-deactivate sessions where dates have passed
                 bool shouldAutoDeactivate = false;
                 DateTime? criticalDate = null;
-                
+
                 // Check registration close date
                 if (session.RegistrationCloseDate.HasValue && session.RegistrationCloseDate.Value < now)
                 {
@@ -172,7 +207,7 @@ public class AdminController : ControllerBase
                     criticalDate = session.EndDate;
                     shouldAutoDeactivate = true;
                 }
-                
+
                 // Only deactivate if session is active and either:
                 // - Never been manually modified, OR
                 // - Last modified before the critical date passed
@@ -244,13 +279,36 @@ public class AdminController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            // Auto-activate session only if RegistrationOpenDate has passed
+            var now = DateTime.UtcNow;
+            var isActive = model.IsActive;
+
+            _logger.LogInformation(
+                "Creating session '{SessionName}': Model.IsActive={ModelIsActive}, RegistrationOpenDate={RegOpenDate}, CurrentTime={Now}",
+                model.Name,
+                model.IsActive,
+                model.RegistrationOpenDate,
+                now
+            );
+
+            if (model.RegistrationOpenDate.HasValue && model.RegistrationOpenDate.Value <= now)
+            {
+                isActive = true;
+                _logger.LogInformation(
+                    "Auto-activating session '{SessionName}' because RegistrationOpenDate ({RegOpenDate}) <= CurrentTime ({Now})",
+                    model.Name,
+                    model.RegistrationOpenDate.Value,
+                    now
+                );
+            }
+
             var session = new Session
             {
                 Name = model.Name,
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
                 Fee = model.RegularPrice ?? model.Fee, // Use RegularPrice as Fee if provided
-                IsActive = model.IsActive,
+                IsActive = isActive,
                 LeagueId = model.LeagueId,
                 MaxPlayers = model.MaxPlayers,
                 RegistrationOpenDate = model.RegistrationOpenDate,
@@ -265,9 +323,10 @@ public class AdminController : ControllerBase
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation(
-                "Session created: {SessionName} (ID: {SessionId})",
+                "Session created: {SessionName} (ID: {SessionId}), Final IsActive={IsActive}",
                 session.Name,
-                session.Id
+                session.Id,
+                session.IsActive
             );
             return Ok(
                 new
@@ -317,7 +376,40 @@ public class AdminController : ControllerBase
             session.StartDate = model.StartDate;
             session.EndDate = model.EndDate;
             session.Fee = model.RegularPrice ?? model.Fee; // Use RegularPrice as Fee if provided
-            session.IsActive = model.IsActive;
+
+            // Auto-activate/deactivate based on RegistrationOpenDate
+            var now = DateTime.UtcNow;
+            if (model.RegistrationOpenDate.HasValue)
+            {
+                if (model.RegistrationOpenDate.Value <= now)
+                {
+                    // Registration has opened - auto-activate
+                    session.IsActive = true;
+                    _logger.LogInformation(
+                        "Auto-activating session {SessionId} during update - Registration opened at: {RegOpenDate}, Current time: {Now}",
+                        id,
+                        model.RegistrationOpenDate.Value,
+                        now
+                    );
+                }
+                else
+                {
+                    // Registration hasn't opened yet - auto-deactivate
+                    session.IsActive = false;
+                    _logger.LogInformation(
+                        "Auto-deactivating session {SessionId} during update - Registration opens at: {RegOpenDate}, Current time: {Now}",
+                        id,
+                        model.RegistrationOpenDate.Value,
+                        now
+                    );
+                }
+            }
+            else
+            {
+                // No registration date - use the value from the form
+                session.IsActive = model.IsActive;
+            }
+
             session.LeagueId = model.LeagueId;
             session.MaxPlayers = model.MaxPlayers;
             session.RegistrationOpenDate = model.RegistrationOpenDate;
@@ -898,7 +990,7 @@ public class CreateSessionModel
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public decimal Fee { get; set; }
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; } = false;
     public int LeagueId { get; set; }
     public int MaxPlayers { get; set; } = 20;
     public DateTime? RegistrationOpenDate { get; set; }

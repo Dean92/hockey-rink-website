@@ -1105,5 +1105,750 @@
     ],
     "estimated_completion": "End of Week 7 (mid-December 2025)"
   },
+  "week_8": {
+    "status": "📋 Planned - December 2025",
+    "focus": "Team Draft System & Player Management",
+    "estimated_hours": "15-18 hours",
+    "deliverables": [
+      {
+        "player_rating_system": {
+          "status": "⏳ Not Started",
+          "description": "Admin-only player rating field for draft sorting",
+          "database_changes": {
+            "application_user_updates": {
+              "add_field": "Rating DECIMAL(3,1) NULL (range: 0.0 to 10.0, admin-only)",
+              "migration_name": "AddPlayerRatingField",
+              "default_value": "NULL (unrated players)",
+              "validation": "Min: 0.0, Max: 10.0, one decimal place"
+            }
+          },
+          "backend_implementation": {
+            "admin_endpoints": {
+              "update_player_rating": {
+                "endpoint": "PUT /api/admin/users/{userId}/rating",
+                "request_body": {
+                  "rating": "decimal (0.0 to 10.0, nullable)"
+                },
+                "authorization": "[Authorize(Roles = \"Admin\")]",
+                "validation": [
+                  "Rating must be between 0.0 and 10.0",
+                  "Only one decimal place allowed",
+                  "Null is allowed (clears rating)"
+                ],
+                "response": "Updated user profile with new rating"
+              },
+              "get_users_with_ratings": {
+                "endpoint": "GET /api/admin/users?includeRating=true",
+                "description": "Returns user list with rating field visible to admin",
+                "filters": [
+                  "rated (users with rating > 0)",
+                  "unrated (users with null rating)",
+                  "all (default)"
+                ]
+              }
+            }
+          },
+          "frontend_implementation": {
+            "admin_user_management": {
+              "add_rating_column": "Display Rating column in admin users table",
+              "inline_edit": "Click to edit rating, save/cancel buttons",
+              "visual_indicators": [
+                "Show rating as stars (e.g., 7.5 = ⭐⭐⭐⭐⭐⭐⭐☆☆☆)",
+                "Or numeric display: '7.5 / 10.0'",
+                "Unrated players: '—' or 'Not Rated'"
+              ],
+              "validation_ui": "Show error if rating outside 0.0-10.0 range"
+            },
+            "player_profile_view": {
+              "admin_only_section": "Rating field only visible when viewing as admin",
+              "user_visibility": "Regular users cannot see their own or others' ratings"
+            }
+          }
+        }
+      },
+      {
+        "team_database_model": {
+          "status": "⏳ Not Started",
+          "description": "Teams table for organizing players into draft teams",
+          "database_schema": {
+            "teams_table": {
+              "table_name": "Teams",
+              "columns": [
+                "Id INT PRIMARY KEY IDENTITY(1,1)",
+                "SessionId INT NOT NULL FOREIGN KEY REFERENCES Sessions(Id) ON DELETE CASCADE",
+                "TeamName NVARCHAR(100) NOT NULL",
+                "TeamColor NVARCHAR(20) NULL (for UI display, e.g., 'Blue', 'Red', 'Green')",
+                "CaptainUserId NVARCHAR(450) NULL FOREIGN KEY REFERENCES AspNetUsers(Id) (Team Captain)",
+                "CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()",
+                "UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()"
+              ],
+              "indexes": ["IX_Teams_SessionId (for querying teams by session)"],
+              "constraints": [
+                "UNIQUE constraint on (SessionId, TeamName) - no duplicate team names per session"
+              ],
+              "migration_name": "CreateTeamsTable"
+            },
+            "team_players_junction_table": {
+              "table_name": "TeamPlayers",
+              "description": "Many-to-many relationship: teams can have multiple players, players can be on one team per session",
+              "columns": [
+                "Id INT PRIMARY KEY IDENTITY(1,1)",
+                "TeamId INT NOT NULL FOREIGN KEY REFERENCES Teams(Id) ON DELETE CASCADE",
+                "UserId NVARCHAR(450) NOT NULL FOREIGN KEY REFERENCES AspNetUsers(Id)",
+                "SessionRegistrationId INT NOT NULL FOREIGN KEY REFERENCES SessionRegistrations(Id)",
+                "DraftOrder INT NULL (order in which player was drafted, 1-based)",
+                "AssignedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()"
+              ],
+              "indexes": [
+                "IX_TeamPlayers_TeamId (for querying players by team)",
+                "IX_TeamPlayers_UserId (for finding which team a user is on)",
+                "IX_TeamPlayers_SessionRegistrationId (unique: player can only be on one team per session)"
+              ],
+              "constraints": [
+                "UNIQUE constraint on SessionRegistrationId - each registration can only be assigned to one team"
+              ],
+              "migration_name": "CreateTeamPlayersTable"
+            }
+          },
+          "backend_models": {
+            "team_model": {
+              "properties": [
+                "int Id",
+                "int SessionId",
+                "string TeamName (required, max 100 chars)",
+                "string? TeamColor (optional, max 20 chars)",
+                "string? CaptainUserId (nullable, FK to AspNetUsers)",
+                "DateTime CreatedAt",
+                "DateTime UpdatedAt",
+                "Session Session (navigation)",
+                "ApplicationUser? Captain (navigation property)",
+                "ICollection<TeamPlayer> TeamPlayers (navigation)"
+              ]
+            },
+            "team_player_model": {
+              "properties": [
+                "int Id",
+                "int TeamId",
+                "string UserId",
+                "int SessionRegistrationId",
+                "int? DraftOrder",
+                "DateTime AssignedAt",
+                "Team Team (navigation)",
+                "ApplicationUser User (navigation)",
+                "SessionRegistration SessionRegistration (navigation)"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "team_management_endpoints": {
+          "status": "⏳ Not Started",
+          "description": "Backend API for managing teams and team assignments",
+          "endpoints": {
+            "create_team": {
+              "method": "POST",
+              "route": "/api/admin/sessions/{sessionId}/teams",
+              "authorization": "[Authorize(Roles = \"Admin\")]",
+              "request_body": {
+                "teamName": "string (required, max 100 chars)",
+                "teamColor": "string (optional, e.g., 'Blue', 'Red', 'Green')",
+                "captainUserId": "string (optional, must be a player on the team)"
+              },
+              "validation": [
+                "Team name must be unique within session",
+                "Session must exist and be valid"
+              ],
+              "response": "Created team object with Id"
+            },
+            "get_teams_for_session": {
+              "method": "GET",
+              "route": "/api/admin/sessions/{sessionId}/teams",
+              "authorization": "[Authorize(Roles = \"Admin\")]",
+              "response": {
+                "teams": [
+                  {
+                    "id": "int",
+                    "teamName": "string",
+                    "teamColor": "string",
+                    "captainUserId": "string (nullable)",
+                    "captainName": "string (nullable, display name of captain)",
+                    "playerCount": "int (count of assigned players)",
+                    "players": [
+                      {
+                        "userId": "string",
+                        "name": "string",
+                        "position": "string",
+                        "rating": "decimal (admin only)",
+                        "draftOrder": "int"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "update_team": {
+              "method": "PUT",
+              "route": "/api/admin/teams/{teamId}",
+              "authorization": "[Authorize(Roles = \"Admin\")]",
+              "request_body": {
+                "teamName": "string (optional)",
+                "teamColor": "string (optional)",
+                "captainUserId": "string (optional, null to clear captain)"
+              },
+              "validation": "Team name must remain unique within session"
+            },
+            "delete_team": {
+              "method": "DELETE",
+              "route": "/api/admin/teams/{teamId}",
+              "authorization": "[Authorize(Roles = \"Admin\")]",
+              "behavior": [
+                "Soft delete or hard delete (cascade removes TeamPlayers)",
+                "Players become unassigned (available for draft again)"
+              ]
+            },
+            "assign_player_to_team": {
+              "method": "POST",
+              "route": "/api/admin/teams/{teamId}/players",
+              "authorization": "[Authorize(Roles = \"Admin\")]",
+              "request_body": {
+                "sessionRegistrationId": "int (required)",
+                "draftOrder": "int (optional, auto-increments if not provided)"
+              },
+              "validation": [
+                "Player must be registered for the session",
+                "Player cannot be assigned to multiple teams in same session",
+                "Registration must belong to same session as team"
+              ],
+              "response": "TeamPlayer object created"
+            },
+            "remove_player_from_team": {
+              "method": "DELETE",
+              "route": "/api/admin/teams/{teamId}/players/{userId}",
+              "authorization": "[Authorize(Roles = \"Admin\")]",
+              "behavior": "Removes player from team, makes them available for draft again",
+              "captain_handling": "If removed player is team captain, CaptainUserId is set to NULL"
+            },
+            "set_team_captain": {
+              "method": "PUT",
+              "route": "/api/admin/teams/{teamId}/captain",
+              "authorization": "[Authorize(Roles = \"Admin\")]",
+              "request_body": {
+                "captainUserId": "string (nullable, set to null to clear captain)"
+              },
+              "validation": [
+                "Captain must be a player currently assigned to the team",
+                "If null, clears the captain assignment"
+              ],
+              "response": "Updated team object with new captain info"
+            }
+          }
+        }
+      },
+      {
+        "team_captain_feature": {
+          "status": "⏳ Not Started",
+          "description": "Team Captain assignment and display functionality",
+          "overview": "Designate one player per team as captain - visible to all users, editable by admin only",
+          "key_features": {
+            "no_special_permissions": "Captain role is cosmetic/honorary - no admin functionality granted",
+            "single_captain_per_team": "Only one captain per team (nullable - teams can have no captain)",
+            "visible_to_all": "Captain name displayed in team overviews for all users",
+            "admin_editable": "Only admins can assign/change/remove captains"
+          },
+          "ui_implementation": {
+            "draft_page_captain_selector": {
+              "location": "Team card header",
+              "display": "Dropdown selector or inline edit",
+              "options": "List of all players currently on the team + 'No Captain' option",
+              "on_change": "Calls PUT /api/admin/teams/{teamId}/captain endpoint",
+              "visual_indicator": "Show ⭐ or (C) badge next to captain's name in player list"
+            },
+            "team_overview_display": {
+              "location": "Any view showing team list (draft page, session details, user dashboard)",
+              "display_format": "Captain: [Name] or 'No Captain Assigned'",
+              "styling": "Badge or special text formatting to distinguish captain"
+            },
+            "player_card_in_team": {
+              "captain_badge": "Show '⭐ Captain' or '(C)' badge on player card if they are captain",
+              "positioning": "Badge appears next to player name or position"
+            }
+          },
+          "user_view": {
+            "my_team_display": {
+              "show_captain": "Display captain name prominently: 'Captain: [Name]'",
+              "is_captain_indicator": "If current user is captain, show 'You are the team captain!' message or badge",
+              "no_captain_state": "Display 'Captain: Not yet assigned' or similar message"
+            },
+            "team_roster_display": {
+              "captain_in_list": "Show captain with special badge/indicator in teammate list",
+              "sort_order": "Optional: Show captain first in teammate list"
+            }
+          },
+          "validation_rules": [
+            "Captain must be a valid user assigned to the team",
+            "If captain is removed from team, captain assignment is automatically cleared (set to NULL)",
+            "Cannot assign captain from different team or unassigned players",
+            "Only one captain per team at any time"
+          ]
+        }
+      },
+      {
+        "draft_page_ui": {
+          "status": "⏳ Not Started",
+          "description": "Admin-only drag-and-drop draft interface",
+          "route": "/admin/sessions/{sessionId}/draft",
+          "authorization": "AdminGuard (admin only)",
+          "prerequisites": [
+            "Registration must be closed for the session",
+            "Session must have at least one registered player"
+          ],
+          "layout": {
+            "available_players_section": {
+              "title": "Available Players",
+              "description": "List of registered players not yet assigned to a team",
+              "display": "Vertical list of draggable player cards",
+              "player_card_info": [
+                "Player name (from registration)",
+                "Preferred position (Forward/Defense/Goalie)",
+                "Drag handle icon"
+              ],
+              "sorting": "Sorted by rating (highest to lowest), rating NOT displayed",
+              "unrated_players": "Shown at bottom of list",
+              "empty_state": "All players have been drafted!",
+              "filters": {
+                "position_filter": "Filter by Forward/Defense/Goalie/All",
+                "search": "Search by name"
+              }
+            },
+            "teams_section": {
+              "title": "Teams",
+              "layout": "Grid of team cards (2-4 columns depending on screen size)",
+              "team_card": {
+                "header": [
+                  "Team name (editable inline)",
+                  "Team color badge",
+                  "Captain badge/selector (dropdown of team players, or 'No Captain')",
+                  "Player count (e.g., '5 players')",
+                  "Delete team button (with confirmation)"
+                ],
+                "body": "Drop zone for player cards",
+                "player_list": [
+                  "Draggable player cards within team",
+                  "Shows: Name, Position",
+                  "Captain badge: Show '⭐ Captain' or '(C)' badge if player is team captain",
+                  "Drag to reorder within team or move to another team",
+                  "Remove button (X) to send back to available players",
+                  "Note: If captain is removed, captain assignment is cleared"
+                ],
+                "empty_state": "Drag players here to build your team"
+              },
+              "add_team_button": {
+                "label": "+ Add Team",
+                "action": "Opens modal to create new team",
+                "modal_fields": [
+                  "Team Name (required)",
+                  "Team Color (dropdown: Blue, Red, Green, Yellow, Purple, Orange, etc.)",
+                  "Team Captain (dropdown: Select after adding players, optional)"
+                ]
+              }
+            }
+          },
+          "drag_and_drop_behavior": {
+            "library": "Angular CDK Drag & Drop or ngx-drag-drop",
+            "drag_sources": ["Available Players list", "Any team card"],
+            "drop_targets": [
+              "Any team card",
+              "Available Players list (to unassign)"
+            ],
+            "on_drop": [
+              "1. Validate drop is allowed (player not already on team in this session)",
+              "2. Call API: POST /api/admin/teams/{teamId}/players",
+              "3. Update UI optimistically",
+              "4. If API fails, revert UI change and show error"
+            ],
+            "visual_feedback": [
+              "Highlight drop zones on drag",
+              "Show placeholder in drop zone",
+              "Smooth animations"
+            ]
+          },
+          "toolbar_actions": {
+            "auto_draft_button": {
+              "label": "Auto-Draft",
+              "description": "Automatically distribute players evenly across teams",
+              "algorithm": [
+                "1. Sort players by rating (highest first)",
+                "2. Use snake draft order (1→2→3, then 3→2→1, repeat)",
+                "3. Assign players to teams in order",
+                "4. Balance by position if possible (optional enhancement)"
+              ],
+              "confirmation": "Modal: 'This will clear current assignments. Continue?'"
+            },
+            "clear_all_button": {
+              "label": "Clear All Assignments",
+              "action": "Remove all players from teams, return to available pool",
+              "confirmation": "Modal: 'This will unassign all players. Continue?'"
+            },
+            "save_button": {
+              "label": "Save Draft",
+              "description": "Persist all changes (normally auto-saves on each action)"
+            }
+          },
+          "mobile_considerations": {
+            "responsive_layout": "Stack teams vertically on mobile",
+            "touch_interactions": "Long-press to drag on touch devices",
+            "alternative_ui": "Consider 'Select & Assign' buttons instead of drag-drop on small screens"
+          }
+        }
+      },
+      {
+        "draft_status_and_visibility": {
+          "status": "⏳ Not Started",
+          "description": "Show draft results to users after draft is complete",
+          "admin_controls": {
+            "publish_draft_toggle": {
+              "description": "Admin can mark draft as 'published' to show teams to players",
+              "database_field": "Session.DraftPublished BIT DEFAULT 0",
+              "ui_location": "Toggle on draft page: 'Publish Draft to Players'",
+              "behavior": "When true, players can see their team assignment"
+            }
+          },
+          "user_view": {
+            "my_team_display": {
+              "locations": [
+                "User dashboard: 'Your Team for [Session Name]' card",
+                "Session detail page: 'Team Assignment' section"
+              ],
+              "display_info": [
+                "Team name and color",
+                "List of teammates (names and positions)",
+                "Your position",
+                "Session date/time"
+              ],
+              "empty_state": "Draft not yet published or you're not assigned to a team"
+            },
+            "endpoint": "GET /api/users/my-team/{sessionId}",
+            "response": {
+              "teamName": "string",
+              "teamColor": "string",
+              "captainName": "string (nullable, name of team captain)",
+              "isCaptain": "boolean (true if current user is captain)",
+              "teammates": [
+                {
+                  "name": "string",
+                  "position": "string"
+                }
+              ],
+              "sessionName": "string",
+              "sessionDate": "DateTime"
+            }
+          }
+        }
+      },
+      {
+        "testing_and_validation": {
+          "status": "⏳ Not Started",
+          "backend_tests": [
+            "Player rating: Test update, validation (0.0-10.0 range)",
+            "Team CRUD: Create, read, update, delete teams",
+            "Team captain: Assign, change, clear captain",
+            "Team captain validation: Captain must be on team, auto-clear when player removed",
+            "Team player assignment: Assign, remove, prevent duplicates",
+            "Draft validation: Players can only be on one team per session",
+            "Auto-draft algorithm: Test even distribution and snake order"
+          ],
+          "frontend_tests": [
+            "Draft page: Test drag-and-drop functionality",
+            "Team management: Create, edit, delete teams",
+            "Team captain selector: Assign and change captain from dropdown",
+            "Captain badge display: Verify captain badge shows on player card",
+            "Player assignment: Drag player to team, remove from team",
+            "Auto-draft: Verify players distributed correctly",
+            "User view: Test team display for published drafts with captain info"
+          ],
+          "integration_tests": [
+            "Complete draft flow: Create teams → Assign players → Assign captains → Publish draft",
+            "Captain auto-clear: Remove captain from team → Verify captain set to null",
+            "User sees team assignment with captain info after publish",
+            "Admin edits team captain after draft → Changes reflected in user view"
+          ],
+          "manual_testing_checklist": [
+            "Admin sets player ratings (various values, null)",
+            "Admin creates multiple teams for a session",
+            "Admin assigns team captains from dropdown",
+            "Verify captain badge appears on player card",
+            "Change team captain to different player",
+            "Clear captain (set to 'No Captain')",
+            "Remove captain from team (verify captain cleared automatically)",
+            "Drag players from available list to teams",
+            "Drag players between teams",
+            "Drag player back to available list (unassign)",
+            "Use auto-draft feature",
+            "Clear all assignments",
+            "Delete team (verify players return to available pool)",
+            "Publish draft",
+            "User views their team assignment with captain info",
+            "User who is captain sees 'You are the team captain' indicator",
+            "Mobile responsive: Drag-and-drop on touch devices",
+            "Edge case: Try to assign player to two teams (should fail)",
+            "Edge case: Try to assign captain from different team (should fail)"
+          ]
+        }
+      }
+    ],
+    "priority_order": [
+      "1. Database migrations: Add Rating to ApplicationUser, create Teams and TeamPlayers tables with CaptainUserId",
+      "2. Backend models: Team, TeamPlayer with navigation properties and Captain relationship",
+      "3. Backend: Player rating endpoints (update rating, get users with ratings)",
+      "4. Frontend: Admin user management with rating column",
+      "5. Backend: Team CRUD endpoints with captain assignment",
+      "6. Backend: Set team captain endpoint",
+      "7. Backend: Team player assignment endpoints (with captain auto-clear on removal)",
+      "8. Frontend: Draft page UI with available players list",
+      "9. Frontend: Team cards with drag-and-drop zones and captain selector",
+      "10. Frontend: Implement drag-and-drop functionality (Angular CDK)",
+      "11. Frontend: Captain badge display on player cards",
+      "12. Backend: Auto-draft algorithm",
+      "13. Frontend: Auto-draft and clear all buttons",
+      "14. Database: Add DraftPublished field to Sessions",
+      "15. Backend: Publish draft and get my team endpoints (include captain info)",
+      "16. Frontend: User team display on dashboard with captain",
+      "17. Testing: Unit, integration, and manual tests (including captain scenarios)",
+      "18. Mobile polish: Touch interactions and responsive layout"
+    ],
+    "estimated_completion": "End of Week 8 (late December 2025)",
+    "notes": [
+      "Rating field is sensitive - ensure it's NEVER visible to non-admin users",
+      "Team captain is cosmetic/honorary - grants no special permissions or admin access",
+      "Captain assignment must auto-clear when captain is removed from team",
+      "Only one captain per team (nullable - teams can have no captain)",
+      "Captain must be a current member of the team to be assigned",
+      "Consider soft delete for teams to preserve draft history",
+      "Auto-draft algorithm can be enhanced with position balancing in future",
+      "Draft page should be disabled/read-only after session starts",
+      "Consider adding draft history/audit log for transparency",
+      "Team colors help visual distinction in UI"
+    ]
+  },
+  "week_9": {
+    "status": "Planned",
+    "focus": "League Management, User Profile, Home Page Redesign, and Footer Enhancement",
+    "estimated_hours": "12-15 hours",
+    "features": [
+      {
+        "name": "Admin League Management (Full CRUD)",
+        "description": "Allow admins to add, edit, and delete leagues through the UI",
+        "estimated_hours": "3-4 hours",
+        "tasks": [
+          {
+            "component": "Backend API",
+            "items": [
+              "Add POST /api/admin/leagues endpoint (create league)",
+              "Add PUT /api/admin/leagues/{id} endpoint (update league)",
+              "Add DELETE /api/admin/leagues/{id} endpoint (delete league)",
+              "Validate league deletion - prevent if league has active sessions",
+              "Add IsActive field to League model for soft delete option",
+              "Add CreatedAt, LastModified timestamps to League model",
+              "Migration: Add new fields to Leagues table"
+            ]
+          },
+          {
+            "component": "Frontend UI",
+            "items": [
+              "Create admin-leagues component (similar to admin-sessions)",
+              "Add 'Manage Leagues' option to admin nav/dashboard",
+              "League table with columns: Name, Description, Created, Active Status, Session Count, Actions",
+              "Create/Edit modal with fields: Name (required), Description (optional), IsActive toggle",
+              "Delete confirmation dialog with warning if league has sessions",
+              "Filter leagues: All, Active, Inactive",
+              "Display session count per league",
+              "Success/error messages for CRUD operations"
+            ]
+          }
+        ],
+        "acceptance_criteria": [
+          "Admin can create new league with name and description",
+          "Admin can edit existing league details",
+          "Admin can delete league (blocked if it has sessions)",
+          "Admin can toggle league active/inactive status",
+          "League changes reflect immediately in session dropdowns",
+          "Proper validation messages for all operations",
+          "Non-admin users cannot access league management endpoints"
+        ]
+      },
+      {
+        "name": "Editable User Profile with Phone Number",
+        "description": "Allow users to view and edit their own profile information including phone number",
+        "estimated_hours": "2-3 hours",
+        "tasks": [
+          {
+            "component": "Backend API",
+            "items": [
+              "Add PhoneNumber field to ApplicationUser model (if not exists)",
+              "Add PUT /api/users/profile endpoint (update user profile)",
+              "Validation: Email format, phone format (optional), name required",
+              "Prevent email changes if user has registrations (or require re-verification)",
+              "Return updated user data after successful update",
+              "Migration: Add PhoneNumber to Users table if needed"
+            ]
+          },
+          {
+            "component": "Frontend UI",
+            "items": [
+              "Update profile component to show editable form (not read-only)",
+              "Add 'Edit' button to toggle between view and edit mode",
+              "Form fields: First Name, Last Name, Email, Phone Number",
+              "Phone number formatting: (555) 555-5555 display format",
+              "Client-side validation: Required fields, email format, phone format",
+              "Save/Cancel buttons in edit mode",
+              "Success message after profile update",
+              "Update navigation bar to reflect name changes immediately"
+            ]
+          }
+        ],
+        "acceptance_criteria": [
+          "User can view their profile information",
+          "User can edit their name and phone number",
+          "Email field is read-only or shows warning about registration impact",
+          "Phone number accepts various formats and displays consistently",
+          "Profile updates are saved and reflected throughout the app",
+          "Validation errors are displayed clearly",
+          "User cannot update another user's profile"
+        ]
+      },
+      {
+        "name": "Home Page Redesign with Hero Section",
+        "description": "Redesign home page with hero section featuring facility intro and photo, plus expanded service offerings",
+        "estimated_hours": "4-5 hours",
+        "tasks": [
+          {
+            "component": "Frontend UI - Hero Section",
+            "items": [
+              "Create hero section component with background image/photo",
+              "Headline: Hockey rink name/tagline (configurable)",
+              "Subheading: Brief intro about the facility (2-3 sentences)",
+              "CTA buttons: 'View Leagues', 'Register Now', 'Learn More'",
+              "Responsive design: Full-height on desktop, adjusted on mobile",
+              "Add placeholder image or stock hockey rink photo",
+              "Overlay gradient for text readability"
+            ]
+          },
+          {
+            "component": "Frontend UI - Service Categories",
+            "items": [
+              "Redesign home page content below hero section",
+              "Create service category cards: Youth Hockey Leagues, Clinics, Training, Girls Figure Skating, Open Ice Time",
+              "Each card shows: Icon, Title, Brief Description, 'Learn More' link",
+              "Grid layout: 2 columns on mobile, 3-4 columns on desktop",
+              "Add icons for each service category (Bootstrap Icons or Font Awesome)",
+              "Brief descriptions for each service (placeholder text)"
+            ]
+          },
+          {
+            "component": "Content Updates",
+            "items": [
+              "Youth Hockey Leagues: 'Competitive leagues for ages 6-18...'",
+              "Clinics: 'Specialized skill development programs...'",
+              "Training: 'Personal and team training sessions...'",
+              "Girls Figure Skating: 'Figure skating programs for all skill levels...'",
+              "Open Ice Time: 'Public skating sessions and ice rental...'",
+              "Move existing league browsing further down or integrate into categories",
+              "Add 'About Us' section with facility details (optional)"
+            ]
+          }
+        ],
+        "acceptance_criteria": [
+          "Hero section displays prominently with engaging photo and text",
+          "Service categories are clearly presented with icons and descriptions",
+          "CTA buttons navigate to appropriate pages",
+          "Page is fully responsive on mobile, tablet, and desktop",
+          "Content is well-organized and easy to scan",
+          "Hero image loads quickly and looks professional",
+          "Navigation flows logically from hero to services to existing content"
+        ]
+      },
+      {
+        "name": "Footer with Social Media Icons",
+        "description": "Add footer component with social media links for Facebook, X (Twitter), and Instagram",
+        "estimated_hours": "1-2 hours",
+        "tasks": [
+          {
+            "component": "Frontend UI",
+            "items": [
+              "Create footer component (shared across all pages)",
+              "Add social media icons: Facebook, X (Twitter), Instagram",
+              "Use Bootstrap Icons or Font Awesome for social icons",
+              "Icon links: Facebook (https://facebook.com/placeholder), X (https://x.com/placeholder), Instagram (https://instagram.com/placeholder)",
+              "Footer sections: Social Media, Quick Links, Contact Info, Copyright",
+              "Quick Links: Home, Leagues, About, Contact",
+              "Contact Info: Address, Phone, Email (placeholder content)",
+              "Copyright: '© 2025 Hockey Rink Name. All rights reserved.'",
+              "Style: Dark background with light text, sticky to bottom",
+              "Ensure footer is included in app.component.html or layout"
+            ]
+          }
+        ],
+        "acceptance_criteria": [
+          "Footer appears on all pages",
+          "Social media icons are clearly visible and styled",
+          "Social media links open in new tab (target='_blank')",
+          "Quick links navigate correctly",
+          "Footer is responsive and looks good on all screen sizes",
+          "Footer stays at bottom of page even with little content",
+          "Icons have hover effects for better UX"
+        ]
+      },
+      {
+        "name": "Database and Model Enhancements",
+        "description": "Support expanded service offerings with new models/fields if needed",
+        "estimated_hours": "2 hours (optional/future)",
+        "tasks": [
+          {
+            "component": "Planning/Discussion",
+            "items": [
+              "Discuss whether to add ServiceType enum (HockeyLeague, Clinic, Training, FigureSkating, OpenIce)",
+              "Decide if Sessions should have ServiceType field or if separate tables are needed",
+              "Plan for future: Clinic schedules, training bookings, open ice time slots",
+              "Consider adding Category or Tags to sessions for filtering",
+              "Week 9 can focus on UI/UX, with backend expansion in Week 10+"
+            ]
+          }
+        ],
+        "acceptance_criteria": [
+          "Design decisions documented for future implementation",
+          "UI is flexible enough to accommodate new service types",
+          "Existing session/league structure can be extended without major refactoring"
+        ]
+      }
+    ],
+    "priority_order": [
+      "1. Migration: Add PhoneNumber to ApplicationUser if needed",
+      "2. Backend: User profile update endpoint (PUT /api/users/profile)",
+      "3. Frontend: Editable user profile form with phone number field",
+      "4. Frontend: Footer component with social media icons and quick links",
+      "5. Frontend: Home page hero section with image and intro text",
+      "6. Frontend: Service category cards (Youth Hockey, Clinics, Training, Figure Skating, Open Ice)",
+      "7. Content: Write placeholder descriptions for each service category",
+      "8. Migration: Add IsActive, CreatedAt, LastModified to League model",
+      "9. Backend: League CRUD endpoints (POST, PUT, DELETE /api/admin/leagues)",
+      "10. Frontend: Admin league management component (table, modals, CRUD operations)",
+      "11. Testing: Profile updates, league management, responsive layout",
+      "12. Polish: Hero image optimization, footer styling, mobile responsiveness"
+    ],
+    "estimated_completion": "End of Week 9 (early January 2026)",
+    "notes": [
+      "Hero section image should be high-quality and optimized for web",
+      "Social media links are placeholders - update with real URLs when available",
+      "Service categories (Clinics, Training, etc.) are UI-only for now - backend expansion in future weeks",
+      "Phone number field is optional - users not required to provide it",
+      "Consider phone number formatting library (e.g., libphonenumber-js) for better validation",
+      "League deletion should be soft delete (IsActive=false) to preserve historical data",
+      "Ensure user profile updates don't break existing registrations",
+      "Footer should be semantic HTML (<footer>) for accessibility",
+      "Quick Links in footer should match main navigation",
+      "Test hero section on various screen sizes and browsers"
+    ]
+  },
   "repo": "https://github.com/Dean92/hockey-rink-website"
 }

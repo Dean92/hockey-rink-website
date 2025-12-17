@@ -54,7 +54,7 @@ export class AdminSessions implements OnInit {
       startDate: ['', Validators.required],
       endDate: ['', Validators.required],
       fee: [0],
-      isActive: [true],
+      isActive: [false],
       leagueId: ['', Validators.required],
       maxPlayers: [
         20,
@@ -128,7 +128,7 @@ export class AdminSessions implements OnInit {
       startDate: '',
       endDate: '',
       fee: 0,
-      isActive: true,
+      isActive: false,
       leagueId: '',
       maxPlayers: 20,
       registrationOpenDate: '',
@@ -188,12 +188,21 @@ export class AdminSessions implements OnInit {
 
     const formData = this.sessionForm.value;
 
-    // Convert empty strings to null for datetime fields
+    // Helper function to convert local datetime-local input to UTC ISO string
+    const toUTC = (dateTimeLocal: string | null): string | null => {
+      if (!dateTimeLocal) return null;
+      // datetime-local gives us a string like "2025-12-16T16:20"
+      // We need to treat this as local time and convert to UTC
+      const localDate = new Date(dateTimeLocal);
+      return localDate.toISOString();
+    };
+
+    // Convert empty strings to null for datetime fields and convert to UTC
     const cleanedData = {
       ...formData,
-      registrationOpenDate: formData.registrationOpenDate || null,
-      registrationCloseDate: formData.registrationCloseDate || null,
-      earlyBirdEndDate: formData.earlyBirdEndDate || null,
+      registrationOpenDate: toUTC(formData.registrationOpenDate),
+      registrationCloseDate: toUTC(formData.registrationCloseDate),
+      earlyBirdEndDate: toUTC(formData.earlyBirdEndDate),
     };
 
     // Log the datetime values being sent
@@ -296,7 +305,23 @@ export class AdminSessions implements OnInit {
   }
 
   formatDateTimeForInput(dateString: string): string {
-    const date = new Date(dateString);
+    // Ensure the date string is treated as UTC by appending 'Z' if it doesn't have timezone info
+    let utcString = dateString;
+    if (
+      !dateString.endsWith('Z') &&
+      !dateString.includes('+') &&
+      !dateString.includes('T')
+    ) {
+      // If it's just a date without time, don't modify
+      return dateString;
+    }
+    if (!dateString.endsWith('Z') && !dateString.includes('+')) {
+      // Add 'Z' to indicate UTC if not present
+      utcString = dateString + 'Z';
+    }
+
+    const date = new Date(utcString);
+
     // Return YYYY-MM-DDTHH:mm format for datetime-local inputs in local time
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
