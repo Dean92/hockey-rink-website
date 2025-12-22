@@ -120,8 +120,8 @@
                 </div>
               </div>
 
-              @if (league.registrationOpenDate && league.registrationCloseDate)
-              {
+              @if (league.registrationOpenDate && league.registrationCloseDate
+              && !hasLeagueStarted(league)) {
               <div class="detail-row mb-3">
                 <div class="d-flex align-items-center">
                   <i class="bi bi-clock-fill fs-4 text-info me-3"></i>

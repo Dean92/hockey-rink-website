@@ -70,4 +70,9 @@ export interface SessionRegistrationRequest {
   email: string;
   dateOfBirth: string;
   position?: string;
+  // Payment information
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+  cardholderName: string;
 }

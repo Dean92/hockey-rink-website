@@ -11,6 +11,8 @@ import {
 import { CommonModule, DatePipe } from '@angular/common';
 import { Session, SessionRegistrationRequest } from '../models';
 import { provideNgxMask, NgxMaskDirective } from 'ngx-mask';
+import { ToastService } from '../services/toast.service';
+import { ToastContainerComponent } from '../toast-container/toast-container.component';
 
 @Component({
   selector: 'app-session-registration',
@@ -21,6 +23,7 @@ import { provideNgxMask, NgxMaskDirective } from 'ngx-mask';
     DatePipe,
     RouterLink,
     NgxMaskDirective,
+    ToastContainerComponent,
   ],
   providers: [provideNgxMask()],
   templateUrl: './session-registration.html',
@@ -34,15 +37,18 @@ export class SessionRegistration implements OnInit {
   registrationForm: FormGroup;
   selectedSession = signal<Session | null>(null);
   currentStep = signal<number>(1);
+  isProcessingPayment = signal<boolean>(false);
 
   constructor(
     private authService: AuthService,
     private dataService: DataService,
     private router: Router,
     private route: ActivatedRoute,
-    private formBuilder: FormBuilder
+    private formBuilder: FormBuilder,
+    private toastService: ToastService
   ) {
     this.registrationForm = this.formBuilder.group({
+      // Step 1: Personal Information
       sessionId: ['', Validators.required],
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
@@ -54,6 +60,14 @@ export class SessionRegistration implements OnInit {
       zipCode: [''],
       position: [''],
       agreeToTerms: [false, Validators.requiredTrue],
+      // Step 2: Payment Information
+      cardNumber: ['', [Validators.required, Validators.pattern(/^\d{16}$/)]],
+      expiryDate: [
+        '',
+        [Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])\/\d{2}$/)],
+      ],
+      cvv: ['', [Validators.required, Validators.pattern(/^\d{3,4}$/)]],
+      cardholderName: ['', Validators.required],
     });
   }
 
@@ -112,7 +126,9 @@ export class SessionRegistration implements OnInit {
     }
   }
 
-  getSessionPrice(session: Session): number {
+  getSessionPrice(session: Session | null): number {
+    if (!session) return 0;
+
     const now = new Date();
     if (session.earlyBirdPrice && session.earlyBirdEndDate) {
       const earlyBirdEnd = new Date(session.earlyBirdEndDate);
@@ -125,8 +141,15 @@ export class SessionRegistration implements OnInit {
 
   nextStep() {
     if (this.currentStep() === 1) {
-      // Validate Step 1 fields
-      const step1Fields = ['sessionId', 'name', 'email', 'dateOfBirth'];
+      // Validate Step 1 fields (personal info + terms)
+      const step1Fields = [
+        'sessionId',
+        'name',
+        'email',
+        'dateOfBirth',
+        'phone',
+        'agreeToTerms',
+      ];
       let isValid = true;
 
       step1Fields.forEach((field) => {
@@ -137,9 +160,16 @@ export class SessionRegistration implements OnInit {
         }
       });
 
-      if (isValid) {
+      // Ensure session is selected
+      if (!this.selectedSession()) {
+        this.onSessionChange();
+      }
+
+      if (isValid && this.selectedSession()) {
         this.currentStep.set(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (!this.selectedSession()) {
+        this.errorMessage.set('Please select a session');
       }
     }
   }
@@ -160,12 +190,63 @@ export class SessionRegistration implements OnInit {
     );
   }
 
+  isStep1Valid(): boolean {
+    const step1Fields = [
+      'sessionId',
+      'name',
+      'email',
+      'dateOfBirth',
+      'phone',
+      'agreeToTerms',
+    ];
+
+    return step1Fields.every((field) => {
+      const control = this.registrationForm.get(field);
+      return control && control.valid;
+    });
+  }
+
+  // Format card number with spaces (XXXX XXXX XXXX XXXX)
+  formatCardNumber(event: any) {
+    let value = event.target.value.replace(/\s/g, '');
+    if (value.length > 16) {
+      value = value.substring(0, 16);
+    }
+    const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+    this.registrationForm.patchValue(
+      { cardNumber: value },
+      { emitEvent: false }
+    );
+    event.target.value = formatted;
+  }
+
+  // Format expiry date (MM/YY)
+  formatExpiryDate(event: any) {
+    let value = event.target.value.replace(/\D/g, '');
+    if (value.length >= 2) {
+      value = value.substring(0, 2) + '/' + value.substring(2, 4);
+    }
+    event.target.value = value;
+    this.registrationForm.patchValue({ expiryDate: value });
+  }
+
+  // Format CVV (digits only)
+  formatCvv(event: any) {
+    let value = event.target.value.replace(/\D/g, '');
+    if (value.length > 4) {
+      value = value.substring(0, 4);
+    }
+    event.target.value = value;
+    this.registrationForm.patchValue({ cvv: value });
+  }
+
   onRegister() {
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
     if (this.registrationForm.invalid) {
       this.registrationForm.markAllAsTouched();
+      this.errorMessage.set('Please fill out all required fields correctly');
       return;
     }
 
@@ -176,6 +257,7 @@ export class SessionRegistration implements OnInit {
     }
 
     this.isLoading.set(true);
+    this.isProcessingPayment.set(true);
     const formValue = this.registrationForm.value;
 
     const registration: SessionRegistrationRequest = {
@@ -189,15 +271,23 @@ export class SessionRegistration implements OnInit {
       state: formValue.state || undefined,
       zipCode: formValue.zipCode || undefined,
       position: formValue.position || undefined,
+      cardNumber: formValue.cardNumber,
+      expiryDate: formValue.expiryDate,
+      cvv: formValue.cvv,
+      cardholderName: formValue.cardholderName,
     };
 
     this.dataService.registerSession(registration).subscribe({
       next: (response) => {
         console.log('Session registration successful:', response);
-        this.successMessage.set(
-          `Successfully registered for ${session?.name}! Redirecting...`
-        );
         this.isLoading.set(false);
+        this.isProcessingPayment.set(false);
+
+        // Show success toast
+        this.toastService.success(
+          'Transaction Successful!',
+          `You're all set for ${session?.name}. Redirecting to dashboard...`
+        );
 
         // Redirect to dashboard after 2 seconds
         setTimeout(() => {
@@ -206,10 +296,18 @@ export class SessionRegistration implements OnInit {
       },
       error: (err) => {
         console.error('Session registration failed:', err);
-        this.errorMessage.set(
+        this.isProcessingPayment.set(false);
+
+        const errorMsg =
+          err.error?.error ||
           err.error?.message ||
-            'Failed to register for session. Please try again.'
-        );
+          'Registration failed. Please check your payment information and try again.';
+
+        this.errorMessage.set(errorMsg);
+
+        // Show error toast
+        this.toastService.error('Payment Failed', errorMsg);
+
         this.isLoading.set(false);
       },
     });

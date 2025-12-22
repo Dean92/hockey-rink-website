@@ -20,18 +20,21 @@ public class SessionsController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
     private readonly MockStripeService _stripeService;
+    private readonly IPaymentService _paymentService;
     private readonly ILogger<SessionsController> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
 
     public SessionsController(
         AppDbContext dbContext,
         MockStripeService stripeService,
+        IPaymentService paymentService,
         ILogger<SessionsController> logger,
         UserManager<ApplicationUser> userManager
     )
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _stripeService = stripeService ?? throw new ArgumentNullException(nameof(stripeService));
+        _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
     }
@@ -344,32 +347,67 @@ public class SessionsController : ControllerBase
             _dbContext.SessionRegistrations.Add(registration);
             await _dbContext.SaveChangesAsync();
 
-            // Process payment
-            var transactionId = await _stripeService.ProcessPayment(amountToCharge);
+            // Process payment using MockPaymentService
+            _logger.LogInformation("Processing payment for session {SessionId}, amount: {Amount}",
+                model.SessionId, amountToCharge);
+
+            var paymentRequest = new PaymentRequest
+            {
+                CardNumber = model.CardNumber,
+                ExpiryDate = model.ExpiryDate,
+                Cvv = model.Cvv,
+                CardholderName = model.CardholderName,
+                Amount = amountToCharge,
+                Description = $"Registration for {session.Name}"
+            };
+
+            var paymentResponse = await _paymentService.ProcessPaymentAsync(paymentRequest);
+
+            if (!paymentResponse.Success)
+            {
+                _logger.LogWarning("Payment failed for session {SessionId}: {Error}",
+                    model.SessionId, paymentResponse.ErrorMessage);
+
+                // Remove the registration since payment failed
+                _dbContext.SessionRegistrations.Remove(registration);
+                await _dbContext.SaveChangesAsync();
+
+                return BadRequest(new
+                {
+                    message = "Payment failed",
+                    error = paymentResponse.ErrorMessage
+                });
+            }
+
+            // Payment successful - create payment record
             var payment = new Payment
             {
                 SessionRegistrationId = registration.Id,
                 Amount = amountToCharge,
-                TransactionId = transactionId,
+                TransactionId = paymentResponse.TransactionId!,
                 Status = "Success",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = paymentResponse.ProcessedAt,
             };
             _dbContext.Payments.Add(payment);
             registration.PaymentStatus = "Paid";
+            registration.PaymentDate = paymentResponse.ProcessedAt;
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation(
-                "User {Email} registered for session {SessionId} with transaction {TransactionId}, amount: {Amount}",
+                "User {Email} registered for session {SessionId} with transaction {TransactionId}, amount: ${Amount}",
                 user.Email,
                 model.SessionId,
-                transactionId,
+                paymentResponse.TransactionId,
                 amountToCharge
             );
+
             return Ok(new
             {
-                message = "Registered for session successfully",
+                message = $"Successfully registered for {session.Name}",
                 amountPaid = amountToCharge,
-                transactionId = transactionId
+                transactionId = paymentResponse.TransactionId,
+                sessionName = session.Name,
+                startDate = session.StartDate
             });
         }
         catch (Exception ex)
@@ -483,4 +521,21 @@ public class SessionRegistrationModel
 
     [StringLength(20)]
     public string? Position { get; set; } // Forward, Defense, Forward/Defense, Goalie
+
+    // Payment fields
+    [Required]
+    [StringLength(16, MinimumLength = 16)]
+    public string CardNumber { get; set; } = string.Empty;
+
+    [Required]
+    [RegularExpression(@"^(0[1-9]|1[0-2])\/\d{2}$", ErrorMessage = "Expiry date must be in MM/YY format")]
+    public string ExpiryDate { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(4, MinimumLength = 3)]
+    public string Cvv { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(100, MinimumLength = 3)]
+    public string CardholderName { get; set; } = string.Empty;
 }

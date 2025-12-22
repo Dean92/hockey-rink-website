@@ -137,4 +137,11 @@ export class Leagues implements OnInit {
 
     return 'Registration Fee';
   }
+
+  hasLeagueStarted(league: League): boolean {
+    const now = new Date();
+    const startDate = league.startDate || league.expectedStartDate;
+    if (!startDate) return false;
+    return new Date(startDate) < now;
+  }
 }

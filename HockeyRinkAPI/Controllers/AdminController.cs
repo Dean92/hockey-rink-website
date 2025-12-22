@@ -377,38 +377,9 @@ public class AdminController : ControllerBase
             session.EndDate = model.EndDate;
             session.Fee = model.RegularPrice ?? model.Fee; // Use RegularPrice as Fee if provided
 
-            // Auto-activate/deactivate based on RegistrationOpenDate
-            var now = DateTime.UtcNow;
-            if (model.RegistrationOpenDate.HasValue)
-            {
-                if (model.RegistrationOpenDate.Value <= now)
-                {
-                    // Registration has opened - auto-activate
-                    session.IsActive = true;
-                    _logger.LogInformation(
-                        "Auto-activating session {SessionId} during update - Registration opened at: {RegOpenDate}, Current time: {Now}",
-                        id,
-                        model.RegistrationOpenDate.Value,
-                        now
-                    );
-                }
-                else
-                {
-                    // Registration hasn't opened yet - auto-deactivate
-                    session.IsActive = false;
-                    _logger.LogInformation(
-                        "Auto-deactivating session {SessionId} during update - Registration opens at: {RegOpenDate}, Current time: {Now}",
-                        id,
-                        model.RegistrationOpenDate.Value,
-                        now
-                    );
-                }
-            }
-            else
-            {
-                // No registration date - use the value from the form
-                session.IsActive = model.IsActive;
-            }
+            // Respect admin's manual status setting
+            // Only auto-activate/deactivate if no RegistrationOpenDate is set
+            session.IsActive = model.IsActive;
 
             session.LeagueId = model.LeagueId;
             session.MaxPlayers = model.MaxPlayers;
