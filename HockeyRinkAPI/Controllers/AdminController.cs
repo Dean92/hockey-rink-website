@@ -554,6 +554,41 @@ public class AdminController : ControllerBase
             if (!string.IsNullOrEmpty(model.Email))
             {
                 user = await _userManager.FindByEmailAsync(model.Email);
+
+                // If user doesn't exist, create one for manual registration
+                if (user == null)
+                {
+                    user = new ApplicationUser
+                    {
+                        UserName = model.Email,
+                        Email = model.Email,
+                        FirstName = model.Name.Split(' ').FirstOrDefault() ?? model.Name,
+                        LastName = model.Name.Split(' ').Skip(1).FirstOrDefault() ?? "",
+                        Address = model.Address,
+                        City = model.City,
+                        State = model.State,
+                        ZipCode = model.ZipCode,
+                        Phone = model.Phone,
+                        DateOfBirth = model.DateOfBirth,
+                        Position = model.Position,
+                        IsManuallyRegistered = true,
+                        PasswordSetupToken = Guid.NewGuid().ToString(),
+                        PasswordSetupTokenExpiry = DateTime.UtcNow.AddDays(7),
+                        EmailConfirmed = false
+                    };
+
+                    var result = await _userManager.CreateAsync(user);
+                    if (!result.Succeeded)
+                    {
+                        return BadRequest(new { message = "Failed to create user account", errors = result.Errors });
+                    }
+
+                    _logger.LogInformation(
+                        "Created manual registration user account for {Email} with setup token {Token}",
+                        user.Email,
+                        user.PasswordSetupToken
+                    );
+                }
             }
 
             // Create registration
@@ -596,7 +631,13 @@ public class AdminController : ControllerBase
                 id
             );
 
-            return Ok(new { message = $"{model.Name} successfully registered for session", registrationId = registration.Id });
+            return Ok(new
+            {
+                message = $"{model.Name} successfully registered for session",
+                registrationId = registration.Id,
+                passwordSetupToken = user?.PasswordSetupToken,
+                passwordSetupRequired = user?.IsManuallyRegistered ?? false
+            });
         }
         catch (Exception ex)
         {

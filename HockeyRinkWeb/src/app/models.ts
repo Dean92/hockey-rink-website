@@ -43,6 +43,13 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   leagueId?: number;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  position?: string;
 }
 
 export interface DashboardData {

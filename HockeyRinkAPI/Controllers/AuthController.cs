@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using HockeyRinkAPI.Models;
@@ -227,6 +229,105 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "ValidateTokenAsync - Exception occurred");
             return false;
+        }
+    }
+
+    // Validate password setup token
+    [HttpGet("setup-password/{token}")]
+    public async Task<IActionResult> ValidatePasswordSetupToken(string token)
+    {
+        try
+        {
+            var user = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.PasswordSetupToken == token);
+
+            if (user == null)
+            {
+                return NotFound(new { message = "Invalid or expired token" });
+            }
+
+            if (!user.PasswordSetupTokenExpiry.HasValue ||
+                user.PasswordSetupTokenExpiry.Value < DateTime.UtcNow)
+            {
+                return BadRequest(new { message = "Token has expired" });
+            }
+
+            return Ok(new
+            {
+                email = user.Email,
+                firstName = user.FirstName,
+                lastName = user.LastName
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating password setup token");
+            return StatusCode(500, new { error = "Internal Server Error" });
+        }
+    }
+
+    // Setup password for manually registered user
+    [HttpPost("setup-password")]
+    public async Task<IActionResult> SetupPassword([FromBody] SetupPasswordModel model)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.PasswordSetupToken == model.Token);
+
+            if (user == null)
+            {
+                return NotFound(new { message = "Invalid or expired token" });
+            }
+
+            if (!user.PasswordSetupTokenExpiry.HasValue ||
+                user.PasswordSetupTokenExpiry.Value < DateTime.UtcNow)
+            {
+                return BadRequest(new { message = "Token has expired" });
+            }
+
+            // Set the password
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, model.Password);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return BadRequest(ModelState);
+            }
+
+            // Clear setup token and mark as not manually registered anymore
+            user.PasswordSetupToken = null;
+            user.PasswordSetupTokenExpiry = null;
+            user.IsManuallyRegistered = false;
+            user.EmailConfirmed = true;
+
+            await _userManager.UpdateAsync(user);
+
+            // Sign the user in
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            var authToken = GenerateToken(user);
+
+            _logger.LogInformation("User {Email} completed password setup", user.Email);
+
+            return Ok(new
+            {
+                message = "Password setup successful",
+                token = authToken
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error setting up password");
+            return StatusCode(500, new { error = "Internal Server Error" });
         }
     }
 }

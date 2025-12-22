@@ -172,4 +172,44 @@ export class DataService {
       }
     );
   }
+
+  validatePasswordSetupToken(token: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/auth/setup-password/${token}`, {
+      withCredentials: true,
+    });
+  }
+
+  setupPassword(data: {
+    token: string;
+    password: string;
+    confirmPassword: string;
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/setup-password`, data, {
+      withCredentials: true,
+    });
+  }
+
+  updateProfile(data: {
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    phone?: string;
+    dateOfBirth?: string;
+    position?: string;
+  }): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put(`${this.apiUrl}/users/profile`, data, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  getMySessions(): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get(`${this.apiUrl}/users/my-sessions`, {
+      headers,
+      withCredentials: true,
+    });
+  }
 }

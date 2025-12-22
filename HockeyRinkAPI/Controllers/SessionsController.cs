@@ -326,6 +326,21 @@ public class SessionsController : ControllerBase
                 return BadRequest(new { message = "You must be at least 18 years old to register" });
             }
 
+            // Update user profile with registration information
+            user.Address = model.Address;
+            user.City = model.City;
+            user.State = model.State;
+            user.ZipCode = model.ZipCode;
+            user.Phone = model.Phone;
+            user.DateOfBirth = model.DateOfBirth;
+            user.Position = model.Position;
+
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                _logger.LogWarning("Failed to update user profile during registration");
+            }
+
             var registration = new SessionRegistration
             {
                 UserId = userId,

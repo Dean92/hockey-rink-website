@@ -446,8 +446,21 @@ export class AdminSessions implements OnInit {
       this.dataService
         .addManualRegistration(current.id, this.manualRegistrationForm.value)
         .subscribe({
-          next: () => {
-            this.successMessage.set('User successfully added to session');
+          next: (response: any) => {
+            // Show password setup link if applicable
+            if (response.passwordSetupRequired && response.passwordSetupToken) {
+              const setupLink = `${window.location.origin}/setup-password/${response.passwordSetupToken}`;
+              this.successMessage.set(
+                `User successfully added! Password setup link: ${setupLink}`
+              );
+              // Copy to clipboard
+              navigator.clipboard.writeText(setupLink).catch(() => {
+                console.warn('Failed to copy to clipboard');
+              });
+            } else {
+              this.successMessage.set('User successfully added to session');
+            }
+
             this.closeAddRegistrationModal();
             // Reload registrations if modal is open, then reload sessions
             if (this.showRegistrationsModal()) {
