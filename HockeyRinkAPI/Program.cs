@@ -109,6 +109,7 @@ public class Program
             });
 
         builder.Services.AddTransient<MockStripeService>();
+        builder.Services.AddScoped<IPaymentService, MockPaymentService>();
 
         // Configure Swagger
         builder.Services.AddSwaggerGen(c =>

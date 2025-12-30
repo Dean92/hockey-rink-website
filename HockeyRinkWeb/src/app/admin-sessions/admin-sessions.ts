@@ -47,6 +47,7 @@ export class AdminSessions implements OnInit {
   currentSession = signal<any>(null);
   registrations = signal<any[]>([]);
   registrationToRemove = signal<any>(null);
+  passwordSetupLink = signal<string | null>(null);
 
   constructor(private dataService: DataService, private fb: FormBuilder) {
     this.sessionForm = this.fb.group({
@@ -54,7 +55,7 @@ export class AdminSessions implements OnInit {
       startDate: ['', Validators.required],
       endDate: ['', Validators.required],
       fee: [0],
-      isActive: [true],
+      isActive: [false],
       leagueId: ['', Validators.required],
       maxPlayers: [
         20,
@@ -128,7 +129,7 @@ export class AdminSessions implements OnInit {
       startDate: '',
       endDate: '',
       fee: 0,
-      isActive: true,
+      isActive: false,
       leagueId: '',
       maxPlayers: 20,
       registrationOpenDate: '',
@@ -188,12 +189,21 @@ export class AdminSessions implements OnInit {
 
     const formData = this.sessionForm.value;
 
-    // Convert empty strings to null for datetime fields
+    // Helper function to convert local datetime-local input to UTC ISO string
+    const toUTC = (dateTimeLocal: string | null): string | null => {
+      if (!dateTimeLocal) return null;
+      // datetime-local gives us a string like "2025-12-16T16:20"
+      // We need to treat this as local time and convert to UTC
+      const localDate = new Date(dateTimeLocal);
+      return localDate.toISOString();
+    };
+
+    // Convert empty strings to null for datetime fields and convert to UTC
     const cleanedData = {
       ...formData,
-      registrationOpenDate: formData.registrationOpenDate || null,
-      registrationCloseDate: formData.registrationCloseDate || null,
-      earlyBirdEndDate: formData.earlyBirdEndDate || null,
+      registrationOpenDate: toUTC(formData.registrationOpenDate),
+      registrationCloseDate: toUTC(formData.registrationCloseDate),
+      earlyBirdEndDate: toUTC(formData.earlyBirdEndDate),
     };
 
     // Log the datetime values being sent
@@ -296,7 +306,23 @@ export class AdminSessions implements OnInit {
   }
 
   formatDateTimeForInput(dateString: string): string {
-    const date = new Date(dateString);
+    // Ensure the date string is treated as UTC by appending 'Z' if it doesn't have timezone info
+    let utcString = dateString;
+    if (
+      !dateString.endsWith('Z') &&
+      !dateString.includes('+') &&
+      !dateString.includes('T')
+    ) {
+      // If it's just a date without time, don't modify
+      return dateString;
+    }
+    if (!dateString.endsWith('Z') && !dateString.includes('+')) {
+      // Add 'Z' to indicate UTC if not present
+      utcString = dateString + 'Z';
+    }
+
+    const date = new Date(utcString);
+
     // Return YYYY-MM-DDTHH:mm format for datetime-local inputs in local time
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -421,8 +447,28 @@ export class AdminSessions implements OnInit {
       this.dataService
         .addManualRegistration(current.id, this.manualRegistrationForm.value)
         .subscribe({
-          next: () => {
-            this.successMessage.set('User successfully added to session');
+          next: (response: any) => {
+            // Show password setup link if applicable
+            if (response.passwordSetupRequired && response.passwordSetupToken) {
+              const setupLink = `${window.location.origin}/setup-password/${response.passwordSetupToken}`;
+              this.passwordSetupLink.set(setupLink);
+              this.successMessage.set(
+                `User successfully added! New user needs to set up their password.`
+              );
+              // Copy to clipboard
+              navigator.clipboard
+                .writeText(setupLink)
+                .then(() => {
+                  console.log('Password setup link copied to clipboard');
+                })
+                .catch(() => {
+                  console.warn('Failed to copy to clipboard');
+                });
+            } else {
+              this.successMessage.set('User successfully added to session');
+              this.passwordSetupLink.set(null);
+            }
+
             this.closeAddRegistrationModal();
             // Reload registrations if modal is open, then reload sessions
             if (this.showRegistrationsModal()) {
@@ -508,5 +554,24 @@ export class AdminSessions implements OnInit {
         this.isLoading.set(false);
       },
     });
+  }
+
+  copyPasswordSetupLink(): void {
+    const link = this.passwordSetupLink();
+    if (link) {
+      navigator.clipboard
+        .writeText(link)
+        .then(() => {
+          // Show a brief success indication
+          const originalMessage = this.successMessage();
+          this.successMessage.set('Password setup link copied to clipboard!');
+          setTimeout(() => {
+            this.successMessage.set(originalMessage);
+          }, 2000);
+        })
+        .catch(() => {
+          console.error('Failed to copy to clipboard');
+        });
+    }
   }
 }

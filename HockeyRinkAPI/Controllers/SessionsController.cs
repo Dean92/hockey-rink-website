@@ -20,18 +20,21 @@ public class SessionsController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
     private readonly MockStripeService _stripeService;
+    private readonly IPaymentService _paymentService;
     private readonly ILogger<SessionsController> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
 
     public SessionsController(
         AppDbContext dbContext,
         MockStripeService stripeService,
+        IPaymentService paymentService,
         ILogger<SessionsController> logger,
         UserManager<ApplicationUser> userManager
     )
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _stripeService = stripeService ?? throw new ArgumentNullException(nameof(stripeService));
+        _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
     }
@@ -49,35 +52,6 @@ public class SessionsController : ControllerBase
                 leagueId,
                 date
             );
-
-            // Check for token-based auth first
-            var authHeader = Request.Headers.Authorization.FirstOrDefault();
-            _logger.LogInformation("GetSessions - Authorization header: {AuthHeader}", authHeader);
-
-            bool isAuthenticated = false;
-
-            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
-            {
-                var token = authHeader.Substring("Bearer ".Length);
-                _logger.LogInformation("GetSessions - Token extracted: {Token}", token);
-                isAuthenticated = await ValidateTokenAsync(token);
-                _logger.LogInformation(
-                    "GetSessions - Token validation result: {IsAuthenticated}",
-                    isAuthenticated
-                );
-            }
-            // Fall back to cookie auth
-            else if (HttpContext.User.Identity?.IsAuthenticated == true)
-            {
-                _logger.LogInformation("GetSessions - Cookie authenticated");
-                isAuthenticated = true;
-            }
-
-            if (!isAuthenticated)
-            {
-                _logger.LogWarning("GetSessions - Not authenticated, returning Unauthorized");
-                return Unauthorized(new { message = "Authentication required" });
-            }
 
             var sessionsQuery = _dbContext.Sessions.Include(s => s.League).Include(s => s.Registrations).AsQueryable();
 
@@ -174,8 +148,14 @@ public class SessionsController : ControllerBase
                 },
                 RegistrationCount = s.Registrations.Count,
                 SpotsLeft = s.MaxPlayers - s.Registrations.Count,
-                IsFull = s.Registrations.Count >= s.MaxPlayers
-            }).ToList();
+                IsFull = s.Registrations.Count >= s.MaxPlayers,
+                IsRegistrationOpen = (!s.RegistrationOpenDate.HasValue || s.RegistrationOpenDate.Value <= now) &&
+                                    (!s.RegistrationCloseDate.HasValue || s.RegistrationCloseDate.Value > now)
+            })
+            .OrderByDescending(s => s.IsRegistrationOpen)
+            .ThenBy(s => s.RegistrationCloseDate ?? DateTime.MaxValue)
+            .ThenBy(s => s.StartDate)
+            .ToList();
 
             _logger.LogInformation("Found {Count} sessions", sessions.Count);
 
@@ -313,14 +293,19 @@ public class SessionsController : ControllerBase
                 _logger.LogInformation("Applying early bird price: {EarlyBirdPrice}", amountToCharge);
             }
 
-            // Validate age requirement (must be 18+)
-            var age = DateTime.UtcNow.Year - model.DateOfBirth.Year;
-            if (model.DateOfBirth > DateTime.UtcNow.AddYears(-age)) age--;
+            // Update user profile with registration information
+            user.Address = model.Address;
+            user.City = model.City;
+            user.State = model.State;
+            user.ZipCode = model.ZipCode;
+            user.Phone = model.Phone;
+            user.DateOfBirth = model.DateOfBirth;
+            user.Position = model.Position;
 
-            if (age < 18)
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
             {
-                _logger.LogWarning("User age {Age} below minimum requirement", age);
-                return BadRequest(new { message = "You must be at least 18 years old to register" });
+                _logger.LogWarning("Failed to update user profile during registration");
             }
 
             var registration = new SessionRegistration
@@ -344,32 +329,67 @@ public class SessionsController : ControllerBase
             _dbContext.SessionRegistrations.Add(registration);
             await _dbContext.SaveChangesAsync();
 
-            // Process payment
-            var transactionId = await _stripeService.ProcessPayment(amountToCharge);
+            // Process payment using MockPaymentService
+            _logger.LogInformation("Processing payment for session {SessionId}, amount: {Amount}",
+                model.SessionId, amountToCharge);
+
+            var paymentRequest = new PaymentRequest
+            {
+                CardNumber = model.CardNumber,
+                ExpiryDate = model.ExpiryDate,
+                Cvv = model.Cvv,
+                CardholderName = model.CardholderName,
+                Amount = amountToCharge,
+                Description = $"Registration for {session.Name}"
+            };
+
+            var paymentResponse = await _paymentService.ProcessPaymentAsync(paymentRequest);
+
+            if (!paymentResponse.Success)
+            {
+                _logger.LogWarning("Payment failed for session {SessionId}: {Error}",
+                    model.SessionId, paymentResponse.ErrorMessage);
+
+                // Remove the registration since payment failed
+                _dbContext.SessionRegistrations.Remove(registration);
+                await _dbContext.SaveChangesAsync();
+
+                return BadRequest(new
+                {
+                    message = "Payment failed",
+                    error = paymentResponse.ErrorMessage
+                });
+            }
+
+            // Payment successful - create payment record
             var payment = new Payment
             {
                 SessionRegistrationId = registration.Id,
                 Amount = amountToCharge,
-                TransactionId = transactionId,
+                TransactionId = paymentResponse.TransactionId!,
                 Status = "Success",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = paymentResponse.ProcessedAt,
             };
             _dbContext.Payments.Add(payment);
             registration.PaymentStatus = "Paid";
+            registration.PaymentDate = paymentResponse.ProcessedAt;
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation(
-                "User {Email} registered for session {SessionId} with transaction {TransactionId}, amount: {Amount}",
+                "User {Email} registered for session {SessionId} with transaction {TransactionId}, amount: ${Amount}",
                 user.Email,
                 model.SessionId,
-                transactionId,
+                paymentResponse.TransactionId,
                 amountToCharge
             );
+
             return Ok(new
             {
-                message = "Registered for session successfully",
+                message = $"Successfully registered for {session.Name}",
                 amountPaid = amountToCharge,
-                transactionId = transactionId
+                transactionId = paymentResponse.TransactionId,
+                sessionName = session.Name,
+                startDate = session.StartDate
             });
         }
         catch (Exception ex)
@@ -483,4 +503,21 @@ public class SessionRegistrationModel
 
     [StringLength(20)]
     public string? Position { get; set; } // Forward, Defense, Forward/Defense, Goalie
+
+    // Payment fields
+    [Required]
+    [StringLength(16, MinimumLength = 16)]
+    public string CardNumber { get; set; } = string.Empty;
+
+    [Required]
+    [RegularExpression(@"^(0[1-9]|1[0-2])\/\d{2}$", ErrorMessage = "Expiry date must be in MM/YY format")]
+    public string ExpiryDate { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(4, MinimumLength = 3)]
+    public string Cvv { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(100, MinimumLength = 3)]
+    public string CardholderName { get; set; } = string.Empty;
 }

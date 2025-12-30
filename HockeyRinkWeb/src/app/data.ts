@@ -172,4 +172,67 @@ export class DataService {
       }
     );
   }
+
+  validatePasswordSetupToken(token: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/auth/setup-password/${token}`, {
+      withCredentials: true,
+    });
+  }
+
+  setupPassword(data: {
+    token: string;
+    password: string;
+    confirmPassword: string;
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/setup-password`, data, {
+      withCredentials: true,
+    });
+  }
+
+  updateProfile(data: {
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    phone?: string;
+    dateOfBirth?: string;
+    position?: string;
+  }): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put(`${this.apiUrl}/users/profile`, data, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  getMySessions(): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get(`${this.apiUrl}/users/my-sessions`, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  changePassword(data: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.post(`${this.apiUrl}/users/change-password`, data, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  cancelSessionRegistration(registrationId: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.delete(
+      `${this.apiUrl}/users/my-sessions/${registrationId}`,
+      {
+        headers,
+        withCredentials: true,
+      }
+    );
+  }
 }

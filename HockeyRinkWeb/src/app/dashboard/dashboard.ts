@@ -1,41 +1,141 @@
-import { Component, OnInit, signal } from "@angular/core";
-import { DataService } from "../data";
-import { CommonModule, DatePipe } from "@angular/common";
-import { RouterLink } from "@angular/router";
-import { DashboardData } from "../models";
+import { Component, OnInit, signal, computed } from '@angular/core';
+import { DataService } from '../data';
+import { CommonModule, DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { ToastService } from '../services/toast.service';
+import { ToastContainerComponent } from '../toast-container/toast-container.component';
 
 @Component({
-  selector: "app-dashboard",
+  selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, DatePipe, RouterLink],
-  templateUrl: "./dashboard.html",
-  styleUrls: ["./dashboard.css"],
+  imports: [CommonModule, DatePipe, RouterLink, ToastContainerComponent],
+  templateUrl: './dashboard.html',
+  styleUrls: ['./dashboard.css'],
 })
 export class Dashboard implements OnInit {
-  dashboardData = signal<DashboardData | null>(null);
+  upcomingSessions = signal<any[]>([]);
+  currentSessions = signal<any[]>([]);
+  pastSessions = signal<any[]>([]);
+  userProfile = signal<any>(null);
   errorMessage = signal<string | null>(null);
   isLoading = signal<boolean>(true);
+  sessionToCancel = signal<any>(null);
 
-  constructor(private dataService: DataService) {}
+  totalSpent = computed(() => {
+    const all = [
+      ...this.upcomingSessions(),
+      ...this.currentSessions(),
+      ...this.pastSessions(),
+    ];
+    return all.reduce((sum, s) => sum + (s.amountPaid || 0), 0);
+  });
+
+  totalSessionsCount = computed(() => {
+    return (
+      this.upcomingSessions().length +
+      this.currentSessions().length +
+      this.pastSessions().length
+    );
+  });
+
+  constructor(
+    private dataService: DataService,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit() {
-    this.loadDashboard();
+    this.loadSessions();
+    this.loadProfile();
   }
 
-  loadDashboard() {
-    this.dataService.getDashboard().subscribe({
+  loadProfile() {
+    this.dataService.getProfile().subscribe({
       next: (data) => {
-        console.log("Dashboard data loaded:", data);
-        this.dashboardData.set(data);
+        this.userProfile.set(data);
+      },
+      error: (err) => {
+        console.error('Error fetching profile:', err);
+      },
+    });
+  }
+
+  loadSessions() {
+    this.isLoading.set(true);
+    this.dataService.getMySessions().subscribe({
+      next: (data) => {
+        console.log('Sessions data loaded:', data);
+
+        // Convert UTC dates to proper Date objects
+        const convertDates = (sessions: any[]) => {
+          return sessions.map((session) => ({
+            ...session,
+            startDate: session.startDate
+              ? new Date(session.startDate + 'Z')
+              : null,
+            endDate: session.endDate ? new Date(session.endDate + 'Z') : null,
+            registrationDate: session.registrationDate
+              ? new Date(session.registrationDate + 'Z')
+              : null,
+          }));
+        };
+
+        this.upcomingSessions.set(convertDates(data.upcomingSessions || []));
+        this.currentSessions.set(convertDates(data.currentSessions || []));
+        this.pastSessions.set(convertDates(data.pastSessions || []));
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error("Error fetching dashboard:", err);
+        console.error('Error fetching sessions:', err);
         this.errorMessage.set(
-          err.error?.message || "Failed to fetch dashboard. Please try again."
+          err.error?.message || 'Failed to fetch sessions. Please try again.'
         );
         this.isLoading.set(false);
       },
     });
+  }
+
+  confirmCancel(session: any) {
+    this.sessionToCancel.set(session);
+  }
+
+  cancelConfirm() {
+    const session = this.sessionToCancel();
+    if (!session) return;
+
+    this.dataService
+      .cancelSessionRegistration(session.registrationId)
+      .subscribe({
+        next: (response) => {
+          this.toastService.success(
+            'Cancellation Request Submitted',
+            'Your cancellation request has been sent to the admin. Refunds will be processed within 7-14 business days.'
+          );
+          this.sessionToCancel.set(null);
+          this.loadSessions(); // Reload sessions
+        },
+        error: (err) => {
+          console.error('Error cancelling registration:', err);
+          this.toastService.error(
+            'Cancellation Failed',
+            err.error?.message || 'Failed to cancel registration'
+          );
+          this.sessionToCancel.set(null);
+        },
+      });
+  }
+
+  cancelDismiss() {
+    this.sessionToCancel.set(null);
+  }
+
+  canCancelSession(session: any): boolean {
+    if (!session.startDate) return false;
+
+    const startDate = new Date(session.startDate);
+    const now = new Date();
+    const daysUntilStart =
+      (startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+
+    return daysUntilStart >= 7;
   }
 }

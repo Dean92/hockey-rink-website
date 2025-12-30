@@ -1,4 +1,28 @@
 <div class="container mt-5">
+  <!-- Processing Payment Overlay -->
+  @if (isProcessingPayment()) {
+  <div
+    class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+    style="
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      backdrop-filter: blur(4px);
+    "
+  >
+    <div class="text-center">
+      <div
+        class="spinner-border text-light mb-3"
+        role="status"
+        style="width: 4rem; height: 4rem"
+      >
+        <span class="visually-hidden">Processing...</span>
+      </div>
+      <h4 class="text-light">Processing Transaction...</h4>
+      <p class="text-light">Please wait while we process your payment</p>
+    </div>
+  </div>
+  }
+
   <div class="mb-3">
     <a routerLink="/sessions" class="btn btn-outline-secondary">
       ← Back to Sessions
@@ -200,9 +224,6 @@
             @if (hasError('dateOfBirth', 'required')) {
             <div class="invalid-feedback">Date of birth is required.</div>
             }
-            <small class="form-text text-muted"
-              >You must be at least 18 years old</small
-            >
           </div>
         </div>
 
@@ -323,7 +344,7 @@
             type="button"
             class="btn btn-primary"
             (click)="nextStep()"
-            [disabled]="registrationForm.invalid || selectedSession()?.isFull"
+            [disabled]="!isStep1Valid() || selectedSession()?.isFull"
           >
             Continue to Payment and Confirmation →
           </button>
@@ -357,27 +378,148 @@
           </p>
           }
           <hr />
+          @if (selectedSession()) {
           <p class="mb-2">
             <strong>Session:</strong> {{ selectedSession()?.name }}
           </p>
           <p class="mb-2">
-            <strong>Date:</strong>
-            {{ selectedSession()?.startDate | date : "medium" }}
+            <strong>Start Date:</strong>
+            {{ selectedSession()?.startDate | date : "mediumDate" }}
+          </p>
+          <p class="mb-2">
+            <strong>End Date:</strong>
+            {{ selectedSession()?.endDate | date : "mediumDate" }}
           </p>
           <p class="mb-0 fs-5">
             <strong>Total Amount:</strong> ${{
-              getSessionPrice(selectedSession()!)
+              getSessionPrice(selectedSession())
             }}
           </p>
+          } @else {
+          <p class="mb-2 text-danger">
+            <strong>Error:</strong> Session not found. Please go back and select
+            a session.
+          </p>
+          }
         </div>
 
-        <div class="alert alert-warning">
-          <h6 class="alert-heading">Payment Information</h6>
-          <p class="mb-0">
-            <strong>Note:</strong> This is a demo registration. No actual
-            payment will be processed. In production, payment processing would
-            be integrated here.
-          </p>
+        <!-- Payment Form -->
+        <div class="card border-success mb-4">
+          <div class="card-header bg-success text-white">
+            <i class="bi bi-lock-fill me-2"></i>
+            <strong>Secure Payment</strong>
+          </div>
+          <div class="card-body">
+            <p class="text-muted small mb-3">
+              <i class="bi bi-info-circle me-1"></i>
+              Test Cards: <strong>4242 4242 4242 4242</strong> (Success) |
+              <strong>4000 0000 0000 0002</strong> (Decline)
+            </p>
+
+            <!-- Card Number -->
+            <div class="mb-3">
+              <label for="cardNumber" class="form-label"
+                >Card Number <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                formControlName="cardNumber"
+                class="form-control"
+                id="cardNumber"
+                placeholder="1234 5678 9012 3456"
+                maxlength="19"
+                (input)="formatCardNumber($event)"
+                [class.is-invalid]="
+                  hasError('cardNumber', 'required') ||
+                  hasError('cardNumber', 'pattern')
+                "
+              />
+              @if (hasError('cardNumber', 'required')) {
+              <div class="invalid-feedback">Card number is required</div>
+              } @if (hasError('cardNumber', 'pattern')) {
+              <div class="invalid-feedback">
+                Please enter a valid 16-digit card number
+              </div>
+              }
+            </div>
+
+            <div class="row">
+              <!-- Expiry Date -->
+              <div class="col-md-6 mb-3">
+                <label for="expiryDate" class="form-label"
+                  >Expiry Date <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  formControlName="expiryDate"
+                  class="form-control"
+                  id="expiryDate"
+                  placeholder="MM/YY"
+                  maxlength="5"
+                  (input)="formatExpiryDate($event)"
+                  [class.is-invalid]="
+                    hasError('expiryDate', 'required') ||
+                    hasError('expiryDate', 'pattern')
+                  "
+                />
+                @if (hasError('expiryDate', 'required')) {
+                <div class="invalid-feedback">Expiry date is required</div>
+                } @if (hasError('expiryDate', 'pattern')) {
+                <div class="invalid-feedback">Format: MM/YY</div>
+                }
+              </div>
+
+              <!-- CVV -->
+              <div class="col-md-6 mb-3">
+                <label for="cvv" class="form-label"
+                  >CVV <span class="text-danger">*</span></label
+                >
+                <input
+                  type="password"
+                  formControlName="cvv"
+                  class="form-control"
+                  id="cvv"
+                  placeholder="123"
+                  maxlength="4"
+                  (input)="formatCvv($event)"
+                  [class.is-invalid]="
+                    hasError('cvv', 'required') || hasError('cvv', 'pattern')
+                  "
+                />
+                @if (hasError('cvv', 'required')) {
+                <div class="invalid-feedback">CVV is required</div>
+                } @if (hasError('cvv', 'pattern')) {
+                <div class="invalid-feedback">CVV must be 3-4 digits</div>
+                }
+              </div>
+            </div>
+
+            <!-- Cardholder Name -->
+            <div class="mb-3">
+              <label for="cardholderName" class="form-label"
+                >Cardholder Name <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                formControlName="cardholderName"
+                class="form-control"
+                id="cardholderName"
+                placeholder="Name as it appears on card"
+                [class.is-invalid]="hasError('cardholderName', 'required')"
+              />
+              @if (hasError('cardholderName', 'required')) {
+              <div class="invalid-feedback">Cardholder name is required</div>
+              }
+            </div>
+
+            <div class="alert alert-light border">
+              <small class="text-muted">
+                <i class="bi bi-shield-check me-1"></i>
+                Your payment information is encrypted and secure. This is a mock
+                payment system for demonstration purposes.
+              </small>
+            </div>
+          </div>
         </div>
 
         <!-- Step 2 Navigation -->
@@ -386,21 +528,30 @@
             type="button"
             class="btn btn-outline-secondary"
             (click)="previousStep()"
+            [disabled]="isProcessingPayment()"
           >
             ← Back to Details
           </button>
           <button
             type="submit"
-            class="btn btn-primary btn-lg"
-            [disabled]="isLoading()"
+            class="btn btn-success btn-lg px-5"
+            [disabled]="isLoading() || registrationForm.invalid"
           >
-            @if (isLoading()) {
+            @if (isProcessingPayment()) {
             <span
               class="spinner-border spinner-border-sm me-2"
               role="status"
               aria-hidden="true"
             ></span>
-            Processing Registration... } @else { Complete Registration }
+            Processing Payment... } @else if (isLoading()) {
+            <span
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+              aria-hidden="true"
+            ></span>
+            Completing Registration... } @else {
+            <i class="bi bi-credit-card me-2"></i>
+            Pay ${{ getSessionPrice(selectedSession()!) }} & Complete }
           </button>
         </div>
         }
@@ -411,3 +562,6 @@
 
   <div class="mb-5"></div>
 </div>
+
+<!-- Toast Container -->
+<app-toast-container></app-toast-container>
