@@ -87,13 +87,50 @@ export class SessionRegistration implements OnInit {
   loadUserProfile() {
     this.dataService.getProfile().subscribe({
       next: (profile) => {
-        // Pre-fill user information
+        // Pre-fill user information from profile
+        const patchData: any = {};
+
         if (profile.firstName && profile.lastName) {
-          this.registrationForm.patchValue({
-            name: `${profile.firstName} ${profile.lastName}`,
-            email: profile.email,
-          });
+          patchData.name = `${profile.firstName} ${profile.lastName}`;
         }
+
+        if (profile.email) {
+          patchData.email = profile.email;
+        }
+
+        if (profile.phone) {
+          patchData.phone = profile.phone;
+        }
+
+        if (profile.address) {
+          patchData.address = profile.address;
+        }
+
+        if (profile.city) {
+          patchData.city = profile.city;
+        }
+
+        if (profile.state) {
+          patchData.state = profile.state;
+        }
+
+        if (profile.zipCode) {
+          patchData.zipCode = profile.zipCode;
+        }
+
+        if (profile.dateOfBirth) {
+          // Format date for date input (YYYY-MM-DD)
+          const date = new Date(profile.dateOfBirth);
+          if (!isNaN(date.getTime())) {
+            patchData.dateOfBirth = date.toISOString().split('T')[0];
+          }
+        }
+
+        if (profile.position) {
+          patchData.position = profile.position;
+        }
+
+        this.registrationForm.patchValue(patchData);
       },
       error: (err) => {
         console.error('Error loading user profile:', err);

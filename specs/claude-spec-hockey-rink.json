@@ -619,13 +619,13 @@
     }
   },
   "week_7": {
-    "status": "📋 Planned - December 2025",
+    "status": "� In Progress - December 30, 2025",
     "focus": "Payment Integration, User Profile Management & Session History",
     "estimated_hours": "12-15 hours",
     "deliverables": [
       {
         "mock_payment_form": {
-          "status": "⏳ Not Started",
+          "status": "✅ Completed",
           "description": "Mock credit card form for session registration (not connected to Stripe)",
           "location": "Session registration page (/sessions/:id/register)",
           "form_fields": {
@@ -706,7 +706,7 @@
       },
       {
         "manual_registration_password_setup": {
-          "status": "⏳ Not Started",
+          "status": "✅ Completed",
           "description": "Allow manually registered users to set password and fully activate account",
           "problem": "Users added manually by admin don't have passwords and can't log in",
           "solution_approach": "Email-based password setup flow",
@@ -810,7 +810,7 @@
       },
       {
         "user_profile_enhancements": {
-          "status": "⏳ Not Started",
+          "status": "✅ Completed",
           "description": "Allow users to edit personal information from registration",
           "current_profile_page": "/profile",
           "database_updates": {
@@ -911,7 +911,7 @@
       },
       {
         "user_dashboard_session_history": {
-          "status": "⏳ Not Started",
+          "status": "✅ Completed",
           "description": "Show current/upcoming and past sessions on user dashboard",
           "route": "/dashboard",
           "component": "DashboardComponent (user's landing page after login)",
@@ -991,7 +991,7 @@
       },
       {
         "additional_features": {
-          "status": "📋 Planned",
+          "status": "� In Progress",
           "items": [
             {
               "league_association_display": {
@@ -1006,6 +1006,7 @@
             },
             {
               "session_cancellation": {
+                "status": "✅ Completed",
                 "description": "Allow users to cancel their registration",
                 "user_flow": [
                   "User clicks 'Cancel Registration' on dashboard or session detail",
@@ -1023,6 +1024,7 @@
             },
             {
               "change_password_page": {
+                "status": "✅ Completed",
                 "route": "/change-password",
                 "auth_required": true,
                 "form_fields": [
@@ -1040,6 +1042,7 @@
             },
             {
               "responsive_improvements": {
+                "status": "📋 Deferred to Week 9",
                 "description": "Ensure all new forms work well on mobile",
                 "focus_areas": [
                   "Payment form: Stack fields vertically on mobile",
@@ -1053,7 +1056,7 @@
       },
       {
         "testing_and_validation": {
-          "status": "⏳ Not Started",
+          "status": "📋 Deferred to Week 9",
           "backend_tests": [
             "Mock payment service: Test success and failure scenarios",
             "Manual registration: Test user creation and password setup token generation",

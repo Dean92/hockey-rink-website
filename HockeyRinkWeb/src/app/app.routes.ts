@@ -22,7 +22,7 @@ export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'register', component: Register },
   { path: 'leagues', component: Leagues }, // Public - no auth required
-  { path: 'sessions', component: Sessions, canActivate: [AuthGuard] },
+  { path: 'sessions', component: Sessions }, // Public - no auth required
   {
     path: 'session-registration',
     component: SessionRegistration,

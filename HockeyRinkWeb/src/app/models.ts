@@ -43,6 +43,7 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   leagueId?: number;
+  leagueName?: string;
   address?: string;
   city?: string;
   state?: string;

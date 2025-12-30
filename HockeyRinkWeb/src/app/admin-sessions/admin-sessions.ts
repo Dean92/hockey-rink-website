@@ -47,6 +47,7 @@ export class AdminSessions implements OnInit {
   currentSession = signal<any>(null);
   registrations = signal<any[]>([]);
   registrationToRemove = signal<any>(null);
+  passwordSetupLink = signal<string | null>(null);
 
   constructor(private dataService: DataService, private fb: FormBuilder) {
     this.sessionForm = this.fb.group({
@@ -450,15 +451,22 @@ export class AdminSessions implements OnInit {
             // Show password setup link if applicable
             if (response.passwordSetupRequired && response.passwordSetupToken) {
               const setupLink = `${window.location.origin}/setup-password/${response.passwordSetupToken}`;
+              this.passwordSetupLink.set(setupLink);
               this.successMessage.set(
-                `User successfully added! Password setup link: ${setupLink}`
+                `User successfully added! New user needs to set up their password.`
               );
               // Copy to clipboard
-              navigator.clipboard.writeText(setupLink).catch(() => {
-                console.warn('Failed to copy to clipboard');
-              });
+              navigator.clipboard
+                .writeText(setupLink)
+                .then(() => {
+                  console.log('Password setup link copied to clipboard');
+                })
+                .catch(() => {
+                  console.warn('Failed to copy to clipboard');
+                });
             } else {
               this.successMessage.set('User successfully added to session');
+              this.passwordSetupLink.set(null);
             }
 
             this.closeAddRegistrationModal();
@@ -546,5 +554,24 @@ export class AdminSessions implements OnInit {
         this.isLoading.set(false);
       },
     });
+  }
+
+  copyPasswordSetupLink(): void {
+    const link = this.passwordSetupLink();
+    if (link) {
+      navigator.clipboard
+        .writeText(link)
+        .then(() => {
+          // Show a brief success indication
+          const originalMessage = this.successMessage();
+          this.successMessage.set('Password setup link copied to clipboard!');
+          setTimeout(() => {
+            this.successMessage.set(originalMessage);
+          }, 2000);
+        })
+        .catch(() => {
+          console.error('Failed to copy to clipboard');
+        });
+    }
   }
 }

@@ -212,4 +212,27 @@ export class DataService {
       withCredentials: true,
     });
   }
+
+  changePassword(data: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.post(`${this.apiUrl}/users/change-password`, data, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  cancelSessionRegistration(registrationId: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.delete(
+      `${this.apiUrl}/users/my-sessions/${registrationId}`,
+      {
+        headers,
+        withCredentials: true,
+      }
+    );
+  }
 }

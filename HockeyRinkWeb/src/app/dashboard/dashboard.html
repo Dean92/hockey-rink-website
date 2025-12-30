@@ -1,10 +1,22 @@
-<div class="container mt-5 mb-5">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="text-primary mb-0">
-      <i class="bi bi-speedometer2 me-2"></i>My Dashboard
-    </h2>
-    <a routerLink="/sessions" class="btn btn-primary">
-      <i class="bi bi-plus-circle me-1"></i>Register for Session
+<div class="container py-5">
+  <app-toast-container></app-toast-container>
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+      <h2 class="fw-bold text-primary mb-1">Dashboard</h2>
+      <p class="text-muted mb-0">Welcome back to the rink!</p>
+      @if (userProfile() && userProfile().leagueName) {
+      <div class="mt-2">
+        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">
+          <i class="bi bi-trophy me-1"></i>Your League:
+          {{ userProfile().leagueName }}
+        </span>
+      </div>
+      }
+    </div>
+    <a routerLink="/sessions" class="btn btn-primary btn-lg shadow-sm">
+      <i class="bi bi-plus-lg me-2"></i>Register for Session
     </a>
   </div>
 
@@ -13,11 +25,11 @@
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
-    <p class="mt-3 text-muted">Loading your sessions...</p>
+    <p class="mt-3 text-muted">Loading your dashboard...</p>
   </div>
   } @if (errorMessage()) {
   <div class="alert alert-danger alert-dismissible fade show" role="alert">
-    <i class="bi bi-exclamation-triangle me-2"></i>
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
     {{ errorMessage() }}
     <button
       type="button"
@@ -27,200 +39,352 @@
   </div>
   } @if (!isLoading()) {
 
-  <!-- Upcoming Sessions -->
-  <div class="mb-4">
-    <h4 class="mb-3">
-      <i class="bi bi-calendar-check text-success me-2"></i>Upcoming Sessions
-    </h4>
-
-    @if (upcomingSessions().length === 0) {
-    <div class="card shadow-sm">
-      <div class="card-body text-center py-5">
-        <i class="bi bi-calendar-x text-muted" style="font-size: 3rem"></i>
-        <p class="text-muted mt-3 mb-3">
-          You don't have any upcoming sessions.
-        </p>
-        <a routerLink="/sessions" class="btn btn-primary">
-          <i class="bi bi-search me-1"></i>Browse Sessions
-        </a>
-      </div>
-    </div>
-    } @else {
-    <div class="row g-3">
-      @for (session of upcomingSessions(); track session.sessionId) {
-      <div class="col-md-6">
-        <div class="card shadow-sm h-100 session-card">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <h5 class="card-title mb-0">{{ session.sessionName }}</h5>
-              <span class="badge bg-success">Active</span>
-            </div>
-
-            <p class="text-muted mb-3">
-              <i class="bi bi-trophy me-1"></i>{{ session.leagueName }}
-            </p>
-
-            <div class="session-details">
-              <p class="mb-2">
-                <i class="bi bi-calendar-event text-primary me-2"></i>
-                <strong>Start:</strong>
-                {{ session.startDate | date : "MMMM d, y 'at' h:mm a" }}
-              </p>
-              <p class="mb-2">
-                <i class="bi bi-calendar-check text-primary me-2"></i>
-                <strong>End:</strong>
-                {{ session.endDate | date : "MMMM d, y 'at' h:mm a" }}
-              </p>
-              <p class="mb-2">
-                <i class="bi bi-cash text-success me-2"></i>
-                <strong>Amount Paid:</strong> ${{ session.amountPaid }}
-              </p>
-              <p class="mb-2">
-                <i class="bi bi-person-badge text-info me-2"></i>
-                <strong>Position:</strong>
-                {{ session.position || "Not specified" }}
-              </p>
-              <p class="mb-0 text-muted small">
-                <i class="bi bi-clock me-1"></i>Registered:
-                {{ session.registrationDate | date : "short" }}
-              </p>
-            </div>
+  <!-- Stats Overview -->
+  <div class="row g-4 mb-5">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center p-4">
+          <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+            <i class="bi bi-calendar-check text-primary fs-4"></i>
+          </div>
+          <div>
+            <h6 class="text-muted text-uppercase small fw-bold mb-1">
+              Total Sessions
+            </h6>
+            <h3 class="fw-bold mb-0">{{ totalSessionsCount() }}</h3>
           </div>
         </div>
       </div>
-      }
     </div>
-    }
-  </div>
-
-  <!-- Current Sessions -->
-  <div class="mb-4">
-    <h4 class="mb-3">
-      <i class="bi bi-play-circle text-primary me-2"></i>Current Sessions
-    </h4>
-
-    @if (currentSessions().length === 0) {
-    <div class="card shadow-sm">
-      <div class="card-body text-center py-4">
-        <p class="text-muted mb-0">No current sessions in progress.</p>
-      </div>
-    </div>
-    } @else {
-    <div class="row g-3">
-      @for (session of currentSessions(); track session.sessionId) {
-      <div class="col-md-6">
-        <div class="card shadow-sm h-100 session-card border-primary">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <h5 class="card-title mb-0">{{ session.sessionName }}</h5>
-              <span class="badge bg-primary">In Progress</span>
-            </div>
-
-            <p class="text-muted mb-3">
-              <i class="bi bi-trophy me-1"></i>{{ session.leagueName }}
-            </p>
-
-            <div class="session-details">
-              <p class="mb-2">
-                <i class="bi bi-calendar-event text-primary me-2"></i>
-                <strong>Start:</strong>
-                {{ session.startDate | date : "MMMM d, y 'at' h:mm a" }}
-              </p>
-              <p class="mb-2">
-                <i class="bi bi-calendar-check text-primary me-2"></i>
-                <strong>End:</strong>
-                {{ session.endDate | date : "MMMM d, y 'at' h:mm a" }}
-              </p>
-              <p class="mb-2">
-                <i class="bi bi-cash text-success me-2"></i>
-                <strong>Amount Paid:</strong> ${{ session.amountPaid }}
-              </p>
-              <p class="mb-2">
-                <i class="bi bi-person-badge text-info me-2"></i>
-                <strong>Position:</strong>
-                {{ session.position || "Not specified" }}
-              </p>
-              <p class="mb-0 text-muted small">
-                <i class="bi bi-clock me-1"></i>Registered:
-                {{ session.registrationDate | date : "short" }}
-              </p>
-            </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center p-4">
+          <div class="bg-success bg-opacity-10 p-3 rounded-circle me-3">
+            <i class="bi bi-clock-history text-success fs-4"></i>
+          </div>
+          <div>
+            <h6 class="text-muted text-uppercase small fw-bold mb-1">
+              Upcoming
+            </h6>
+            <h3 class="fw-bold mb-0">{{ upcomingSessions().length }}</h3>
           </div>
         </div>
       </div>
-      }
     </div>
-    }
-  </div>
-
-  <!-- Past Sessions -->
-  <div class="mb-4">
-    <h4 class="mb-3">
-      <i class="bi bi-clock-history text-secondary me-2"></i>Past Sessions
-    </h4>
-
-    @if (pastSessions().length === 0) {
-    <div class="card shadow-sm">
-      <div class="card-body text-center py-4">
-        <p class="text-muted mb-0">No past sessions to display.</p>
-      </div>
-    </div>
-    } @else {
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead>
-              <tr>
-                <th>Session</th>
-                <th>League</th>
-                <th>Date</th>
-                <th>Position</th>
-                <th class="text-end">Amount Paid</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (session of pastSessions(); track session.sessionId) {
-              <tr>
-                <td>
-                  <strong>{{ session.sessionName }}</strong>
-                </td>
-                <td>{{ session.leagueName }}</td>
-                <td>{{ session.startDate | date : "MMM d, y" }}</td>
-                <td>
-                  <span class="badge bg-light text-dark">{{
-                    session.position || "N/A"
-                  }}</span>
-                </td>
-                <td class="text-end">${{ session.amountPaid }}</td>
-              </tr>
-              }
-            </tbody>
-          </table>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center p-4">
+          <div class="bg-info bg-opacity-10 p-3 rounded-circle me-3">
+            <i class="bi bi-wallet2 text-info fs-4"></i>
+          </div>
+          <div>
+            <h6 class="text-muted text-uppercase small fw-bold mb-1">
+              Total Spent
+            </h6>
+            <h3 class="fw-bold mb-0">${{ totalSpent() }}</h3>
+          </div>
         </div>
       </div>
     </div>
-    }
   </div>
 
-  <!-- Quick Actions -->
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <h5 class="card-title mb-3">
-        <i class="bi bi-lightning-fill text-warning me-2"></i>Quick Actions
-      </h5>
-      <div class="d-flex gap-2 flex-wrap">
-        <a routerLink="/sessions" class="btn btn-outline-primary">
-          <i class="bi bi-search me-1"></i>Browse Sessions
-        </a>
-        <a routerLink="/leagues" class="btn btn-outline-primary">
-          <i class="bi bi-trophy me-1"></i>View Leagues
-        </a>
-        <a routerLink="/profile" class="btn btn-outline-primary">
-          <i class="bi bi-person-circle me-1"></i>Edit Profile
-        </a>
+  <div class="row g-4">
+    <!-- Main Content Column -->
+    <div class="col-lg-8">
+      <!-- Current Sessions (Happening Now) -->
+      @if (currentSessions().length > 0) {
+      <div class="mb-5">
+        <h5 class="fw-bold mb-3 text-primary">
+          <i class="bi bi-play-circle-fill me-2"></i>Happening Now
+        </h5>
+        <div class="row g-3">
+          @for (session of currentSessions(); track session.sessionId) {
+          <div class="col-12">
+            <div class="card border-primary shadow-sm">
+              <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <span class="badge bg-primary mb-2">In Progress</span>
+                    <h4 class="card-title mb-1">{{ session.sessionName }}</h4>
+                    <p class="text-muted mb-3">
+                      <i class="bi bi-trophy me-1"></i>{{ session.leagueName }}
+                    </p>
+                  </div>
+                  <div class="text-end">
+                    <p class="mb-1 fw-bold text-primary">
+                      {{ session.startDate | date : "shortTime" }} -
+                      {{ session.endDate | date : "shortTime" }}
+                    </p>
+                    <small class="text-muted">{{
+                      session.startDate | date : "MMMM d, y"
+                    }}</small>
+                  </div>
+                </div>
+                <hr />
+                <div class="row g-3">
+                  <div class="col-sm-6">
+                    <small class="text-muted d-block">Position</small>
+                    <span class="fw-medium">{{
+                      session.position || "Not specified"
+                    }}</span>
+                  </div>
+                  <div class="col-sm-6">
+                    <small class="text-muted d-block">Location</small>
+                    <span class="fw-medium">Main Rink</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- Upcoming Sessions -->
+      <div class="mb-5">
+        <h5 class="fw-bold mb-3">Upcoming Sessions</h5>
+
+        @if (upcomingSessions().length === 0) {
+        <div class="card border-0 shadow-sm bg-light">
+          <div class="card-body text-center py-5">
+            <div
+              class="bg-white p-3 rounded-circle d-inline-block shadow-sm mb-3"
+            >
+              <i class="bi bi-calendar-x text-muted fs-1"></i>
+            </div>
+            <h5 class="fw-bold text-muted">No upcoming sessions</h5>
+            <p class="text-muted mb-4">
+              You haven't registered for any upcoming sessions yet.
+            </p>
+            <a routerLink="/sessions" class="btn btn-primary">
+              Browse Sessions
+            </a>
+          </div>
+        </div>
+        } @else {
+        <div class="d-flex flex-column gap-3">
+          @for (session of upcomingSessions(); track session.sessionId) {
+          <div class="card border-0 shadow-sm session-card">
+            <div class="card-body p-4">
+              <div class="row align-items-center">
+                <!-- Date Box -->
+                <div class="col-auto">
+                  <div
+                    class="text-center rounded p-2 bg-light border"
+                    style="min-width: 80px"
+                  >
+                    <div class="text-uppercase text-danger fw-bold small">
+                      {{ session.startDate | date : "MMM" }}
+                    </div>
+                    <div class="fs-3 fw-bold lh-1">
+                      {{ session.startDate | date : "dd" }}
+                    </div>
+                    <div class="text-muted small">
+                      {{ session.startDate | date : "EEE" }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Session Info -->
+                <div class="col">
+                  <h5 class="card-title fw-bold mb-1">
+                    {{ session.sessionName }}
+                  </h5>
+                  <p class="text-muted mb-2 small">
+                    <i class="bi bi-trophy me-1"></i>{{ session.leagueName }}
+                  </p>
+                  <div class="d-flex gap-3 text-muted small">
+                    <span>
+                      <i class="bi bi-clock me-1"></i>
+                      {{ session.startDate | date : "shortTime" }} -
+                      {{ session.endDate | date : "shortTime" }}
+                    </span>
+                    <span>
+                      <i class="bi bi-person-badge me-1"></i>
+                      {{ session.position || "Any" }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Action -->
+                <div class="col-auto mt-3 mt-md-0">
+                  @if (canCancelSession(session)) {
+                  <button
+                    class="btn btn-outline-danger btn-sm"
+                    (click)="confirmCancel(session)"
+                  >
+                    Cancel
+                  </button>
+                  } @else {
+                  <span
+                    class="badge bg-light text-muted border"
+                    title="Too close to start date to cancel"
+                  >
+                    Locked
+                  </span>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </div>
+
+      <!-- Past Sessions -->
+      <div>
+        <h5 class="fw-bold mb-3">Session History</h5>
+        @if (pastSessions().length === 0) {
+        <p class="text-muted">No past sessions found.</p>
+        } @else {
+        <div class="card border-0 shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+              <thead class="bg-light">
+                <tr>
+                  <th class="ps-4 py-3">Date</th>
+                  <th class="py-3">Session</th>
+                  <th class="py-3">League</th>
+                  <th class="py-3 text-end pe-4">Fee</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (session of pastSessions(); track session.sessionId) {
+                <tr>
+                  <td class="ps-4 text-muted">
+                    {{ session.startDate | date : "MMM d, y" }}
+                  </td>
+                  <td class="fw-medium">{{ session.sessionName }}</td>
+                  <td>{{ session.leagueName }}</td>
+                  <td class="text-end pe-4 text-muted">
+                    ${{ session.amountPaid }}
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Sidebar Column -->
+    <div class="col-lg-4">
+      <!-- Quick Actions -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-3">Quick Actions</h5>
+          <div class="d-grid gap-2">
+            <a
+              routerLink="/sessions"
+              class="btn btn-outline-primary text-start p-3"
+            >
+              <i class="bi bi-search me-2 fs-5 align-middle"></i>Browse All
+              Sessions
+            </a>
+            <a
+              routerLink="/leagues"
+              class="btn btn-outline-primary text-start p-3"
+            >
+              <i class="bi bi-trophy me-2 fs-5 align-middle"></i>View Leagues
+            </a>
+            <a
+              routerLink="/profile"
+              class="btn btn-outline-primary text-start p-3"
+            >
+              <i class="bi bi-person-gear me-2 fs-5 align-middle"></i>Manage
+              Profile
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Card -->
+      <div class="card border-0 shadow-sm bg-light mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-bold mb-2">
+            <i class="bi bi-info-circle-fill text-primary me-2"></i>Did you
+            know?
+          </h6>
+          <p class="text-muted small mb-0">
+            You can cancel your registration up to 7 days before the session
+            starts for a full refund.
+          </p>
+        </div>
+      </div>
+
+      <!-- Support Card -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <h6 class="fw-bold mb-2">Need Help?</h6>
+          <p class="text-muted small mb-3">
+            Having trouble with your registration or account?
+          </p>
+          <a
+            href="mailto:support@hockeyrink.com"
+            class="text-decoration-none fw-bold"
+          >
+            Contact Support <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
       </div>
     </div>
   </div>
   }
 </div>
+
+<!-- Cancellation Confirmation Modal -->
+@if (sessionToCancel()) {
+<div
+  class="modal fade show d-block"
+  tabindex="-1"
+  style="background-color: rgba(0, 0, 0, 0.5)"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm
+          Cancellation
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          (click)="cancelDismiss()"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-3">
+          Are you sure you want to cancel your registration for:
+        </p>
+        <div class="alert alert-warning border-warning">
+          <h6 class="fw-bold mb-1">{{ sessionToCancel()!.sessionName }}</h6>
+          <small>
+            {{ sessionToCancel()!.startDate | date : "MMMM d, y 'at' h:mm a" }}
+          </small>
+        </div>
+        <p class="text-muted small mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          A cancellation request will be sent to the admin. Refunds will be
+          processed within 7-14 business days.
+        </p>
+      </div>
+      <div class="modal-footer bg-light">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="cancelDismiss()"
+        >
+          Keep Registration
+        </button>
+        <button type="button" class="btn btn-danger" (click)="cancelConfirm()">
+          Cancel Registration
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

@@ -1,42 +1,51 @@
-/* Leagues Header */
-.leagues-header {
-  background: linear-gradient(135deg, #0288d1 0%, #039be5 100%);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
+/* Leagues Hero Section */
+.leagues-hero {
+  background-image: url("https://images.unsplash.com/photo-1580748141549-71748dbe0bdc?auto=format&fit=crop&q=80&w=2000");
+  background-size: cover;
+  background-position: center;
+  min-height: 500px;
 }
 
-.leagues-header::before {
-  content: "";
+.hero-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><defs><pattern id="ice" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="1200" height="600" fill="url(%23ice)"/></svg>');
-  opacity: 0.3;
-}
-
-.leagues-header .container {
-  position: relative;
+  background: linear-gradient(
+    to bottom,
+    rgba(15, 23, 42, 0.85),
+    rgba(15, 23, 42, 0.95)
+  );
   z-index: 1;
 }
 
-/* Trophy Icon - Gold Color */
-.trophy-icon {
-  color: #ffd700;
-  filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.4));
-  animation: trophy-glow 2s ease-in-out infinite;
+.tracking-wider {
+  letter-spacing: 0.1em;
 }
 
-@keyframes trophy-glow {
-  0%,
-  100% {
-    filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.4));
-  }
-  50% {
-    filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.6));
-  }
+.tracking-tight {
+  letter-spacing: -0.025em;
+}
+
+.border-white-10 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.icon-circle:hover {
+  transform: scale(1.1);
+  background-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 /* Feature Badges - Colorful */
@@ -120,7 +129,6 @@
 .info-step:hover .step-icon {
   transform: scale(1.2);
 }
-
 
 /* Leagues Section */
 .leagues-section {
@@ -241,4 +249,44 @@
   .badge-feature {
     font-size: 0.8rem;
   }
+}
+
+/* League Cards Redesign */
+.league-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.league-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+}
+
+.league-image-container {
+  height: 200px;
+  overflow: hidden;
+  background-color: #e9ecef;
+}
+
+.league-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  transition: transform 0.5s ease;
+}
+
+.league-card:hover .league-image {
+  transform: scale(1.05);
+}
+
+.league-overlay {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1;
+}
+
+.league-details {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
 }

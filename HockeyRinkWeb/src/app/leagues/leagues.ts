@@ -77,6 +77,19 @@ export class Leagues implements OnInit {
     });
   }
 
+  getLeagueImage(league: League): string {
+    // Return a deterministic image based on league id
+    const id = league.id || 0;
+    const images = [
+      '/images/league_1.png',
+      '/images/league_2.png',
+      '/images/league_3.jpg',
+      '/images/league_4.jpg',
+      '/images/league_5.jpg',
+    ];
+    return images[id % images.length];
+  }
+
   isAuthenticated(): boolean {
     return this.authService.getToken() !== null;
   }

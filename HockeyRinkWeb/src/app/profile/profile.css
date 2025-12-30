@@ -1,50 +1,152 @@
-.profile-field {
-  padding: 1rem;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  margin-bottom: 1rem;
+/* Profile Styles */
+.profile-card {
+  border: none;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  background: #fff;
 }
 
-.profile-field label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
+.profile-header-bg {
+  background: linear-gradient(135deg, #64b5f6 0%, #2196f3 100%);
+  height: 120px;
+  position: relative;
+}
+
+.profile-avatar-container {
+  position: absolute;
+  bottom: -40px;
+  left: 40px;
+  width: 100px;
+  height: 100px;
+  background: #fff;
+  border-radius: 50%;
+  padding: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-avatar {
+  width: 100%;
+  height: 100%;
+  background: #e9ecef;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  color: #6c757d;
+}
+
+.profile-actions {
+  position: absolute;
+  bottom: 20px;
+  right: 30px;
+}
+
+.profile-body {
+  padding: 60px 40px 40px;
+}
+
+.info-group {
+  margin-bottom: 1.5rem;
+}
+
+.info-label {
   font-size: 0.75rem;
+  text-transform: uppercase;
   letter-spacing: 0.5px;
+  color: #6c757d;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  display: block;
 }
 
-.profile-field p {
+.info-value {
   font-size: 1rem;
   color: #212529;
-}
-
-.card {
-  border: none;
-  border-radius: 12px;
-  margin-bottom: 3rem;
-}
-
-.btn-primary,
-.btn-success {
-  border-radius: 8px;
-  padding: 0.5rem 1.5rem;
   font-weight: 500;
+  padding: 0.75rem 1rem;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
 }
 
+.info-value i {
+  color: #0d6efd;
+  margin-right: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f8f9fa;
+}
+
+/* Form Styles */
 .form-control,
 .form-select {
-  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  border-color: #dee2e6;
+  background-color: #fff;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  margin-right: 0.5rem;
+}
+
+.form-control::placeholder {
+  font-style: italic;
+  font-weight: 300;
+  opacity: 0.6;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
 }
 
 .form-label {
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  color: #495057;
 }
 
-.alert-info {
-  background-color: #e7f3ff;
-  border-color: #b3d9ff;
-  color: #004085;
+/* Password Card */
+.password-card {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-header-bg {
+    height: 100px;
+  }
+
+  .profile-avatar-container {
+    width: 80px;
+    height: 80px;
+    left: 20px;
+    bottom: -30px;
+  }
+
+  .profile-body {
+    padding: 50px 20px 30px;
+  }
+
+  .profile-actions {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    margin-top: 1rem;
+    text-align: right;
+  }
 }

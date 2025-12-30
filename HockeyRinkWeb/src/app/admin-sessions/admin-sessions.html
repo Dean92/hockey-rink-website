@@ -52,11 +52,37 @@
   } @if (successMessage()) {
   <div class="alert alert-success alert-dismissible fade show" role="alert">
     {{ successMessage() }}
+    @if (passwordSetupLink()) {
+    <hr />
+    <div class="mt-2">
+      <strong>Password Setup Link:</strong>
+      <div class="input-group mt-2">
+        <input
+          type="text"
+          class="form-control"
+          [value]="passwordSetupLink()"
+          readonly
+        />
+        <button
+          class="btn btn-outline-primary"
+          type="button"
+          (click)="copyPasswordSetupLink()"
+          title="Copy to clipboard"
+        >
+          <i class="bi bi-clipboard"></i> Copy
+        </button>
+      </div>
+      <small class="text-muted"
+        >Share this link with the user so they can set up their password and log
+        in.</small
+      >
+    </div>
+    }
     <button
       type="button"
       class="btn-close"
       aria-label="Close success message"
-      (click)="successMessage.set(null)"
+      (click)="successMessage.set(null); passwordSetupLink.set(null)"
     ></button>
   </div>
   } @if (isLoading()) {

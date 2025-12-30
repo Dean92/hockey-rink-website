@@ -2,99 +2,65 @@
 
 .session-card {
   transition: transform 0.2s, box-shadow 0.2s;
-  border: none;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
 }
 
 .session-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
-}
-
-.session-details {
-  background-color: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
 }
 
 .card {
-  border: none;
   border-radius: 12px;
 }
 
-.badge {
-  font-size: 0.85rem;
-  padding: 0.5rem 0.75rem;
+/* Stats Cards */
+.bg-opacity-10 {
+  --bs-bg-opacity: 0.1;
 }
 
+/* Date Box in Upcoming Sessions */
+.date-box {
+  min-width: 80px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+}
+
+/* Table Styles */
 .table thead th {
   background-color: #f8f9fa;
   font-weight: 600;
-  border-bottom: 2px solid #dee2e6;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  border-bottom: none;
 }
 
-/* Dashboard Responsive Styles */
+.table td {
+  vertical-align: middle;
+}
 
-/* Mobile adjustments */
+/* Quick Actions */
+.btn-outline-primary {
+  border-color: #dee2e6;
+  color: #495057;
+}
+
+.btn-outline-primary:hover {
+  background-color: #f8f9fa;
+  color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   .container {
-    padding: 1rem;
+    padding-top: 1rem !important;
   }
 
-  h1,
-  h2 {
-    font-size: 1.75rem;
-  }
-
-  h3 {
-    font-size: 1.5rem;
-  }
-
-  .card {
-    margin-bottom: 1rem;
-  }
-
-  .card-body {
-    padding: 1rem;
-  }
-
-  .table {
-    font-size: 0.875rem;
-  }
-
-  .table th,
-  .table td {
-    padding: 0.5rem;
-  }
-
-  /* Make tables horizontally scrollable on mobile */
-  .table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .btn {
-    font-size: 0.875rem;
-    padding: 0.5rem 1rem;
-  }
-
-  .badge {
-    font-size: 0.75rem;
-  }
-
-  /* Stack cards vertically on mobile */
-  .row > [class*="col-"] {
-    margin-bottom: 1rem;
-  }
-}
-
-/* Tablet adjustments */
-@media (min-width: 769px) and (max-width: 992px) {
-  h1 {
-    font-size: 2rem;
-  }
-
-  .card-body {
-    padding: 1.25rem;
+  .display-4 {
+    font-size: 2.5rem;
   }
 }
 

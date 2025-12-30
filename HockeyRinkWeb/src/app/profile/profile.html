@@ -1,22 +1,5 @@
-<div class="container mt-5">
+<div class="container py-5">
   <app-toast-container></app-toast-container>
-
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="text-primary mb-0">
-      <i class="bi bi-person-circle me-2"></i>User Profile
-    </h2>
-    @if (!isLoading() && profile()) {
-    <button
-      class="btn btn-primary"
-      (click)="toggleEdit()"
-      [disabled]="isSaving()"
-    >
-      @if (isEditing()) {
-      <i class="bi bi-x-circle me-1"></i>Cancel } @else {
-      <i class="bi bi-pencil me-1"></i>Edit Profile }
-    </button>
-    }
-  </div>
 
   @if (isLoading()) {
   <div class="text-center py-5">
@@ -36,66 +19,127 @@
     ></button>
   </div>
   } @if (profile() && !isLoading()) {
-  <div class="card shadow-sm">
-    <div class="card-body p-4">
+
+  <!-- Main Profile Card -->
+  <div class="profile-card mb-5">
+    <!-- Header Background -->
+    <div class="profile-header-bg">
+      <div class="profile-avatar-container">
+        <div class="profile-avatar">
+          <i class="bi bi-person-fill"></i>
+        </div>
+      </div>
+
+      <!-- Edit Button (Top Right) -->
+      <div class="profile-actions">
+        @if (!isEditing()) {
+        <button
+          class="btn btn-light shadow-sm fw-bold"
+          (click)="toggleEdit()"
+          [disabled]="isSaving()"
+        >
+          <i class="bi bi-pencil me-2"></i>Edit Profile
+        </button>
+        }
+      </div>
+    </div>
+
+    <div class="profile-body">
+      <!-- User Name Header -->
+      <div class="mb-5">
+        <h2 class="fw-bold mb-1">
+          {{ profile()!.firstName }} {{ profile()!.lastName }}
+        </h2>
+        <p class="text-muted mb-0">
+          <i class="bi bi-envelope me-2"></i>{{ profile()!.email }}
+        </p>
+      </div>
+
       <!-- View Mode -->
       @if (!isEditing()) {
-      <div class="row g-3">
-        <div class="col-md-6">
-          <div class="profile-field">
-            <label class="text-muted small">First Name</label>
-            <p class="mb-0 fw-bold">{{ profile()!.firstName }}</p>
+      <div class="row g-5">
+        <!-- Personal Information -->
+        <div class="col-lg-6">
+          <h5 class="section-title">
+            <i class="bi bi-person-badge me-2 text-primary"></i>Personal
+            Information
+          </h5>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="info-group">
+                <label class="info-label">Position</label>
+                <div class="info-value">
+                  <i class="bi bi-person-standing"></i>
+                  {{ profile()!.position || "Not specified" }}
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="info-group">
+                <label class="info-label">Date of Birth</label>
+                <div class="info-value">
+                  <i class="bi bi-calendar3"></i>
+                  {{
+                    profile()!.dateOfBirth
+                      ? (profile()!.dateOfBirth | date : "mediumDate")
+                      : "Not provided"
+                  }}
+                </div>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="info-group">
+                <label class="info-label">Current League</label>
+                <div class="info-value">
+                  <i class="bi bi-trophy"></i>
+                  {{ getLeagueName(profile()!.leagueId) }}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="col-md-6">
-          <div class="profile-field">
-            <label class="text-muted small">Last Name</label>
-            <p class="mb-0 fw-bold">{{ profile()!.lastName }}</p>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="profile-field">
-            <label class="text-muted small">Email</label>
-            <p class="mb-0">{{ profile()!.email }}</p>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="profile-field">
-            <label class="text-muted small">Phone</label>
-            <p class="mb-0">{{ profile()!.phone || "Not provided" }}</p>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="profile-field">
-            <label class="text-muted small">Date of Birth</label>
-            <p class="mb-0">
-              {{
-                profile()!.dateOfBirth
-                  ? (profile()!.dateOfBirth | date : "mediumDate")
-                  : "Not provided"
-              }}
-            </p>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="profile-field">
-            <label class="text-muted small">Position</label>
-            <p class="mb-0">{{ profile()!.position || "Not specified" }}</p>
-          </div>
-        </div>
-        <div class="col-12">
-          <div class="profile-field">
-            <label class="text-muted small">Address</label>
-            <p class="mb-0">
-              @if (profile()!.address) {
-              {{ profile()!.address }}
-              @if (profile()!.city || profile()!.state || profile()!.zipCode) {
-              <br />
-              {{ profile()!.city
-              }}{{ profile()!.city && profile()!.state ? "," : "" }}
-              {{ profile()!.state }} {{ profile()!.zipCode }}
-              } } @else { Not provided }
-            </p>
+
+        <!-- Contact Information -->
+        <div class="col-lg-6">
+          <h5 class="section-title">
+            <i class="bi bi-geo-alt me-2 text-primary"></i>Contact Details
+          </h5>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="info-group">
+                <label class="info-label">Phone</label>
+                <div class="info-value">
+                  <i class="bi bi-telephone"></i>
+                  {{ profile()!.phone || "Not provided" }}
+                </div>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="info-group">
+                <label class="info-label">Address</label>
+                <div class="info-value">
+                  <i class="bi bi-house-door"></i>
+                  @if (profile()!.address) {
+                  <span>
+                    {{ profile()!.address }}
+                    @if (profile()!.city || profile()!.state ||
+                    profile()!.zipCode) {
+                    <br class="d-md-none" />
+                    <span class="ms-md-1">
+                      <span>{{ profile()!.city }}</span
+                      >{{ profile()!.city && profile()!.state ? "," : ""
+                      }}<span>
+                        {{ profile()!.state }} {{ profile()!.zipCode }}</span
+                      >
+                    </span>
+                    }
+                  </span>
+                  } @else { Not provided }
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -104,94 +148,174 @@
       <!-- Edit Mode -->
       @if (isEditing()) {
       <form [formGroup]="profileForm" (ngSubmit)="onSaveProfile()">
-        <div class="row g-3">
-          <div class="col-12">
-            <div class="alert alert-info">
-              <i class="bi bi-info-circle me-2"></i>
-              Name and email cannot be changed. Contact administrator if needed.
+        <div class="alert alert-info mb-4 border-0 bg-primary bg-opacity-10">
+          <i class="bi bi-info-circle-fill me-2 text-primary"></i>
+          <span class="text-muted"
+            >Name and email cannot be changed. Contact administrator if
+            needed.</span
+          >
+        </div>
+
+        <div class="row g-4">
+          <!-- Personal Info Edit -->
+          <div class="col-lg-6">
+            <h5 class="section-title">Personal Information</h5>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label"
+                  >Position <span class="text-danger">*</span></label
+                >
+                <select
+                  class="form-select"
+                  formControlName="position"
+                  [class.is-invalid]="hasError('position', 'required')"
+                >
+                  <option value="">Select Position</option>
+                  <option value="Forward">Forward</option>
+                  <option value="Defense">Defense</option>
+                  <option value="Forward/Defense">Forward/Defense</option>
+                  <option value="Goalie">Goalie</option>
+                </select>
+                @if (hasError('position', 'required')) {
+                <div class="invalid-feedback">Position is required</div>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label"
+                  >Date of Birth <span class="text-danger">*</span></label
+                >
+                <input
+                  type="date"
+                  class="form-control"
+                  formControlName="dateOfBirth"
+                  placeholder="Select your date of birth"
+                  [class.is-invalid]="hasError('dateOfBirth', 'required')"
+                />
+                @if (hasError('dateOfBirth', 'required')) {
+                <div class="invalid-feedback">Date of birth is required</div>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label">Current League</label>
+                <div
+                  class="form-control bg-light text-muted"
+                  style="cursor: not-allowed"
+                >
+                  <i class="bi bi-trophy me-2"></i
+                  >{{ getLeagueName(profile()!.leagueId) }}
+                </div>
+                <div class="form-text">
+                  <i class="bi bi-lock me-1"></i>League assignment is managed by
+                  administrators
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="col-md-6">
-            <label class="form-label">Phone</label>
-            <input
-              type="tel"
-              class="form-control"
-              formControlName="phone"
-              [class.is-invalid]="hasError('phone', 'pattern')"
-              placeholder="(123) 456-7890"
-            />
-            @if (hasError('phone', 'pattern')) {
-            <div class="invalid-feedback">Invalid phone format</div>
-            }
+          <!-- Contact Info Edit -->
+          <div class="col-lg-6">
+            <h5 class="section-title">Contact Details</h5>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label"
+                  >Phone <span class="text-danger">*</span></label
+                >
+                <input
+                  type="tel"
+                  class="form-control"
+                  formControlName="phone"
+                  (input)="onPhoneInput($event)"
+                  [class.is-invalid]="
+                    hasError('phone', 'required') ||
+                    hasError('phone', 'pattern')
+                  "
+                  placeholder="Enter phone number"
+                  maxlength="14"
+                />
+                @if (hasError('phone', 'required')) {
+                <div class="invalid-feedback">Phone number is required</div>
+                } @if (hasError('phone', 'pattern')) {
+                <div class="invalid-feedback">Invalid phone format</div>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label"
+                  >Address <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="address"
+                  placeholder="Enter street address"
+                  [class.is-invalid]="hasError('address', 'required')"
+                />
+                @if (hasError('address', 'required')) {
+                <div class="invalid-feedback">Address is required</div>
+                }
+              </div>
+              <div class="col-md-5">
+                <label class="form-label"
+                  >City <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="city"
+                  placeholder="Enter city name"
+                  [class.is-invalid]="hasError('city', 'required')"
+                />
+                @if (hasError('city', 'required')) {
+                <div class="invalid-feedback">City is required</div>
+                }
+              </div>
+              <div class="col-md-3">
+                <label class="form-label"
+                  >State <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="state"
+                  placeholder="Enter state"
+                  maxlength="2"
+                  [class.is-invalid]="hasError('state', 'required')"
+                />
+                @if (hasError('state', 'required')) {
+                <div class="invalid-feedback">State is required</div>
+                }
+              </div>
+              <div class="col-md-4">
+                <label class="form-label"
+                  >Zip Code <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="zipCode"
+                  placeholder="Enter zip code"
+                  [class.is-invalid]="hasError('zipCode', 'required')"
+                />
+                @if (hasError('zipCode', 'required')) {
+                <div class="invalid-feedback">Zip code is required</div>
+                }
+              </div>
+            </div>
           </div>
 
-          <div class="col-md-6">
-            <label class="form-label">Date of Birth</label>
-            <input
-              type="date"
-              class="form-control"
-              formControlName="dateOfBirth"
-            />
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">Position</label>
-            <select class="form-select" formControlName="position">
-              <option value="">Select Position</option>
-              <option value="Forward">Forward</option>
-              <option value="Defense">Defense</option>
-              <option value="Forward/Defense">Forward/Defense</option>
-              <option value="Goalie">Goalie</option>
-            </select>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">Address</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="address"
-              placeholder="123 Main St"
-            />
-          </div>
-
-          <div class="col-md-5">
-            <label class="form-label">City</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="city"
-              placeholder="New York"
-            />
-          </div>
-
-          <div class="col-md-3">
-            <label class="form-label">State</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="state"
-              placeholder="NY"
-              maxlength="2"
-            />
-          </div>
-
-          <div class="col-md-4">
-            <label class="form-label">Zip Code</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="zipCode"
-              placeholder="10001"
-            />
-          </div>
-
-          <div class="col-12">
-            <div class="d-flex gap-2">
+          <!-- Action Buttons -->
+          <div class="col-12 mt-4 pt-3 border-top">
+            <div class="d-flex gap-2 justify-content-end">
+              <button
+                type="button"
+                class="btn btn-light"
+                (click)="toggleEdit()"
+                [disabled]="isSaving()"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
-                class="btn btn-success"
+                class="btn btn-primary px-4"
                 [disabled]="profileForm.invalid || isSaving()"
               >
                 @if (isSaving()) {
@@ -199,16 +323,7 @@
                   class="spinner-border spinner-border-sm me-2"
                   role="status"
                 ></span>
-                Saving... } @else {
-                <i class="bi bi-check-circle me-1"></i>Save Changes }
-              </button>
-              <button
-                type="button"
-                class="btn btn-secondary"
-                (click)="toggleEdit()"
-                [disabled]="isSaving()"
-              >
-                <i class="bi bi-x-circle me-1"></i>Cancel
+                Saving... } @else { Save Changes }
               </button>
             </div>
           </div>
@@ -216,6 +331,114 @@
       </form>
       }
     </div>
+  </div>
+
+  <!-- Security Section -->
+  <div class="password-card card bg-white p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h5 class="fw-bold mb-1">
+          <i class="bi bi-shield-lock me-2 text-primary"></i>Security Settings
+        </h5>
+        <p class="text-muted small mb-0">
+          Manage your password and account security
+        </p>
+      </div>
+      @if (!showChangePassword()) {
+      <button class="btn btn-outline-primary" (click)="toggleChangePassword()">
+        Change Password
+      </button>
+      }
+    </div>
+
+    @if (showChangePassword()) {
+    <div class="bg-light p-4 rounded-3">
+      <form [formGroup]="changePasswordForm" (ngSubmit)="onChangePassword()">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Current Password</label>
+            <input
+              type="password"
+              class="form-control"
+              formControlName="currentPassword"
+              [class.is-invalid]="
+                hasPasswordError('currentPassword', 'required')
+              "
+              placeholder="Enter current password"
+            />
+            @if (hasPasswordError('currentPassword', 'required')) {
+            <div class="invalid-feedback">Current password is required</div>
+            }
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">New Password</label>
+            <input
+              type="password"
+              class="form-control"
+              formControlName="newPassword"
+              [class.is-invalid]="
+                hasPasswordError('newPassword', 'required') ||
+                hasPasswordError('newPassword', 'minlength')
+              "
+              placeholder="Enter new password"
+            />
+            @if (hasPasswordError('newPassword', 'required')) {
+            <div class="invalid-feedback">New password is required</div>
+            } @if (hasPasswordError('newPassword', 'minlength')) {
+            <div class="invalid-feedback">
+              Password must be at least 6 characters
+            </div>
+            }
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Confirm New Password</label>
+            <input
+              type="password"
+              class="form-control"
+              formControlName="confirmPassword"
+              [class.is-invalid]="
+                hasPasswordError('confirmPassword', 'required') ||
+                passwordMismatch
+              "
+              placeholder="Confirm new password"
+            />
+            @if (hasPasswordError('confirmPassword', 'required')) {
+            <div class="invalid-feedback">Please confirm your password</div>
+            } @if (passwordMismatch) {
+            <div class="invalid-feedback">Passwords do not match</div>
+            }
+          </div>
+
+          <div class="col-12 mt-4">
+            <div class="d-flex gap-2">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="changePasswordForm.invalid || isChangingPassword()"
+              >
+                @if (isChangingPassword()) {
+                <span
+                  class="spinner-border spinner-border-sm me-2"
+                  role="status"
+                ></span>
+                Updating... } @else { Update Password }
+              </button>
+              <button
+                type="button"
+                class="btn btn-light"
+                (click)="toggleChangePassword()"
+                [disabled]="isChangingPassword()"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    }
   </div>
   }
 </div>

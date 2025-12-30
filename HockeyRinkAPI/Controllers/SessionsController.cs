@@ -53,35 +53,6 @@ public class SessionsController : ControllerBase
                 date
             );
 
-            // Check for token-based auth first
-            var authHeader = Request.Headers.Authorization.FirstOrDefault();
-            _logger.LogInformation("GetSessions - Authorization header: {AuthHeader}", authHeader);
-
-            bool isAuthenticated = false;
-
-            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
-            {
-                var token = authHeader.Substring("Bearer ".Length);
-                _logger.LogInformation("GetSessions - Token extracted: {Token}", token);
-                isAuthenticated = await ValidateTokenAsync(token);
-                _logger.LogInformation(
-                    "GetSessions - Token validation result: {IsAuthenticated}",
-                    isAuthenticated
-                );
-            }
-            // Fall back to cookie auth
-            else if (HttpContext.User.Identity?.IsAuthenticated == true)
-            {
-                _logger.LogInformation("GetSessions - Cookie authenticated");
-                isAuthenticated = true;
-            }
-
-            if (!isAuthenticated)
-            {
-                _logger.LogWarning("GetSessions - Not authenticated, returning Unauthorized");
-                return Unauthorized(new { message = "Authentication required" });
-            }
-
             var sessionsQuery = _dbContext.Sessions.Include(s => s.League).Include(s => s.Registrations).AsQueryable();
 
             if (leagueId.HasValue)
@@ -177,8 +148,14 @@ public class SessionsController : ControllerBase
                 },
                 RegistrationCount = s.Registrations.Count,
                 SpotsLeft = s.MaxPlayers - s.Registrations.Count,
-                IsFull = s.Registrations.Count >= s.MaxPlayers
-            }).ToList();
+                IsFull = s.Registrations.Count >= s.MaxPlayers,
+                IsRegistrationOpen = (!s.RegistrationOpenDate.HasValue || s.RegistrationOpenDate.Value <= now) &&
+                                    (!s.RegistrationCloseDate.HasValue || s.RegistrationCloseDate.Value > now)
+            })
+            .OrderByDescending(s => s.IsRegistrationOpen)
+            .ThenBy(s => s.RegistrationCloseDate ?? DateTime.MaxValue)
+            .ThenBy(s => s.StartDate)
+            .ToList();
 
             _logger.LogInformation("Found {Count} sessions", sessions.Count);
 
@@ -314,16 +291,6 @@ public class SessionsController : ControllerBase
             {
                 amountToCharge = session.EarlyBirdPrice.Value;
                 _logger.LogInformation("Applying early bird price: {EarlyBirdPrice}", amountToCharge);
-            }
-
-            // Validate age requirement (must be 18+)
-            var age = DateTime.UtcNow.Year - model.DateOfBirth.Year;
-            if (model.DateOfBirth > DateTime.UtcNow.AddYears(-age)) age--;
-
-            if (age < 18)
-            {
-                _logger.LogWarning("User age {Age} below minimum requirement", age);
-                return BadRequest(new { message = "You must be at least 18 years old to register" });
             }
 
             // Update user profile with registration information

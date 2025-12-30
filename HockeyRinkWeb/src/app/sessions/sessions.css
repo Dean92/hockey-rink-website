@@ -1,21 +1,167 @@
-.card {
-  transition: transform 0.2s;
+.sessions-hero {
+  background: #1565c0;
+  padding-top: 4rem;
+  padding-bottom: 6rem;
+  margin-bottom: 0;
+  border-radius: 0 0 0 0;
+  position: relative;
 }
 
-.card:hover {
-  transform: translateY(-5px);
+.sessions-hero::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4rem;
+  background: linear-gradient(to bottom right, transparent 49%, #f8f9fa 50%);
+  display: none; /* Optional: slanted edge effect if desired, keeping simple for now */
 }
 
 .filter-card {
-  background: linear-gradient(135deg, #e1f5fe 0%, #f1f8fb 100%);
-  border: 1px solid #81d4fa;
+  background: #ffffff;
+  border-radius: 15px;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  margin-top: -4rem; /* Overlap with hero */
+  position: relative;
+  z-index: 10;
+  margin-bottom: 3rem;
 }
 
 .session-card {
-  background: linear-gradient(135deg, #e1f5fe 0%, #f1f8fb 100%);
-  border: 1px solid #81d4fa;
+  border: none;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  background: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.btn.disabled {
-  cursor: not-allowed;
+.session-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Preferred league highlighting */
+.session-card.preferred-league {
+  border: 2px solid #ffd700;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+}
+
+.session-card.preferred-league:hover {
+  box-shadow: 0 15px 35px rgba(255, 215, 0, 0.3);
+}
+
+.session-card.preferred-league .session-card-header {
+  background: linear-gradient(135deg, #fff9e6 0%, #e3f2fd 100%);
+}
+
+.session-card.preferred-league .session-league-badge {
+  background-color: #fff9e6;
+  color: #b8860b;
+  border: 1px solid #ffd700;
+}
+
+.session-card-header {
+  background: #e3f2fd;
+  padding: 1.5rem 1.5rem 0.5rem;
+  border-bottom: none;
+}
+
+.session-card-title {
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+}
+
+.session-league-badge {
+  display: inline-block;
+  padding: 0.35em 0.65em;
+  font-size: 0.75em;
+  font-weight: 600;
+  color: #0d47a1;
+  background-color: #e3f2fd;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.session-card-body {
+  padding: 1rem 1.5rem;
+  flex: 1;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.info-icon {
+  min-width: 24px;
+  color: #1976d2;
+  margin-right: 12px;
+  margin-top: 3px;
+  text-align: center;
+}
+
+.session-card-footer {
+  padding: 1.25rem 1.5rem;
+  background-color: #f8f9fa;
+  border-top: 1px solid rgba(0, 0, 0, 0.03);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 0 0 16px 16px;
+}
+
+.price-display {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #7f8c8d;
+  font-weight: 600;
+}
+
+.price-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #2c3e50;
+}
+
+.spots-badge {
+  font-size: 0.85rem;
+  padding: 0.6em 1em;
+  border-radius: 50px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.form-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  border-color: #dee2e6;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 0.25rem rgba(25, 118, 210, 0.15);
 }
