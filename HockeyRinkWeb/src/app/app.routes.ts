@@ -11,6 +11,7 @@ import { AdminDashboard } from './admin-dashboard/admin-dashboard';
 import { AdminUsers } from './admin-users/admin-users';
 import { AdminSessions } from './admin-sessions/admin-sessions';
 import { AdminLeagues } from './admin-leagues/admin-leagues';
+import { AdminTeams } from './admin-teams/admin-teams';
 import { SetupPassword } from './setup-password/setup-password';
 import { NotFound } from './not-found/not-found';
 import { AuthGuard } from './auth.guard';
@@ -48,6 +49,11 @@ export const routes: Routes = [
   {
     path: 'admin/leagues',
     component: AdminLeagues,
+    canActivate: [AuthGuard, AdminGuard],
+  },
+  {
+    path: 'admin/sessions/:sessionId/teams',
+    component: AdminTeams,
     canActivate: [AuthGuard, AdminGuard],
   },
   { path: 'setup-password/:token', component: SetupPassword },

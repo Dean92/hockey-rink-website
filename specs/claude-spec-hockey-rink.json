@@ -1853,5 +1853,246 @@
       "Test hero section on various screen sizes and browsers"
     ]
   },
+  "week_10": {
+    "status": "🔄 Planned",
+    "focus": "Security & Framework Upgrades",
+    "estimated_hours": "12-15 hours",
+    "start_date": "TBD (After Week 8 & 9 completion)",
+    "objectives": [
+      "Migrate from custom Base64 tokens to proper JWT authentication",
+      "Upgrade backend to .NET 10",
+      "Upgrade frontend to Angular 21",
+      "Improve authentication security and maintainability"
+    ],
+    "tasks": [
+      {
+        "jwt_authentication_migration": {
+          "status": "🔄 Planned",
+          "priority": "High - Security & Technical Debt",
+          "description": "Replace custom Base64 token authentication with industry-standard JWT (JSON Web Tokens)",
+          "current_issues": [
+            "Custom Base64 token is not cryptographically signed",
+            "Cannot use [Authorize] attributes with current token system",
+            "Manual token validation in every controller is error-prone",
+            "No token refresh mechanism",
+            "Tokens cannot be revoked before expiry"
+          ],
+          "backend_changes": {
+            "packages": [
+              "Install Microsoft.AspNetCore.Authentication.JwtBearer",
+              "Install System.IdentityModel.Tokens.Jwt"
+            ],
+            "program_cs": [
+              "Remove CookieAuthentication configuration",
+              "Add JWT Bearer authentication with proper key signing",
+              "Configure TokenValidationParameters (issuer, audience, signing key, lifetime)",
+              "Set default authentication scheme to JwtBearerDefaults.AuthenticationScheme"
+            ],
+            "auth_controller": [
+              "Replace Base64 token generation with JwtSecurityTokenHandler",
+              "Add proper claims (userId, email, role, expiry)",
+              "Sign tokens with symmetric or asymmetric key",
+              "Add refresh token endpoint (POST /api/auth/refresh)",
+              "Add token revocation/blacklist mechanism"
+            ],
+            "all_controllers": [
+              "Remove manual IsAdminAsync() and GetUserIdFromTokenAsync() methods",
+              "Replace manual checks with [Authorize] and [Authorize(Roles = \"Admin\")] attributes",
+              "Access user info via HttpContext.User.Claims",
+              "Remove duplicate authentication logic"
+            ],
+            "configuration": [
+              "Add JWT settings to appsettings.json (SecretKey, Issuer, Audience, ExpireMinutes)",
+              "Use Azure Key Vault or environment variables for production keys",
+              "Set AccessToken expiry: 15-60 minutes",
+              "Set RefreshToken expiry: 7-30 days"
+            ]
+          },
+          "frontend_changes": {
+            "auth_service": [
+              "Keep existing token storage in localStorage (or move to httpOnly cookies if desired)",
+              "Update login response handling to accept JWT format",
+              "Add refresh token storage (localStorage or sessionStorage)",
+              "Implement automatic token refresh before expiry",
+              "Add token refresh interceptor for 401 responses"
+            ],
+            "http_interceptor": [
+              "Continue sending Authorization: Bearer <JWT>",
+              "Handle 401 responses by attempting token refresh",
+              "Redirect to login only after refresh fails"
+            ],
+            "minimal_changes": [
+              "Most frontend code remains unchanged",
+              "Token is still stored and sent the same way",
+              "Only AuthService token generation/refresh logic changes"
+            ]
+          },
+          "security_improvements": [
+            "✅ Cryptographically signed tokens prevent tampering",
+            "✅ Standard JWT format enables third-party validation",
+            "✅ Token refresh reduces exposure window",
+            "✅ Can implement token blacklist for immediate revocation",
+            "✅ Roles and claims properly embedded in token",
+            "✅ [Authorize] attributes work correctly"
+          ],
+          "acceptance_criteria": [
+            "Login returns proper JWT with signature",
+            "All [Authorize] attributes work without manual token validation",
+            "Token refresh mechanism implemented and tested",
+            "Old Base64 tokens no longer accepted",
+            "All existing API tests pass with JWT authentication",
+            "Frontend can automatically refresh expired tokens",
+            "Admin endpoints properly enforce role-based authorization"
+          ],
+          "testing": [
+            "Test token expiry and refresh flow",
+            "Test invalid/tampered token rejection",
+            "Test role-based authorization ([Authorize(Roles = \"Admin\")])",
+            "Test logout clears tokens",
+            "Test concurrent requests with token refresh",
+            "Load test with JWT validation performance"
+          ]
+        }
+      },
+      {
+        "dotnet_10_upgrade": {
+          "status": "🔄 Planned",
+          "priority": "Medium - Framework Modernization",
+          "description": "Upgrade backend from .NET 9 to .NET 10",
+          "prerequisites": [
+            ".NET 10 SDK released and stable (expected Q4 2025)"
+          ],
+          "steps": [
+            "Install .NET 10 SDK",
+            "Update HockeyRinkAPI.csproj: <TargetFramework>net10.0</TargetFramework>",
+            "Update NuGet packages to .NET 10 compatible versions",
+            "Update Entity Framework Core to 10.x",
+            "Update Microsoft.AspNetCore.* packages to 10.x",
+            "Update Azure SDK packages if needed",
+            "Review .NET 10 breaking changes and migration guide",
+            "Test all API endpoints",
+            "Run full test suite (xUnit)",
+            "Update Azure deployment configuration for .NET 10 runtime"
+          ],
+          "potential_benefits": [
+            "Performance improvements",
+            "New C# language features",
+            "Security patches",
+            "Better async/await patterns",
+            "Improved minimal APIs if applicable"
+          ],
+          "acceptance_criteria": [
+            "All API endpoints function correctly on .NET 10",
+            "All unit tests pass",
+            "No performance regressions",
+            "Azure deployment successful with .NET 10 runtime"
+          ]
+        }
+      },
+      {
+        "angular_21_upgrade": {
+          "status": "🔄 Planned",
+          "priority": "Medium - Framework Modernization",
+          "description": "Upgrade frontend from Angular 20 to Angular 21",
+          "prerequisites": [
+            "Angular 21 released and stable (expected November 2025)"
+          ],
+          "steps": [
+            "Run: ng update @angular/cli @angular/core",
+            "Update Angular Material if used",
+            "Update RxJS to compatible version",
+            "Update TypeScript to required version",
+            "Review Angular 21 breaking changes",
+            "Test all components and routes",
+            "Check for deprecated APIs",
+            "Update build configuration if needed",
+            "Test production build: ng build --configuration production",
+            "Update Azure Static Web Apps deployment if needed"
+          ],
+          "potential_benefits": [
+            "Performance improvements (faster change detection)",
+            "New Angular signals features",
+            "Better developer experience",
+            "Security patches",
+            "Improved tree-shaking"
+          ],
+          "acceptance_criteria": [
+            "All pages render correctly",
+            "All routes and navigation work",
+            "Forms and validation function properly",
+            "HTTP requests and authentication work",
+            "Production build completes without errors",
+            "No console errors or warnings",
+            "Azure deployment successful"
+          ]
+        }
+      },
+      {
+        "code_cleanup": {
+          "status": "🔄 Planned",
+          "priority": "Low - Technical Debt",
+          "description": "Clean up deprecated code and improve maintainability",
+          "tasks": [
+            "Remove unused cookie authentication configuration from Program.cs",
+            "Consolidate authentication logic (no more duplicate IsAdminAsync methods)",
+            "Remove TODO comments for JWT migration",
+            "Update API documentation with JWT examples",
+            "Add code comments for complex JWT logic",
+            "Review and update .gitignore if needed",
+            "Check for unused NuGet packages and npm packages",
+            "Update README with new authentication flow"
+          ]
+        }
+      }
+    ],
+    "priority_order": [
+      "1. .NET 10 upgrade (if released)",
+      "2. Angular 21 upgrade (if released)",
+      "3. JWT authentication backend implementation",
+      "4. JWT authentication frontend integration",
+      "5. Token refresh mechanism",
+      "6. Update all controllers to use [Authorize] attributes",
+      "7. Remove manual authentication methods",
+      "8. Testing (unit tests, integration tests, E2E)",
+      "9. Code cleanup and documentation",
+      "10. Deploy and monitor"
+    ],
+    "estimated_completion": "End of Week 10 (mid-late January 2026)",
+    "dependencies": [
+      ".NET 10 SDK release schedule",
+      "Angular 21 release schedule",
+      "Week 8 and Week 9 completion"
+    ],
+    "notes": [
+      "JWT migration is the most critical task for security and maintainability",
+      "Framework upgrades depend on stable releases - may need to postpone if not ready",
+      "JWT secret key MUST be stored securely (Azure Key Vault in production)",
+      "Consider using RS256 (asymmetric) instead of HS256 for better security",
+      "Token refresh implementation should handle race conditions",
+      "Add comprehensive logging for authentication failures",
+      "Consider implementing token blacklist using Redis for logout functionality",
+      "Test authentication flow thoroughly before removing old system",
+      "Keep old token validation code in a separate branch temporarily for rollback",
+      "Update API documentation (Swagger) to reflect JWT authentication",
+      "Consider adding rate limiting to token refresh endpoint",
+      "Monitor token generation and validation performance",
+      "Document JWT claims structure for future developers",
+      "Ensure backward compatibility during migration (support both tokens temporarily?)",
+      "Plan a maintenance window for JWT migration if needed"
+    ],
+    "risks": [
+      "JWT migration could break existing sessions - users need to re-login",
+      ".NET 10 or Angular 21 may have breaking changes requiring code updates",
+      "Token refresh race conditions could cause authentication issues",
+      "Framework upgrades may introduce new bugs"
+    ],
+    "mitigation": [
+      "Thoroughly test JWT implementation in development",
+      "Deploy during low-traffic period",
+      "Have rollback plan ready",
+      "Monitor error logs closely after deployment",
+      "Keep old authentication code in version control for quick rollback"
+    ]
+  },
   "repo": "https://github.com/Dean92/hockey-rink-website"
 }

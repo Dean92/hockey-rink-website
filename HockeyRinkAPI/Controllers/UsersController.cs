@@ -82,8 +82,7 @@ public class UsersController : ControllerBase
                     .ThenInclude(s => s.League)
                 .Where(sr => sr.UserId == userId
                     && sr.Session.StartDate <= now
-                    && sr.Session.EndDate >= now
-                    && sr.Session.LeagueId.HasValue)
+                    && sr.Session.EndDate >= now)
                 .OrderBy(sr => sr.Session.StartDate)
                 .FirstOrDefaultAsync();
 

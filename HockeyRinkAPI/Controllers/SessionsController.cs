@@ -53,7 +53,7 @@ public class SessionsController : ControllerBase
                 date
             );
 
-            var sessionsQuery = _dbContext.Sessions.Include(s => s.League).Include(s => s.Registrations).AsQueryable();
+            var sessionsQuery = _dbContext.Sessions.Include(s => s.League).Include(s => s.SessionRegistrations).AsQueryable();
 
             if (leagueId.HasValue)
             {
@@ -146,9 +146,9 @@ public class SessionsController : ControllerBase
                     s.League.RegistrationOpenDate,
                     s.League.RegistrationCloseDate
                 },
-                RegistrationCount = s.Registrations.Count,
-                SpotsLeft = s.MaxPlayers - s.Registrations.Count,
-                IsFull = s.Registrations.Count >= s.MaxPlayers,
+                RegistrationCount = s.SessionRegistrations.Count,
+                SpotsLeft = s.MaxPlayers - s.SessionRegistrations.Count,
+                IsFull = s.SessionRegistrations.Count >= s.MaxPlayers,
                 IsRegistrationOpen = (!s.RegistrationOpenDate.HasValue || s.RegistrationOpenDate.Value <= now) &&
                                     (!s.RegistrationCloseDate.HasValue || s.RegistrationCloseDate.Value > now)
             })
@@ -319,7 +319,7 @@ public class SessionsController : ControllerBase
                 ZipCode = model.ZipCode,
                 Phone = model.Phone,
                 Email = model.Email,
-                DateOfBirth = model.DateOfBirth,
+                DateOfBirth = DateOnly.FromDateTime(model.DateOfBirth),
                 Position = model.Position,
                 RegistrationDate = registrationDate,
                 AmountPaid = amountToCharge,

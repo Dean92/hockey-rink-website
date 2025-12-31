@@ -79,32 +79,24 @@ public class Program
             .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
             {
-                options.LoginPath = "/api/auth/login";
-                options.AccessDeniedPath = "/api/auth/access-denied";
-                options.Cookie.HttpOnly = false;
+                options.LoginPath = null; // Prevent automatic redirects
+                options.AccessDeniedPath = null; // Prevent automatic redirects
+                options.Cookie.HttpOnly = true;
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.Cookie.SameSite = SameSiteMode.None; // Changed from Lax to None for cross-origin
                 options.ExpireTimeSpan = TimeSpan.FromHours(24);
                 options.SlidingExpiration = true;
                 options.Events.OnRedirectToLogin = context =>
                 {
-                    if (context.Request.Path.StartsWithSegments("/api"))
-                    {
-                        context.Response.StatusCode = 401;
-                        context.Response.Headers["Content-Type"] = "application/json";
-                        return context.Response.WriteAsync("{\"error\": \"Unauthorized\"}");
-                    }
-                    return Task.CompletedTask;
+                    context.Response.StatusCode = 401;
+                    context.Response.Headers["Content-Type"] = "application/json";
+                    return context.Response.WriteAsync("{\"error\": \"Unauthorized\"}");
                 };
                 options.Events.OnRedirectToAccessDenied = context =>
                 {
-                    if (context.Request.Path.StartsWithSegments("/api"))
-                    {
-                        context.Response.StatusCode = 403;
-                        context.Response.Headers["Content-Type"] = "application/json";
-                        return context.Response.WriteAsync("{\"error\": \"Forbidden\"}");
-                    }
-                    return Task.CompletedTask;
+                    context.Response.StatusCode = 403;
+                    context.Response.Headers["Content-Type"] = "application/json";
+                    return context.Response.WriteAsync("{\"error\": \"Forbidden\"}");
                 };
             });
 

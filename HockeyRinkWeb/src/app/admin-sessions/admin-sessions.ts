@@ -6,6 +6,7 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { NgxMaskDirective, provideNgxMask } from 'ngx-mask';
 import { DataService } from '../data';
 import { Session, League } from '../models';
@@ -13,7 +14,7 @@ import { Session, League } from '../models';
 @Component({
   selector: 'app-admin-sessions',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgxMaskDirective],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, NgxMaskDirective],
   providers: [provideNgxMask()],
   templateUrl: './admin-sessions.html',
   styleUrls: ['./admin-sessions.css'],

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
@@ -144,7 +144,7 @@ public class AdminController : ControllerBase
 
             var sessions = await _dbContext
                 .Sessions.Include(s => s.League)
-                .Include(s => s.Registrations)
+                .Include(s => s.SessionRegistrations)
                 .ToListAsync();
 
             // Auto-activate/deactivate sessions based on dates
@@ -243,7 +243,7 @@ public class AdminController : ControllerBase
                     s.IsActive,
                     s.LeagueId,
                     LeagueName = s.League != null ? s.League.Name : null,
-                    RegistrationCount = s.Registrations.Count,
+                    RegistrationCount = s.SessionRegistrations.Count,
                     s.CreatedAt,
                     s.MaxPlayers,
                     s.RegistrationOpenDate,
@@ -260,6 +260,45 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching all sessions");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    [HttpGet("sessions/{id}")]
+    public async Task<IActionResult> GetSession(int id)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var session = await _dbContext
+                .Sessions
+                .Include(s => s.League)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (session == null)
+            {
+                return NotFound(new { message = "Session not found" });
+            }
+
+            return Ok(new
+            {
+                session.Id,
+                session.Name,
+                session.StartDate,
+                session.EndDate,
+                session.Fee,
+                session.IsActive,
+                session.LeagueId,
+                LeagueName = session.League?.Name
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching session {SessionId}", id);
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
     }
@@ -417,7 +456,7 @@ public class AdminController : ControllerBase
             }
 
             var session = await _dbContext
-                .Sessions.Include(s => s.Registrations)
+                .Sessions.Include(s => s.SessionRegistrations)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (session == null)
@@ -426,7 +465,7 @@ public class AdminController : ControllerBase
             }
 
             // Check if there are any registrations
-            if (session.Registrations.Any())
+            if (session.SessionRegistrations.Any())
             {
                 // Instead of deleting, deactivate the session
                 session.IsActive = false;
@@ -468,7 +507,7 @@ public class AdminController : ControllerBase
             }
 
             var session = await _dbContext
-                .Sessions.Include(s => s.Registrations)
+                .Sessions.Include(s => s.SessionRegistrations)
                 .ThenInclude(r => r.User)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -477,7 +516,7 @@ public class AdminController : ControllerBase
                 return NotFound(new { message = "Session not found" });
             }
 
-            var registrations = session.Registrations.Select(r => new
+            var registrations = session.SessionRegistrations.Select(r => new
             {
                 r.Id,
                 r.Name,
@@ -529,7 +568,7 @@ public class AdminController : ControllerBase
             }
 
             var session = await _dbContext
-                .Sessions.Include(s => s.Registrations)
+                .Sessions.Include(s => s.SessionRegistrations)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (session == null)
@@ -538,13 +577,13 @@ public class AdminController : ControllerBase
             }
 
             // Check capacity
-            if (session.Registrations.Count >= session.MaxPlayers)
+            if (session.SessionRegistrations.Count >= session.MaxPlayers)
             {
                 return BadRequest(new { message = "Session is at full capacity" });
             }
 
             // Check for duplicate registration by email
-            if (session.Registrations.Any(r => r.Email.ToLower() == model.Email.ToLower()))
+            if (session.SessionRegistrations.Any(r => r.Email.ToLower() == model.Email.ToLower()))
             {
                 return Conflict(new { message = "User is already registered for this session" });
             }
@@ -603,7 +642,7 @@ public class AdminController : ControllerBase
                 City = model.City,
                 State = model.State,
                 ZipCode = model.ZipCode,
-                DateOfBirth = model.DateOfBirth,
+                DateOfBirth = DateOnly.FromDateTime(model.DateOfBirth),
                 Position = model.Position,
                 RegistrationDate = DateTime.UtcNow,
                 AmountPaid = model.AmountPaid
@@ -680,7 +719,7 @@ public class AdminController : ControllerBase
             registration.City = model.City;
             registration.State = model.State;
             registration.ZipCode = model.ZipCode;
-            registration.DateOfBirth = model.DateOfBirth;
+            registration.DateOfBirth = DateOnly.FromDateTime(model.DateOfBirth);
             registration.Position = model.Position;
             registration.AmountPaid = model.AmountPaid;
 
@@ -785,7 +824,7 @@ public class AdminController : ControllerBase
             // Get all active sessions with registration details
             var activeSessions = await _dbContext.Sessions
                 .Include(s => s.League)
-                .Include(s => s.Registrations)
+                .Include(s => s.SessionRegistrations)
                 .Where(s => s.IsActive)
                 .OrderBy(s => s.StartDate)
                 .Select(s => new
@@ -796,9 +835,9 @@ public class AdminController : ControllerBase
                     s.StartDate,
                     s.EndDate,
                     s.MaxPlayers,
-                    RegisteredCount = s.Registrations.Count,
-                    SpotsRemaining = s.MaxPlayers - s.Registrations.Count,
-                    TotalRevenue = s.Registrations.Sum(r => r.AmountPaid),
+                    RegisteredCount = s.SessionRegistrations.Count,
+                    SpotsRemaining = s.MaxPlayers - s.SessionRegistrations.Count,
+                    TotalRevenue = s.SessionRegistrations.Sum(r => r.AmountPaid),
                     s.RegularPrice
                 })
                 .ToListAsync();
@@ -828,7 +867,7 @@ public class AdminController : ControllerBase
                     s.Name,
                     LeagueName = s.League != null ? s.League.Name : null,
                     s.StartDate,
-                    RegisteredCount = s.Registrations.Count,
+                    RegisteredCount = s.SessionRegistrations.Count,
                     s.MaxPlayers
                 })
                 .ToListAsync();

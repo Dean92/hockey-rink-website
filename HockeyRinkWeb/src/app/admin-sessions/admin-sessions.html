@@ -126,11 +126,18 @@
           <td>{{ session.registrationCount || 0 }}</td>
           <td>
             <button
+              class="btn btn-sm btn-outline-secondary me-2"
+              [routerLink]="['/admin/sessions', session.id, 'teams']"
+              title="Manage Teams"
+            >
+              <i class="bi bi-people-fill"></i>
+            </button>
+            <button
               class="btn btn-sm btn-outline-info me-2"
               (click)="viewRegistrations(session)"
               title="View Registrations"
             >
-              <i class="bi bi-people"></i>
+              <i class="bi bi-person-check"></i>
             </button>
             <button
               class="btn btn-sm btn-outline-primary me-2"

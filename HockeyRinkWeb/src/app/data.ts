@@ -235,4 +235,56 @@ export class DataService {
       }
     );
   }
+
+  // Team management methods
+  getTeamsForSession(sessionId: number): Observable<any[]> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get<any[]>(
+      `${this.apiUrl}/admin/sessions/${sessionId}/teams`,
+      {
+        ...(headers && { headers }),
+        withCredentials: true,
+      }
+    );
+  }
+
+  createTeam(sessionId: number, team: any): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.post(
+      `${this.apiUrl}/admin/sessions/${sessionId}/teams`,
+      team,
+      {
+        ...(headers && { headers }),
+        withCredentials: true,
+      }
+    );
+  }
+
+  updateTeam(teamId: number, team: any): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put(
+      `${this.apiUrl}/admin/sessions/teams/${teamId}`,
+      team,
+      {
+        ...(headers && { headers }),
+        withCredentials: true,
+      }
+    );
+  }
+
+  deleteTeam(teamId: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.delete(`${this.apiUrl}/admin/sessions/teams/${teamId}`, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  getSessionById(sessionId: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get(`${this.apiUrl}/admin/sessions/${sessionId}`, {
+      headers,
+      withCredentials: true,
+    });
+  }
 }

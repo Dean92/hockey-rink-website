@@ -1,12 +1,25 @@
-﻿namespace HockeyRinkAPI.Models
+﻿using System;
+using System.Collections.Generic;
+
+namespace HockeyRinkAPI.Models;
+
+public partial class Team
 {
-    public class Team
-    {
-        public int Id { get; set; }
-        public int LeagueId { get; set; }
-        public string? Name { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public League? League { get; set; }
-        public List<Player>? Players { get; set; }
-    }
+    public int Id { get; set; }
+
+    public string? TeamColor { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public string? CaptainName { get; set; }
+
+    public int SessionId { get; set; }
+
+    public string TeamName { get; set; } = null!;
+
+    public DateTime UpdatedAt { get; set; }
+
+    public virtual ICollection<Player> Players { get; set; } = new List<Player>();
+
+    public virtual Session Session { get; set; } = null!;
 }

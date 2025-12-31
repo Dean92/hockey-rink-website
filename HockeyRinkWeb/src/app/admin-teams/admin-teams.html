@@ -1,0 +1,189 @@
+<div class="container-fluid py-4">
+  <app-toast-container></app-toast-container>
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <button class="btn btn-outline-secondary mb-2" (click)="goBack()">
+        <i class="bi bi-arrow-left me-2"></i>Back to Sessions
+      </button>
+      <h2 class="fw-bold mb-1">Manage Teams</h2>
+      <p class="text-muted mb-0">Session: {{ sessionName() }}</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreateModal()">
+      <i class="bi bi-plus-lg me-2"></i>Create Team
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-3 text-muted">Loading teams...</p>
+  </div>
+  }
+
+  <!-- Teams Table -->
+  @if (!isLoading()) {
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (teams().length === 0) {
+      <div class="text-center py-5">
+        <i class="bi bi-people display-1 text-muted mb-3"></i>
+        <h5 class="text-muted">No teams created yet</h5>
+        <p class="text-muted">
+          Create teams for this session to prepare for the draft
+        </p>
+        <button class="btn btn-primary mt-3" (click)="openCreateModal()">
+          <i class="bi bi-plus-lg me-2"></i>Create First Team
+        </button>
+      </div>
+      } @else {
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Team Name</th>
+              <th>Captain</th>
+              <th>Color</th>
+              <th>Created</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (team of teams(); track team.id) {
+            <tr>
+              <td>
+                <strong>{{ team.teamName }}</strong>
+              </td>
+              <td>
+                {{ team.captainName || "—" }}
+              </td>
+              <td>
+                @if (team.teamColor) {
+                <span
+                  class="badge"
+                  [style.background-color]="team.teamColor"
+                  [style.color]="
+                    team.teamColor === 'Yellow' || team.teamColor === 'White'
+                      ? '#000'
+                      : '#fff'
+                  "
+                >
+                  {{ team.teamColor }}
+                </span>
+                } @else { — }
+              </td>
+              <td>
+                {{ team.createdAt | date : "short" }}
+              </td>
+              <td class="text-end">
+                <button
+                  class="btn btn-sm btn-outline-primary me-2"
+                  (click)="openEditModal(team)"
+                >
+                  <i class="bi bi-pencil"></i> Edit
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="deleteTeam(team)"
+                >
+                  <i class="bi bi-trash"></i> Delete
+                </button>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </div>
+  </div>
+  }
+</div>
+
+<!-- Create/Edit Team Modal -->
+@if (showModal()) {
+<div
+  class="modal show d-block"
+  tabindex="-1"
+  style="background-color: rgba(0, 0, 0, 0.5)"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          {{ isEditing() ? "Edit Team" : "Create Team" }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="teamForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <!-- Team Name -->
+          <div class="mb-3">
+            <label class="form-label"
+              >Team Name <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              class="form-control"
+              formControlName="teamName"
+              placeholder="Enter team name"
+              [class.is-invalid]="hasError('teamName', 'required')"
+            />
+            @if (hasError('teamName', 'required')) {
+            <div class="invalid-feedback">Team name is required</div>
+            }
+          </div>
+
+          <!-- Captain Name -->
+          <div class="mb-3">
+            <label class="form-label">Captain Name</label>
+            <input
+              type="text"
+              class="form-control"
+              formControlName="captainName"
+              placeholder="Enter captain name (optional)"
+            />
+          </div>
+
+          <!-- Team Color -->
+          <div class="mb-3">
+            <label class="form-label">Team Color</label>
+            <select class="form-select" formControlName="teamColor">
+              <option value="">Select a color (optional)</option>
+              @for (color of teamColors; track color.value) {
+              <option [value]="color.value">{{ color.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="closeModal()"
+            [disabled]="isSaving()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="teamForm.invalid || isSaving()"
+          >
+            @if (isSaving()) {
+            <span
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+            ></span>
+            } {{ isEditing() ? "Update" : "Create" }} Team
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+}
