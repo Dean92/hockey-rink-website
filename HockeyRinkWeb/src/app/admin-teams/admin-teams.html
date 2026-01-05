@@ -77,7 +77,7 @@
                 } @else { — }
               </td>
               <td>
-                {{ team.createdAt | date : "short" }}
+                {{ formatDateInCentralTime(team.createdAt) }}
               </td>
               <td class="text-end">
                 <button

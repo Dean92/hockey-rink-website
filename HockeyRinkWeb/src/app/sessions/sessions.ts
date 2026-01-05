@@ -117,7 +117,20 @@ export class Sessions implements OnInit {
       .pipe(
         tap((data) => {
           console.log('Sessions loaded:', data);
-          this.sessions.set(data);
+          // Filter out sessions where registration has closed
+          const now = new Date();
+          const activeSessions = data.filter((session) => {
+            if (!session.registrationCloseDate) {
+              return true; // No close date means always visible
+            }
+            const closeDate = new Date(session.registrationCloseDate);
+            return closeDate > now; // Only show if close date is in the future
+          });
+          console.log(
+            'Active sessions after filtering closed registrations:',
+            activeSessions
+          );
+          this.sessions.set(activeSessions);
           this.errorMessage.set(null);
           this.isLoading.set(false);
         }),

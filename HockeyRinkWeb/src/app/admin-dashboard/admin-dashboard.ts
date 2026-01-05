@@ -1,14 +1,14 @@
-import { Component, OnInit, signal } from "@angular/core";
-import { CommonModule, DatePipe, CurrencyPipe } from "@angular/common";
-import { RouterLink } from "@angular/router";
-import { AdminService, AdminDashboardData } from "../admin.service";
+import { Component, OnInit, signal } from '@angular/core';
+import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { AdminService, AdminDashboardData } from '../admin.service';
 
 @Component({
-  selector: "app-admin-dashboard",
+  selector: 'app-admin-dashboard',
   standalone: true,
   imports: [CommonModule, DatePipe, CurrencyPipe, RouterLink],
-  templateUrl: "./admin-dashboard.html",
-  styleUrls: ["./admin-dashboard.css"],
+  templateUrl: './admin-dashboard.html',
+  styleUrls: ['./admin-dashboard.css'],
 })
 export class AdminDashboard implements OnInit {
   dashboardData = signal<AdminDashboardData | null>(null);
@@ -24,17 +24,32 @@ export class AdminDashboard implements OnInit {
   loadDashboard() {
     this.adminService.getDashboard().subscribe({
       next: (data) => {
-        console.log("Admin dashboard data loaded:", data);
+        console.log('Admin dashboard data loaded:', data);
         this.dashboardData.set(data);
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error("Error fetching admin dashboard:", err);
+        console.error('Error fetching admin dashboard:', err);
         this.errorMessage.set(
-          err.error?.message || "Failed to load admin dashboard"
+          err.error?.message || 'Failed to load admin dashboard'
         );
         this.isLoading.set(false);
       },
+    });
+  }
+
+  formatDateInCentralTime(dateString: string): string {
+    // Ensure the date string is treated as UTC
+    const utcDate = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+    const date = new Date(utcDate);
+    // Convert to user's local timezone
+    return date.toLocaleString('en-US', {
+      month: 'numeric',
+      day: 'numeric',
+      year: '2-digit',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
     });
   }
 }

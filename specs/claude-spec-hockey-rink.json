@@ -1721,6 +1721,71 @@
         ]
       },
       {
+        "name": "User Management - Clickable User Rows",
+        "description": "Admin can click on any user row in User Management to view detailed user profile with admin-specific information",
+        "estimated_hours": "3-4 hours",
+        "tasks": [
+          {
+            "component": "Backend API",
+            "items": [
+              "Add GET /api/admin/users/{id} endpoint (get user details by ID)",
+              "Return comprehensive user data: Basic profile, registration history, payment history, session attendance",
+              "Include admin-only fields: Account status, created date, last login, total spent, registration count, admin notes",
+              "Calculate user statistics: Total registrations, total amount paid, active sessions, completed sessions",
+              "Include league membership history if applicable",
+              "Add PUT /api/admin/users/{id}/notes endpoint (update admin notes for user)",
+              "Add AdminNotes field to ApplicationUser model (NVARCHAR(MAX), nullable)",
+              "Migration: Add AdminNotes column to AspNetUsers table",
+              "Validate only admins can read/write AdminNotes"
+            ]
+          },
+          {
+            "component": "Frontend UI - User Management Table",
+            "items": [
+              "Make each user row clickable (cursor: pointer, hover effect)",
+              "Add click handler to navigate to /admin/users/{id} route",
+              "Add visual indication that rows are clickable (hover background color change)",
+              "Maintain existing table functionality (sorting, filtering)"
+            ]
+          },
+          {
+            "component": "Frontend UI - User Profile Page (Admin View)",
+            "items": [
+              "Create admin-user-profile component with route /admin/users/{id}",
+              "Display user basic information: Name, Email, Phone, Date of Birth, Address",
+              "Display account details: Created Date (local timezone), Email Confirmed status, Account Active status",
+              "Display league membership: Current league, league join date if applicable",
+              "Display registration history table: Session Name, League, Registration Date, Amount Paid, Payment Status",
+              "Display statistics cards: Total Registrations, Total Spent, Active Sessions, Completed Sessions",
+              "Add Admin Notes section: Textarea for notes with Save/Cancel buttons",
+              "Admin Notes: Display existing notes (read-only initially), 'Edit Notes' button to make editable",
+              "Admin Notes: Save button calls PUT /api/admin/users/{id}/notes with note content",
+              "Admin Notes: Show last updated timestamp if available (future enhancement)",
+              "Admin Notes: Character limit indicator (e.g., 5000 characters max)",
+              "Add 'Back to User Management' button/link",
+              "Add admin actions section: 'Deactivate Account', 'Reset Password', 'Send Email' (optional for Week 9)",
+              "Style consistently with other admin pages"
+            ]
+          }
+        ],
+        "acceptance_criteria": [
+          "Admin can click any user row in User Management to view their profile",
+          "User profile page displays all relevant user information",
+          "Admin-specific information (account stats, registration history) is clearly visible",
+          "Admin can view and edit notes for any user",
+          "Admin notes are saved successfully and persist across sessions",
+          "Admin notes are NOT visible to regular users viewing their own profile",
+          "Notes section has clear visual distinction (e.g., card with border, different background color)",
+          "Registration history shows all sessions user has registered for",
+          "Navigation back to User Management works correctly",
+          "Non-admin users cannot access /admin/users/{id} routes",
+          "Non-admin users cannot read or modify admin notes via API",
+          "Page loads quickly even for users with many registrations",
+          "All dates display in user's local timezone",
+          "Profile page is responsive on mobile devices"
+        ]
+      },
+      {
         "name": "Home Page Redesign with Hero Section",
         "description": "Redesign home page with hero section featuring facility intro and photo, plus expanded service offerings",
         "estimated_hours": "4-5 hours",
@@ -1800,6 +1865,45 @@
           "Footer is responsive and looks good on all screen sizes",
           "Footer stays at bottom of page even with little content",
           "Icons have hover effects for better UX"
+        ]
+      },
+      {
+        "name": "Team Color Management Enhancement",
+        "description": "Allow admins to manually enter custom team colors in addition to selecting from predefined colors",
+        "estimated_hours": "2-3 hours",
+        "tasks": [
+          {
+            "component": "Frontend UI - Admin Teams",
+            "items": [
+              "Update team creation/edit modal to support both dropdown and manual text input for team colors",
+              "Add 'Custom Color' option to team color dropdown",
+              "When 'Custom Color' is selected, show text input field for manual color entry",
+              "Allow free-text entry for colors (e.g., 'Light Blue', 'Dark Green', 'Silver', 'Maroon')",
+              "Display custom colors in the team table with same badge styling as predefined colors",
+              "Validate color input: Max length 50 characters, required if 'Custom Color' selected",
+              "Keep existing predefined color options: Blue, Red, Green, Yellow, Purple, Orange, Brass, Copper",
+              "Show color preview badge in the modal when custom color is entered"
+            ]
+          },
+          {
+            "component": "Backend API",
+            "items": [
+              "Update Team model validation: TeamColor field accepts any string up to 50 characters",
+              "No database migration needed - TeamColor already supports NVARCHAR(50)",
+              "Ensure PUT /api/teams/{id} and POST /api/teams endpoints accept custom color values",
+              "No need for predefined color enum - accept any color string value"
+            ]
+          }
+        ],
+        "acceptance_criteria": [
+          "Admin can select from predefined color dropdown OR enter custom color name",
+          "Custom color names are saved and displayed correctly in the team table",
+          "Custom colors display with badge styling matching predefined colors",
+          "Modal shows clear indication of which input method is active (dropdown vs custom)",
+          "Validation prevents empty or excessively long color names",
+          "Existing teams with predefined colors continue to work without changes",
+          "UI is intuitive and doesn't confuse users with too many options",
+          "Team color badge in table shows color name regardless of source (predefined or custom)"
         ]
       },
       {

@@ -46,7 +46,7 @@
                 <span class="badge bg-warning">Pending</span>
                 }
               </td>
-              <td>{{ user.createdAt | date : "short" }}</td>
+              <td>{{ formatDateInCentralTime(user.createdAt) }}</td>
             </tr>
             }
           </tbody>

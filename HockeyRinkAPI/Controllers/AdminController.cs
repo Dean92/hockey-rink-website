@@ -116,7 +116,13 @@ public class AdminController : ControllerBase
                     u.LastName,
                     u.Email,
                     u.LeagueId,
-                    LeagueName = u.League != null ? u.League.Name : null,
+                    // Get league name from user's LeagueId or their most recent session registration
+                    LeagueName = u.League != null ? u.League.Name :
+                        _dbContext.SessionRegistrations
+                            .Where(sr => sr.UserId == u.Id)
+                            .OrderByDescending(sr => sr.RegistrationDate)
+                            .Select(sr => sr.Session.League.Name)
+                            .FirstOrDefault(),
                     u.EmailConfirmed,
                     u.CreatedAt,
                 })

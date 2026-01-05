@@ -335,10 +335,33 @@ export class SessionRegistration implements OnInit {
         console.error('Session registration failed:', err);
         this.isProcessingPayment.set(false);
 
-        const errorMsg =
-          err.error?.error ||
-          err.error?.message ||
+        let errorMsg =
           'Registration failed. Please check your payment information and try again.';
+
+        // Check for ModelState errors (400 BadRequest with validation errors)
+        if (err.status === 400 && err.error) {
+          if (err.error.errors) {
+            // Extract all error messages from ModelState
+            const errors = Object.values(err.error.errors).flat().join(' ');
+            errorMsg = errors || errorMsg;
+          } else if (typeof err.error === 'object') {
+            // Extract errors from empty string key (common in ModelState)
+            const emptyKeyErrors = err.error[''] || err.error[''];
+            if (Array.isArray(emptyKeyErrors) && emptyKeyErrors.length > 0) {
+              errorMsg = emptyKeyErrors.join(' ');
+            } else if (err.error.error) {
+              errorMsg = err.error.error;
+            } else if (err.error.message) {
+              errorMsg = err.error.message;
+            }
+          }
+        } else if (err.error?.error) {
+          errorMsg = err.error.error;
+        } else if (err.error?.message) {
+          errorMsg = err.error.message;
+        } else if (err.error?.details) {
+          errorMsg = err.error.details;
+        }
 
         this.errorMessage.set(errorMsg);
 

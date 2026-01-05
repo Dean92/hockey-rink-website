@@ -71,6 +71,20 @@ export class AdminTeams implements OnInit {
     });
   }
 
+  formatDateInCentralTime(dateString: string): string {
+    // Ensure the date string is treated as UTC
+    const utcDate = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+    const date = new Date(utcDate);
+    return date.toLocaleString('en-US', {
+      month: 'numeric',
+      day: 'numeric',
+      year: '2-digit',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  }
+
   loadSessionDetails() {
     this.dataService.getSessionById(this.sessionId()).subscribe({
       next: (session) => {
