@@ -19,6 +19,8 @@ public partial class Team
 
     public DateTime UpdatedAt { get; set; }
 
+    public int? MaxPlayers { get; set; }
+
     public virtual ICollection<Player> Players { get; set; } = new List<Player>();
 
     public virtual Session Session { get; set; } = null!;

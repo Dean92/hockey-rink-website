@@ -60,6 +60,20 @@ export class Sessions implements OnInit {
     return hasOpened && hasNotClosed;
   }
 
+  isSessionStartingSoon(session: Session): boolean {
+    const registrationClose = session.registrationCloseDate
+      ? new Date(session.registrationCloseDate)
+      : null;
+    const sessionStart = new Date(session.startDate);
+
+    // Check if registration is closed but session hasn't started yet
+    const isRegistrationClosed =
+      registrationClose && registrationClose <= this.currentDate;
+    const hasNotStarted = sessionStart > this.currentDate;
+
+    return isRegistrationClosed && hasNotStarted;
+  }
+
   isUserPreferredLeague(session: Session): boolean {
     const profile = this.userProfile();
     if (!profile || !profile.leagueId || !session.leagueId) {
@@ -117,17 +131,16 @@ export class Sessions implements OnInit {
       .pipe(
         tap((data) => {
           console.log('Sessions loaded:', data);
-          // Filter out sessions where registration has closed
+          // Filter out sessions that started more than 7 days ago
           const now = new Date();
           const activeSessions = data.filter((session) => {
-            if (!session.registrationCloseDate) {
-              return true; // No close date means always visible
-            }
-            const closeDate = new Date(session.registrationCloseDate);
-            return closeDate > now; // Only show if close date is in the future
+            const startDate = new Date(session.startDate);
+            const sevenDaysAfterStart = new Date(startDate);
+            sevenDaysAfterStart.setDate(sevenDaysAfterStart.getDate() + 7);
+            return sevenDaysAfterStart > now; // Only show if less than 7 days since start
           });
           console.log(
-            'Active sessions after filtering closed registrations:',
+            'Active sessions (within 7 days of start):',
             activeSessions
           );
           this.sessions.set(activeSessions);

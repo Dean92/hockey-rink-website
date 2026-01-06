@@ -48,6 +48,7 @@
               <th>Team Name</th>
               <th>Captain</th>
               <th>Color</th>
+              <th>Players</th>
               <th>Created</th>
               <th class="text-end">Actions</th>
             </tr>
@@ -77,6 +78,14 @@
                 } @else { — }
               </td>
               <td>
+                <span class="badge bg-secondary">{{
+                  team.playerCount || 0
+                }}</span>
+                @if (team.maxPlayers) {
+                <span class="text-muted ms-1">/ {{ team.maxPlayers }}</span>
+                }
+              </td>
+              <td>
                 {{ formatDateInCentralTime(team.createdAt) }}
               </td>
               <td class="text-end">
@@ -88,7 +97,7 @@
                 </button>
                 <button
                   class="btn btn-sm btn-outline-danger"
-                  (click)="deleteTeam(team)"
+                  (click)="openDeleteModal(team)"
                 >
                   <i class="bi bi-trash"></i> Delete
                 </button>
@@ -141,12 +150,12 @@
           <!-- Captain Name -->
           <div class="mb-3">
             <label class="form-label">Captain Name</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="captainName"
-              placeholder="Enter captain name (optional)"
-            />
+            <select class="form-select" formControlName="captainName">
+              <option value="">Select a captain (optional)</option>
+              @for (player of registeredPlayers(); track player.id) {
+              <option [value]="player.name">{{ player.name }}</option>
+              }
+            </select>
           </div>
 
           <!-- Team Color -->
@@ -158,6 +167,27 @@
               <option [value]="color.value">{{ color.name }}</option>
               }
             </select>
+          </div>
+
+          <!-- Max Players -->
+          <div class="mb-3">
+            <label class="form-label">Maximum Players</label>
+            <input
+              type="number"
+              class="form-control"
+              formControlName="maxPlayers"
+              placeholder="Enter max players (optional)"
+              min="1"
+              max="50"
+              [class.is-invalid]="
+                hasError('maxPlayers', 'min') || hasError('maxPlayers', 'max')
+              "
+            />
+            @if (hasError('maxPlayers', 'min')) {
+            <div class="invalid-feedback">Minimum is 1 player</div>
+            } @if (hasError('maxPlayers', 'max')) {
+            <div class="invalid-feedback">Maximum is 50 players</div>
+            }
           </div>
         </div>
         <div class="modal-footer">
@@ -183,6 +213,70 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteModal()) {
+<div
+  class="modal show d-block"
+  tabindex="-1"
+  style="background-color: rgba(0, 0, 0, 0.5)"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">Confirm Delete</h5>
+        <button
+          type="button"
+          class="btn-close"
+          (click)="closeDeleteModal()"
+          [disabled]="isDeleting()"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center py-3">
+          <i class="bi bi-exclamation-triangle text-warning display-1 mb-3"></i>
+          <h5>Are you sure you want to delete this team?</h5>
+          @if (teamToDelete()) {
+          <p class="text-muted mb-0">
+            <strong>{{ teamToDelete()!.teamName }}</strong>
+          </p>
+          @if (teamToDelete()!.playerCount && teamToDelete()!.playerCount! > 0)
+          {
+          <p class="text-danger mt-2">
+            <i class="bi bi-exclamation-circle me-1"></i>
+            This team has {{ teamToDelete()!.playerCount }} player(s) assigned.
+          </p>
+          } }
+          <p class="text-muted mt-3 mb-0">This action cannot be undone.</p>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="closeDeleteModal()"
+          [disabled]="isDeleting()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          (click)="confirmDelete()"
+          [disabled]="isDeleting()"
+        >
+          @if (isDeleting()) {
+          <span
+            class="spinner-border spinner-border-sm me-2"
+            role="status"
+          ></span>
+          } Delete Team
+        </button>
+      </div>
     </div>
   </div>
 </div>

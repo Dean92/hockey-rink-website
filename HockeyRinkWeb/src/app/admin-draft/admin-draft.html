@@ -1,0 +1,248 @@
+<div class="draft-container">
+  <!-- Header Section -->
+  <header class="draft-header">
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn btn-outline-secondary btn-sm" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <div>
+        <h5 class="mb-0 fw-bold text-dark">Draft Board</h5>
+        <small class="text-muted"
+          >Session #{{ sessionId() }} Drag & Drop Players</small
+        >
+      </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <button
+        class="btn btn-sm btn-outline-primary"
+        (click)="navigateToTeams()"
+      >
+        <i class="bi bi-people-fill"></i> Manage Teams
+      </button>
+      <button
+        class="btn btn-sm"
+        [class.btn-outline-info]="!showRatings()"
+        [class.btn-info]="showRatings()"
+        [class.text-white]="showRatings()"
+        (click)="toggleRatings()"
+      >
+        <i class="bi bi-eye{{ showRatings() ? '' : '-slash' }}-fill"></i>
+        {{ showRatings() ? "Ratings Visible" : "Ratings Hidden" }}
+      </button>
+    </div>
+  </header>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+  <div
+    class="d-flex flex-column align-items-center justify-content-center h-100"
+  >
+    <div class="spinner-border text-primary mb-3" role="status"></div>
+    <p class="text-muted">Loading draft data...</p>
+  </div>
+  }
+
+  <!-- Error State -->
+  @if (errorMessage()) {
+  <div class="p-4">
+    <div class="alert alert-danger" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ errorMessage() }}
+    </div>
+  </div>
+  }
+
+  <!-- Draft Interface -->
+  @if (!isLoading() && !errorMessage()) {
+  <div class="draft-content">
+    <!-- Left Column: Draft Pool -->
+    <aside class="pool-column">
+      <div class="pool-header">
+        <h6 class="mb-0 fw-bold">
+          <i class="bi bi-person-lines-fill text-primary me-2"></i>Draft Pool
+        </h6>
+        <span class="badge bg-secondary rounded-pill">{{
+          availablePlayers().length
+        }}</span>
+      </div>
+
+      <div
+        class="pool-list"
+        cdkDropList
+        #availableList="cdkDropList"
+        [cdkDropListData]="availablePlayers()"
+        [cdkDropListConnectedTo]="getTeamDropListIds()"
+        (cdkDropListDropped)="drop($event)"
+      >
+        @if (availablePlayers().length === 0) {
+        <div class="empty-state">
+          <i class="bi bi-check-circle"></i>
+          <p>Draft Pool Empty</p>
+        </div>
+        } @for (player of availablePlayers(); track player.id) {
+        <div class="player-item" cdkDrag>
+          <!-- Position Badge -->
+          <div
+            class="position-badge"
+            [ngClass]="'pos-' + (player.position || 'Unknown')"
+          >
+            {{ (player.position || "?").charAt(0) }}
+          </div>
+
+          <!-- Player Info -->
+          <div class="player-info">
+            <div class="player-name">{{ player.name }}</div>
+            <div class="player-details">
+              {{ player.position }}
+            </div>
+          </div>
+
+          <!-- Rating -->
+          @if (showRatings()) {
+          <div class="metric-badge rating-display">
+            {{ player.rating !== null ? player.rating : "-" }}
+          </div>
+          }
+
+          <!-- Drag Preview -->
+          <div *cdkDragPreview class="player-item cdk-drag-preview">
+            <div
+              class="position-badge"
+              [ngClass]="'pos-' + (player.position || 'Unknown')"
+            >
+              {{ (player.position || "?").charAt(0) }}
+            </div>
+            <div class="player-info">
+              <div class="player-name">{{ player.name }}</div>
+            </div>
+            @if (showRatings()) {
+            <div class="metric-badge rating-display">
+              {{ player.rating !== null ? player.rating : "-" }}
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </div>
+    </aside>
+
+    <!-- Right Column: Teams Grid -->
+    <main class="teams-column">
+      @if (teams().length === 0) {
+      <div class="alert alert-info shadow-sm border-0">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+          <div>
+            <h5 class="alert-heading mb-1">No Teams Created</h5>
+            <p class="mb-0">
+              Go to
+              <a
+                [routerLink]="['/admin/sessions', sessionId(), 'teams']"
+                class="fw-bold text-decoration-none"
+                >Manage Teams</a
+              >
+              to create teams for this session.
+            </p>
+          </div>
+        </div>
+      </div>
+      }
+
+      <div class="teams-grid">
+        @for (team of teams(); track team.id) {
+        <div class="team-card" [style.border-top-color]="team.teamColor">
+          <div
+            class="team-card-header"
+            [style.background-color]="team.teamColor || '#64748b'"
+          >
+            <div class="d-flex flex-column">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold fs-5">{{ team.teamName }}</span>
+                @if (team.captainName) {
+                <span class="team-captain-inline">
+                  <i class="bi bi-star-fill"></i>
+                  {{ team.captainName }}
+                </span>
+                }
+              </div>
+            </div>
+            <span class="badge bg-white text-dark opacity-75"
+              >#{{ team.id }}</span
+            >
+          </div>
+
+          <div
+            class="team-roster"
+            cdkDropList
+            [id]="'team-' + team.id"
+            [cdkDropListData]="team.players"
+            [cdkDropListConnectedTo]="
+              ['availableList'].concat(getOtherTeamDropListIds(team.id))
+            "
+            (cdkDropListDropped)="drop($event, team.id)"
+          >
+            @if (team.players.length === 0) {
+            <div class="empty-state" style="padding: 1rem; color: #cbd5e1">
+              <i class="bi bi-person-plus" style="font-size: 1.5rem"></i>
+              <small>Drop players here</small>
+            </div>
+            } @for (player of team.players; track player.id) {
+            <div class="player-item" cdkDrag>
+              <div
+                class="position-badge"
+                [style.width.px]="24"
+                [style.height.px]="24"
+                [style.font-size.rem]="0.7"
+                [ngClass]="'pos-' + (player.position || 'Unknown')"
+              >
+                {{ (player.position || "?").charAt(0) }}
+              </div>
+              <div class="player-info">
+                <div class="player-name" style="font-size: 0.9rem">
+                  {{ player.name }}
+                </div>
+              </div>
+              @if (showRatings()) {
+              <div class="metric-badge" style="font-size: 0.7rem">
+                {{ player.rating !== null ? player.rating : "-" }}
+              </div>
+              }
+
+              <button
+                class="btn btn-sm btn-outline-danger remove-player-btn"
+                (click)="removePlayerFromTeam(player)"
+                title="Remove from team"
+                type="button"
+              >
+                <i class="bi bi-x-lg"></i>
+              </button>
+
+              <div *cdkDragPreview class="player-item cdk-drag-preview">
+                <div
+                  class="position-badge"
+                  [ngClass]="'pos-' + (player.position || 'Unknown')"
+                >
+                  {{ (player.position || "?").charAt(0) }}
+                </div>
+                <div class="player-info">
+                  <div class="player-name">{{ player.name }}</div>
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+
+          <div class="team-footer">
+            <i class="bi bi-people"></i>
+            <span class="fw-bold">{{ team.players.length }}</span>
+            @if (team.maxPlayers) {
+            <span>/ {{ team.maxPlayers }}</span>
+            } Players
+          </div>
+        </div>
+        }
+      </div>
+    </main>
+  </div>
+  }
+</div>

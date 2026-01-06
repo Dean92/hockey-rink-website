@@ -4,6 +4,7 @@ using HockeyRinkAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HockeyRinkAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260105222143_AddRatingToSessionRegistration")]
+    partial class AddRatingToSessionRegistration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -251,25 +254,17 @@ namespace HockeyRinkAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTime>("AssignedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("SessionRegistrationId")
-                        .HasColumnType("int");
 
                     b.Property<int>("TeamId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("UserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("SessionRegistrationId")
-                        .IsUnique();
 
                     b.HasIndex("TeamId");
 
@@ -428,9 +423,6 @@ namespace HockeyRinkAPI.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("LeagueId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("MaxPlayers")
                         .HasColumnType("int");
 
                     b.Property<int>("SessionId")
@@ -622,12 +614,6 @@ namespace HockeyRinkAPI.Migrations
 
             modelBuilder.Entity("HockeyRinkAPI.Models.Player", b =>
                 {
-                    b.HasOne("HockeyRinkAPI.Models.SessionRegistration", "SessionRegistration")
-                        .WithMany()
-                        .HasForeignKey("SessionRegistrationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("HockeyRinkAPI.Models.Team", "Team")
                         .WithMany("Players")
                         .HasForeignKey("TeamId")
@@ -637,9 +623,8 @@ namespace HockeyRinkAPI.Migrations
                     b.HasOne("HockeyRinkAPI.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("SessionRegistration");
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Team");
 

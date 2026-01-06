@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, tap, catchError } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { AuthService } from './auth';
 import { environment } from '../environments/environment';
 import { League, Session, SessionRegistrationRequest } from './models';
@@ -120,9 +121,9 @@ export class DataService {
   }
 
   // Registration management methods
-  getSessionRegistrations(sessionId: number): Observable<any[]> {
+  getSessionRegistrations(sessionId: number): Observable<any> {
     const headers = this.authService.getAuthHeaders();
-    return this.http.get<any[]>(
+    return this.http.get<any>(
       `${this.apiUrl}/admin/sessions/${sessionId}/registrations`,
       {
         headers,

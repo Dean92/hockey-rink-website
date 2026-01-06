@@ -74,22 +74,17 @@ public class SessionsController : ControllerBase
             {
                 // Only auto-deactivate if:
                 // 1. Session is currently active
-                // 2. Dates have passed
-                // 3. Session hasn't been manually modified after the dates passed
+                // 2. Session started more than 7 days ago
+                // 3. Session hasn't been manually modified after that date passed
 
                 bool shouldAutoDeactivate = false;
                 DateTime? criticalDate = null;
 
-                // Check registration close date
-                if (session.RegistrationCloseDate.HasValue && session.RegistrationCloseDate.Value < now)
+                // Check if session started more than 7 days ago
+                var sevenDaysAfterStart = session.StartDate.AddDays(7);
+                if (sevenDaysAfterStart < now)
                 {
-                    criticalDate = session.RegistrationCloseDate.Value;
-                    shouldAutoDeactivate = true;
-                }
-                // Check session end date
-                else if (session.EndDate < now)
-                {
-                    criticalDate = session.EndDate;
+                    criticalDate = sevenDaysAfterStart;
                     shouldAutoDeactivate = true;
                 }
 
@@ -103,7 +98,7 @@ public class SessionsController : ControllerBase
                         session.IsActive = false;
                         hasChanges = true;
                         _logger.LogInformation(
-                            "Auto-deactivated session: {SessionName} (ID: {SessionId}) - Critical date: {CriticalDate}",
+                            "Auto-deactivated session: {SessionName} (ID: {SessionId}) - 7 days after start date: {CriticalDate}",
                             session.Name,
                             session.Id,
                             criticalDate

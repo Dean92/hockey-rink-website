@@ -39,7 +39,17 @@ namespace HockeyRinkAPI.Data
                 .HasForeignKey(p => p.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Note: Player-Team relationship will be handled separately for draft assignments
+            builder
+                .Entity<Player>()
+                .HasOne(p => p.SessionRegistration)
+                .WithMany()
+                .HasForeignKey(p => p.SessionRegistrationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder
+                .Entity<Player>()
+                .HasIndex(p => p.SessionRegistrationId)
+                .IsUnique(); // Each registration can only be on one team
 
             builder
                 .Entity<SessionRegistration>()
@@ -82,6 +92,8 @@ namespace HockeyRinkAPI.Data
             builder.Entity<Payment>().Property(p => p.Amount).HasPrecision(10, 2);
 
             builder.Entity<SessionRegistration>().Property(sr => sr.AmountPaid).HasPrecision(10, 2);
+
+            builder.Entity<SessionRegistration>().Property(sr => sr.Rating).HasPrecision(3, 1);
 
             builder.Entity<SessionRegistration>().Property(sr => sr.DateOfBirth).HasColumnType("date");
 

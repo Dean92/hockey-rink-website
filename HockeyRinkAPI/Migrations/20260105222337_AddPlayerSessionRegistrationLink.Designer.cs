@@ -4,6 +4,7 @@ using HockeyRinkAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HockeyRinkAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260105222337_AddPlayerSessionRegistrationLink")]
+    partial class AddPlayerSessionRegistrationLink
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -428,9 +431,6 @@ namespace HockeyRinkAPI.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("LeagueId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("MaxPlayers")
                         .HasColumnType("int");
 
                     b.Property<int>("SessionId")

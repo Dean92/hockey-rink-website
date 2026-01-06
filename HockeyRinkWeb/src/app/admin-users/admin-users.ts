@@ -1,11 +1,11 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { AdminService, AdminUser } from '../admin.service';
 
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, DatePipe],
+  imports: [CommonModule],
   templateUrl: './admin-users.html',
   styleUrls: ['./admin-users.css'],
 })

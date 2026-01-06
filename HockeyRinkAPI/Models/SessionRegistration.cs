@@ -39,6 +39,8 @@ public partial class SessionRegistration
 
     public string? ZipCode { get; set; }
 
+    public decimal? Rating { get; set; }
+
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
     public virtual Session Session { get; set; } = null!;

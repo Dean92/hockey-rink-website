@@ -16,6 +16,8 @@ interface Team {
   teamName: string;
   captainName?: string;
   teamColor?: string;
+  maxPlayers?: number;
+  playerCount?: number;
   createdAt: string;
 }
 
@@ -28,12 +30,16 @@ interface Team {
 })
 export class AdminTeams implements OnInit {
   teams = signal<Team[]>([]);
+  registeredPlayers = signal<any[]>([]);
   sessionId = signal<number>(0);
   sessionName = signal<string>('');
   isLoading = signal<boolean>(true);
   showModal = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   isSaving = signal<boolean>(false);
+  showDeleteModal = signal<boolean>(false);
+  isDeleting = signal<boolean>(false);
+  teamToDelete = signal<Team | null>(null);
   teamForm: FormGroup;
   editingTeamId = signal<number | null>(null);
 
@@ -59,6 +65,7 @@ export class AdminTeams implements OnInit {
       teamName: ['', [Validators.required, Validators.maxLength(100)]],
       captainName: ['', Validators.maxLength(100)],
       teamColor: [''],
+      maxPlayers: ['', [Validators.min(1), Validators.max(50)]],
     });
   }
 
@@ -68,6 +75,7 @@ export class AdminTeams implements OnInit {
       this.sessionId.set(id);
       this.loadSessionDetails();
       this.loadTeams();
+      this.loadRegisteredPlayers();
     });
   }
 
@@ -112,6 +120,18 @@ export class AdminTeams implements OnInit {
     });
   }
 
+  loadRegisteredPlayers() {
+    this.dataService.getSessionRegistrations(this.sessionId()).subscribe({
+      next: (data) => {
+        this.registeredPlayers.set(data);
+      },
+      error: (err) => {
+        console.error('Error loading registered players:', err);
+        this.toastService.error('Error', 'Failed to load registered players');
+      },
+    });
+  }
+
   openCreateModal() {
     this.isEditing.set(false);
     this.editingTeamId.set(null);
@@ -126,6 +146,7 @@ export class AdminTeams implements OnInit {
       teamName: team.teamName,
       captainName: team.captainName || '',
       teamColor: team.teamColor || '',
+      maxPlayers: team.maxPlayers || '',
     });
     this.showModal.set(true);
   }
@@ -185,15 +206,27 @@ export class AdminTeams implements OnInit {
     }
   }
 
-  deleteTeam(team: Team) {
-    if (!confirm(`Are you sure you want to delete team "${team.teamName}"?`)) {
-      return;
-    }
+  openDeleteModal(team: Team) {
+    this.teamToDelete.set(team);
+    this.showDeleteModal.set(true);
+  }
 
+  closeDeleteModal() {
+    this.showDeleteModal.set(false);
+    this.teamToDelete.set(null);
+  }
+
+  confirmDelete() {
+    const team = this.teamToDelete();
+    if (!team) return;
+
+    this.isDeleting.set(true);
     this.dataService.deleteTeam(team.id).subscribe({
       next: () => {
         this.toastService.success('Success', 'Team deleted successfully');
         this.loadTeams();
+        this.closeDeleteModal();
+        this.isDeleting.set(false);
       },
       error: (err) => {
         console.error('Error deleting team:', err);
@@ -201,6 +234,7 @@ export class AdminTeams implements OnInit {
           'Error',
           err.error?.message || 'Failed to delete team'
         );
+        this.isDeleting.set(false);
       },
     });
   }
