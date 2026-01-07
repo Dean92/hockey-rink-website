@@ -68,7 +68,7 @@ export class Sessions implements OnInit {
 
     // Check if registration is closed but session hasn't started yet
     const isRegistrationClosed =
-      registrationClose && registrationClose <= this.currentDate;
+      !!registrationClose && registrationClose <= this.currentDate;
     const hasNotStarted = sessionStart > this.currentDate;
 
     return isRegistrationClosed && hasNotStarted;
