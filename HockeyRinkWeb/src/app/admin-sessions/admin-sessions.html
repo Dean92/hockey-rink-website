@@ -7,9 +7,14 @@
       <h2 class="fw-bold mb-1">Manage Sessions</h2>
       <div class="text-muted">Create, edit, and manage registrations</div>
     </div>
-    <button class="btn btn-primary" (click)="openCreateModal()">
-      <i class="bi bi-plus-circle me-2"></i> Create New Session
-    </button>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary" routerLink="/admin">
+        <i class="bi bi-arrow-left me-2"></i> Back to Admin Dashboard
+      </button>
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <i class="bi bi-plus-circle me-2"></i> Create New Session
+      </button>
+    </div>
   </div>
 
   <!-- Filters / Toolbar -->
