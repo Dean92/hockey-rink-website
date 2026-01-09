@@ -1919,15 +1919,15 @@
           }
         }
       },
-          "description": "Show draft results to users after draft is complete (FEATURE NOT IMPLEMENTED - ADMIN ONLY)",
-          "note": "Draft functionality currently admin-only. User-facing team views not implemented in Week 8.",
+          "description": "Show draft results to users after admin publishes the draft",
+          "note": "✅ IMPLEMENTED January 2026 - Players can view team assignments after admin publishes draft",
           "admin_controls": {
             "publish_draft_toggle": {
               "description": "Admin can mark draft as 'published' to show teams to players",
               "database_field": "Session.DraftPublished BIT DEFAULT 0",
               "ui_location": "Toggle on draft page: 'Publish Draft to Players'",
               "behavior": "When true, players can see their team assignment",
-              "status": "❌ Not Implemented"
+              "status": "✅ Implemented - PUT /api/admin/sessions/{id}/publish-draft endpoint"
             }
           },
           "user_view": {
@@ -2053,11 +2053,16 @@
       "14. ✅ Backend: Session visibility logic update (7-day window after start)",
       "15. ✅ Frontend: Session filtering and 'Starting Soon' notifications",
       "16. ✅ Bug fixes: Registration data loading, TypeScript type errors, button spacing",
-      "17. ❌ Auto-draft algorithm (not implemented)",
-      "18. ❌ User-facing team views (deferred to future week)"
+      "17. ✅ Draft publish feature: DraftEnabled and DraftPublished fields with toggle UI",
+      "18. ✅ User-facing team views: Player dashboard with team card and roster modal",
+      "19. ✅ Backend authentication fix: ConfigureApplicationCookie prevents unwanted redirects",
+      "20. ✅ Team captain support: CaptainUserId field, UpdateTeamModel enhancement, captain badge display",
+      "21. ✅ Navigation enhancements: My Teams link in menu and quick actions",
+      "22. ✅ Draft status column: Admin sessions table shows draft progress badges",
+      "23. ❌ Auto-draft algorithm (not implemented)"
     ],
     "estimated_completion": "End of Week 8 (late December 2024)",
-    "actual_completion": "December 2024 - All core features completed with expanded scope",
+    "actual_completion": "January 9, 2026 - All core features including draft publish and user team views completed",
     "notes": [
       "✅ Rating field stored on SessionRegistrations (not ApplicationUser) for session-specific context",
       "✅ Simplified database design - Players link directly to SessionRegistrations (no junction table)",
@@ -2072,8 +2077,15 @@
       "✅ Admin sessions page redesigned with modern card layout and polished modals",
       "✅ Session visibility extended to 7 days after session start (not when registration closes)",
       "✅ 'Starting Soon' notification displays when registration closed but session not started",
+      "✅ Draft publish feature: Admin can publish/unpublish drafts via toggle button on draft page",
+      "✅ Player dashboard: Users see current/past team assignments with team color and captain badge",
+      "✅ Team roster modal: Players can view full roster, captains see teammate emails",
+      "✅ Draft status badges: Admin sessions table displays Disabled/Not Started/In Progress/Completed",
+      "✅ Backend authentication: ConfigureApplicationCookie prevents 404 redirects to /Account/Login",
+      "✅ Captain functionality: CaptainUserId field in Teams table, displayed in player dashboard",
+      "✅ Navigation: My Teams link added to main menu and dashboard quick actions",
+      "✅ Week 8 FULLY COMPLETE - All planned features implemented and tested",
       "❌ Auto-draft algorithm not implemented - manual draft via drag-and-drop only",
-      "❌ Draft publish and user-facing team views deferred to future sprint",
       "Consider adding draft history/audit log in future for transparency",
       "MaxPlayers field added as enhancement beyond original plan",
       "Delete team confirmation shows player count warning",

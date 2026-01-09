@@ -20,15 +20,7 @@ export class Dashboard implements OnInit {
   errorMessage = signal<string | null>(null);
   isLoading = signal<boolean>(true);
   sessionToCancel = signal<any>(null);
-
-  totalSpent = computed(() => {
-    const all = [
-      ...this.upcomingSessions(),
-      ...this.currentSessions(),
-      ...this.pastSessions(),
-    ];
-    return all.reduce((sum, s) => sum + (s.amountPaid || 0), 0);
-  });
+  currentTeam = signal<any>(null);
 
   totalSessionsCount = computed(() => {
     return (
@@ -46,6 +38,7 @@ export class Dashboard implements OnInit {
   ngOnInit() {
     this.loadSessions();
     this.loadProfile();
+    this.loadCurrentTeam();
   }
 
   loadProfile() {
@@ -55,6 +48,24 @@ export class Dashboard implements OnInit {
       },
       error: (err) => {
         console.error('Error fetching profile:', err);
+      },
+    });
+  }
+
+  loadCurrentTeam() {
+    this.dataService.getMyTeams().subscribe({
+      next: (teams) => {
+        if (teams && teams.length > 0) {
+          // Get the most recent team (teams are ordered by date descending)
+          const latestTeam = teams[0];
+          this.currentTeam.set(latestTeam);
+        }
+      },
+      error: (err) => {
+        // Silently fail - will show "No team assigned" in UI
+        // This can happen if user hasn't been assigned to any teams yet
+        // or if there's a temporary auth issue
+        console.log('No teams found or unable to load teams');
       },
     });
   }

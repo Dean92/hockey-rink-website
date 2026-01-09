@@ -218,6 +218,7 @@ public class TeamsController : ControllerBase
 
             team.TeamName = model.TeamName;
             team.CaptainName = model.CaptainName;
+            team.CaptainUserId = model.CaptainUserId;
             team.TeamColor = model.TeamColor;
             team.MaxPlayers = model.MaxPlayers;
             team.UpdatedAt = DateTime.UtcNow;
@@ -557,6 +558,8 @@ public class UpdateTeamModel
 
     [StringLength(100)]
     public string? CaptainName { get; set; }
+
+    public string? CaptainUserId { get; set; }
 
     [StringLength(20)]
     public string? TeamColor { get; set; }
