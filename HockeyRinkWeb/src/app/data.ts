@@ -288,4 +288,21 @@ export class DataService {
       withCredentials: true,
     });
   }
+
+  // Player dashboard methods
+  getMyTeams(): Observable<any[]> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get<any[]>(`${this.apiUrl}/users/my-teams`, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  getMyTeam(sessionId: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get<any>(`${this.apiUrl}/users/my-team/${sessionId}`, {
+      headers,
+      withCredentials: true,
+    });
+  }
 }

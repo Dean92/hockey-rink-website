@@ -132,7 +132,7 @@
 }
 
 .team-footer {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   background: white;
   border-top: 1px solid #e2e8f0;
   font-size: 0.875rem;
@@ -181,7 +181,7 @@
   margin-right: 0.75rem;
   flex-shrink: 0;
   color: white;
-  background-color: #64748b; /* Default */
+  background-color: #632e58; /* Default */
 }
 
 /* Position Colors */

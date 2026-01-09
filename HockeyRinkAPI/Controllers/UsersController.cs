@@ -599,4 +599,165 @@ public class UsersController : ControllerBase
             return null;
         }
     }
+
+    /// <summary>
+    /// Get user's team assignment for a specific session (published drafts only)
+    /// </summary>
+    [HttpGet("my-team/{sessionId}")]
+    [Authorize]
+    public async Task<IActionResult> GetMyTeam(int sessionId)
+    {
+        try
+        {
+            var userId = await GetUserIdFromRequestAsync();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "Invalid or missing authentication" });
+            }
+
+            var session = await _dbContext.Sessions
+                .Include(s => s.League)
+                .FirstOrDefaultAsync(s => s.Id == sessionId);
+
+            if (session == null)
+            {
+                return NotFound(new { message = "Session not found" });
+            }
+
+            if (!session.DraftPublished)
+            {
+                return NotFound(new { message = "Draft not yet published for this session" });
+            }
+
+            var registration = await _dbContext.SessionRegistrations
+                .FirstOrDefaultAsync(sr => sr.SessionId == sessionId && sr.UserId == userId);
+
+            if (registration == null)
+            {
+                return NotFound(new { message = "You are not registered for this session" });
+            }
+
+            var player = await _dbContext.Players
+                .Include(p => p.Team)
+                    .ThenInclude(t => t.Captain)
+                .Include(p => p.SessionRegistration)
+                .FirstOrDefaultAsync(p => p.SessionRegistrationId == registration.Id);
+
+            if (player == null || player.TeamId == null)
+            {
+                return NotFound(new { message = "You have not been assigned to a team yet" });
+            }
+
+            var team = player.Team;
+            var isCaptain = team.CaptainUserId == userId;
+
+            var teammates = await _dbContext.Players
+                .Include(p => p.SessionRegistration)
+                    .ThenInclude(sr => sr.User)
+                .Where(p => p.TeamId == team.Id)
+                .OrderByDescending(p => p.SessionRegistration.UserId == team.CaptainUserId)
+                .ThenBy(p => p.SessionRegistration.Name)
+                .Select(p => new
+                {
+                    Name = p.SessionRegistration.Name,
+                    Position = p.SessionRegistration.Position,
+                    Email = isCaptain ? p.SessionRegistration.User!.Email : null
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                TeamId = team.Id,
+                TeamName = team.TeamName,
+                TeamColor = team.TeamColor,
+                CaptainName = team.CaptainName,
+                IsCaptain = isCaptain,
+                Teammates = teammates,
+                SessionName = session.Name,
+                SessionDate = session.StartDate,
+                LeagueName = session.League?.Name,
+                SessionRecord = (string?)null,
+                Standing = (string?)null
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting team for user in session {SessionId}", sessionId);
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Get all team assignments for current user
+    /// </summary>
+    [HttpGet("my-teams")]
+    [Authorize]
+    public async Task<IActionResult> GetMyTeams()
+    {
+        try
+        {
+            var userId = await GetUserIdFromRequestAsync();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "Invalid or missing authentication" });
+            }
+
+            var teams = await _dbContext.SessionRegistrations
+                .Include(sr => sr.Session)
+                    .ThenInclude(s => s.League)
+                .Where(sr => sr.UserId == userId)
+                .Select(sr => new
+                {
+                    sr.Session,
+                    sr.Session.League,
+                    Player = _dbContext.Players
+                        .Include(p => p.Team)
+                        .FirstOrDefault(p => p.SessionRegistrationId == sr.Id)
+                })
+                .Where(x => x.Session.DraftPublished && x.Player != null && x.Player.TeamId != null)
+                .Select(x => new
+                {
+                    SessionId = x.Session.Id,
+                    SessionName = x.Session.Name,
+                    SessionDate = x.Session.StartDate,
+                    LeagueName = x.League.Name,
+                    TeamId = x.Player!.TeamId,
+                    TeamName = x.Player.Team!.TeamName,
+                    TeamColor = x.Player.Team.TeamColor,
+                    IsCaptain = x.Player.Team.CaptainUserId == userId,
+                    SessionRecord = (string?)null,
+                    Standing = (string?)null
+                })
+                .OrderByDescending(x => x.SessionDate)
+                .ToListAsync();
+
+            return Ok(teams);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all teams for user");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    private async Task<string?> GetUserIdFromRequestAsync()
+    {
+        var authHeader = Request.Headers.Authorization.FirstOrDefault();
+
+        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+        {
+            var token = authHeader.Substring("Bearer ".Length);
+            var isValid = await ValidateTokenAsync(token);
+            if (isValid)
+            {
+                return await GetUserIdFromTokenAsync(token);
+            }
+        }
+        else if (HttpContext.User.Identity?.IsAuthenticated == true)
+        {
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        return null;
+    }
 }

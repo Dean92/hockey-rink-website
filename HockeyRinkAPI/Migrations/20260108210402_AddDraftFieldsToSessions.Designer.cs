@@ -4,6 +4,7 @@ using HockeyRinkAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HockeyRinkAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260108210402_AddDraftFieldsToSessions")]
+    partial class AddDraftFieldsToSessions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -427,13 +430,7 @@ namespace HockeyRinkAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CaptainId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("CaptainName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CaptainUserId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -459,8 +456,6 @@ namespace HockeyRinkAPI.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CaptainId");
 
                     b.HasIndex("LeagueId");
 
@@ -691,10 +686,6 @@ namespace HockeyRinkAPI.Migrations
 
             modelBuilder.Entity("HockeyRinkAPI.Models.Team", b =>
                 {
-                    b.HasOne("HockeyRinkAPI.Models.ApplicationUser", "Captain")
-                        .WithMany()
-                        .HasForeignKey("CaptainId");
-
                     b.HasOne("HockeyRinkAPI.Models.League", null)
                         .WithMany("Teams")
                         .HasForeignKey("LeagueId");
@@ -704,8 +695,6 @@ namespace HockeyRinkAPI.Migrations
                         .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Captain");
 
                     b.Navigation("Session");
                 });

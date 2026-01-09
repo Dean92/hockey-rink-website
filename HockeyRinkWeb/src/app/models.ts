@@ -36,6 +36,8 @@ export interface Session {
   registrationCount?: number;
   spotsLeft?: number;
   isFull?: boolean;
+  draftEnabled?: boolean;
+  draftPublished?: boolean;
 }
 
 export interface UserProfile {

@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../auth';
 import { ToastService } from '../services/toast.service';
@@ -47,6 +48,7 @@ export class AdminDraft implements OnInit {
   isLoading = signal<boolean>(true);
   errorMessage = signal<string | null>(null);
   showRatings = signal<boolean>(true);
+  draftPublished = signal<boolean>(false);
 
   constructor(
     private route: ActivatedRoute,
@@ -76,24 +78,34 @@ export class AdminDraft implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
-    // Load players and teams in parallel
+    // Load session, players and teams in parallel
     Promise.all([
-      this.http
-        .get<DraftPlayer[]>(
+      firstValueFrom(
+        this.http.get<any>(
+          `${environment.apiUrl}/admin/sessions/${this.sessionId()}`,
+          { headers: this.getHeaders() }
+        )
+      ),
+      firstValueFrom(
+        this.http.get<DraftPlayer[]>(
           `${
             environment.apiUrl
           }/admin/sessions/${this.sessionId()}/draft/players`,
           { headers: this.getHeaders() }
         )
-        .toPromise(),
-      this.http
-        .get<Team[]>(
+      ),
+      firstValueFrom(
+        this.http.get<Team[]>(
           `${environment.apiUrl}/admin/sessions/${this.sessionId()}/teams`,
           { headers: this.getHeaders() }
         )
-        .toPromise(),
+      ),
     ])
-      .then(([players, teams]) => {
+      .then(([session, players, teams]) => {
+        // Set session data
+        this.sessionName.set(session?.name || '');
+        this.draftPublished.set(session?.draftPublished || false);
+
         // Separate players into available vs assigned
         const availablePlayers: DraftPlayer[] = [];
         const teamPlayersMap = new Map<number, DraftPlayer[]>();
@@ -284,6 +296,36 @@ export class AdminDraft implements OnInit {
             err.error?.message || 'Failed to remove player'
           );
           this.loadDraftData(); // Reload to sync state
+        },
+      });
+  }
+
+  togglePublishDraft() {
+    const newPublishedState = !this.draftPublished();
+    const action = newPublishedState ? 'publish' : 'unpublish';
+
+    this.http
+      .put(
+        `${
+          environment.apiUrl
+        }/admin/sessions/${this.sessionId()}/publish-draft`,
+        { published: newPublishedState },
+        { headers: this.getHeaders() }
+      )
+      .subscribe({
+        next: () => {
+          this.draftPublished.set(newPublishedState);
+          this.toastService.success(
+            'Draft Updated',
+            `Draft ${action}ed successfully`
+          );
+        },
+        error: (err) => {
+          console.error(`Error ${action}ing draft:`, err);
+          this.toastService.error(
+            'Update Failed',
+            err.error?.message || `Failed to ${action} draft`
+          );
         },
       });
   }

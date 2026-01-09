@@ -133,6 +133,7 @@
               <th>End Date</th>
               <th class="text-nowrap">Fee</th>
               <th class="text-nowrap">Registration Status</th>
+              <th class="text-nowrap">Draft Status</th>
               <th class="text-nowrap">Registrations</th>
               <th class="text-end text-nowrap">Actions</th>
             </tr>
@@ -153,6 +154,15 @@
                 >
                   {{ session.isActive ? "Active" : "Inactive" }}
                 </span>
+              </td>
+              <td>
+                @if (session.draftEnabled) { @if (session.draftPublished) {
+                <span class="badge bg-success">Completed</span>
+                } @else {
+                <span class="badge bg-warning text-dark">In Progress</span>
+                } } @else {
+                <span class="badge bg-secondary">Not Started</span>
+                }
               </td>
               <td class="text-nowrap">{{ session.registrationCount || 0 }}</td>
               <td class="text-end sessions-actions">
@@ -195,7 +205,7 @@
             </tr>
             } @empty {
             <tr>
-              <td colspan="8" class="text-center py-5">
+              <td colspan="9" class="text-center py-5">
                 <div class="text-muted">No sessions found</div>
               </td>
             </tr>
@@ -436,6 +446,25 @@
               />
               <label class="form-check-label" for="isActive">
                 {{ sessionForm.get("isActive")?.value ? "Active" : "Inactive" }}
+              </label>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="draftEnabled" class="form-label">Team Draft</label>
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="draftEnabled"
+                formControlName="draftEnabled"
+              />
+              <label class="form-check-label" for="draftEnabled">
+                {{
+                  sessionForm.get("draftEnabled")?.value
+                    ? "Enabled"
+                    : "Disabled"
+                }}
               </label>
             </div>
           </div>

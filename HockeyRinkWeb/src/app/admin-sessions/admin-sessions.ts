@@ -57,6 +57,7 @@ export class AdminSessions implements OnInit {
       endDate: ['', Validators.required],
       fee: [0],
       isActive: [false],
+      draftEnabled: [false],
       leagueId: ['', Validators.required],
       maxPlayers: [
         20,
@@ -153,6 +154,7 @@ export class AdminSessions implements OnInit {
       endDate: this.formatDateForInput(session.endDate),
       fee: session.fee,
       isActive: session.isActive,
+      draftEnabled: session.draftEnabled || false,
       leagueId: session.leagueId,
       maxPlayers: session.maxPlayers || 20,
       registrationOpenDate: session.registrationOpenDate

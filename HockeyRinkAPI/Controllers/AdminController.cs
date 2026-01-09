@@ -247,6 +247,8 @@ public class AdminController : ControllerBase
                     s.EndDate,
                     s.Fee,
                     s.IsActive,
+                    s.DraftEnabled,
+                    s.DraftPublished,
                     s.LeagueId,
                     LeagueName = s.League != null ? s.League.Name : null,
                     RegistrationCount = s.SessionRegistrations.Count,
@@ -354,6 +356,7 @@ public class AdminController : ControllerBase
                 EndDate = model.EndDate,
                 Fee = model.RegularPrice ?? model.Fee, // Use RegularPrice as Fee if provided
                 IsActive = isActive,
+                DraftEnabled = model.DraftEnabled,
                 LeagueId = model.LeagueId,
                 MaxPlayers = model.MaxPlayers,
                 RegistrationOpenDate = model.RegistrationOpenDate,
@@ -425,6 +428,7 @@ public class AdminController : ControllerBase
             // Respect admin's manual status setting
             // Only auto-activate/deactivate if no RegistrationOpenDate is set
             session.IsActive = model.IsActive;
+            session.DraftEnabled = model.DraftEnabled;
 
             session.LeagueId = model.LeagueId;
             session.MaxPlayers = model.MaxPlayers;
@@ -1039,6 +1043,56 @@ public class AdminController : ControllerBase
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Publish or unpublish a draft to make teams visible to players
+    /// </summary>
+    [HttpPut("sessions/{sessionId}/publish-draft")]
+    public async Task<IActionResult> PublishDraft(int sessionId, [FromBody] PublishDraftModel model)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var session = await _dbContext.Sessions.FindAsync(sessionId);
+
+            if (session == null)
+            {
+                return NotFound(new { message = "Session not found" });
+            }
+
+            if (!session.DraftEnabled)
+            {
+                return BadRequest(new { message = "Draft is not enabled for this session" });
+            }
+
+            session.DraftPublished = model.Published;
+            await _dbContext.SaveChangesAsync();
+
+            var status = model.Published ? "published" : "unpublished";
+            _logger.LogInformation("Draft for session {SessionId} {Status}", sessionId, status);
+
+            return Ok(new
+            {
+                message = $"Draft successfully {status}",
+                sessionId = session.Id,
+                draftPublished = session.DraftPublished
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error publishing draft for session {SessionId}", sessionId);
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+}
+
+public class PublishDraftModel
+{
+    public bool Published { get; set; }
 }
 
 public class CreateSessionModel
@@ -1048,6 +1102,7 @@ public class CreateSessionModel
     public DateTime EndDate { get; set; }
     public decimal Fee { get; set; }
     public bool IsActive { get; set; } = false;
+    public bool DraftEnabled { get; set; } = false;
     public int LeagueId { get; set; }
     public int MaxPlayers { get; set; } = 20;
     public DateTime? RegistrationOpenDate { get; set; }
@@ -1064,6 +1119,7 @@ public class UpdateSessionModel
     public DateTime EndDate { get; set; }
     public decimal Fee { get; set; }
     public bool IsActive { get; set; }
+    public bool DraftEnabled { get; set; }
     public int LeagueId { get; set; }
     public int MaxPlayers { get; set; } = 20;
     public DateTime? RegistrationOpenDate { get; set; }

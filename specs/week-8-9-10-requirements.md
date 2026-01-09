@@ -507,6 +507,181 @@ viewTeam(sessionId: number) {
 
 ---
 
+### 0. Draft Page Enhancement - Team Average Rating Display
+
+**Location**: Admin Draft Page - Team Cards
+
+**Purpose**: Help admins balance teams by showing real-time average rating for each team during the draft process.
+
+#### Position Badge Display Logic
+
+**Draft Pool Player Icons**:
+
+- Display first letter of position in colored badge
+- **Special Case**: Players with position "Forward/Defense" display "B" (for "Both") instead of "F"
+- Position letter calculation:
+  ```typescript
+  getPositionLetter(position: string): string {
+    if (position === 'Forward/Defense') return 'B';
+    return (position || '?').charAt(0);
+  }
+  ```
+
+#### Frontend Implementation
+
+**Display Location**: Upper right corner of each team card header (next to team name)
+
+**Toggle Control**:
+
+- Add toggle button in draft page header (next to "Ratings Visible" button)
+- Button text: "Team Avg" or "Team Averages"
+- Icon: `<i class="bi bi-calculator"></i>`
+- State stored in signal: `showTeamAverages = signal<boolean>(true)`
+- Button styling matches existing "Ratings Visible" button pattern
+
+**UI Design**:
+
+```html
+<!-- Header Toggle Button -->
+<button
+  class="btn btn-sm"
+  [class.btn-outline-warning]="!showTeamAverages()"
+  [class.btn-warning]="showTeamAverages()"
+  [class.text-white]="showTeamAverages()"
+  (click)="toggleTeamAverages()"
+>
+  <i class="bi bi-calculator"></i>
+  {{ showTeamAverages() ? "Team Avg Visible" : "Team Avg Hidden" }}
+</button>
+
+<!-- Team Card Header with Conditional Display -->
+<div class="team-card-header">
+  <div>
+    <h5>Blue Demons</h5>
+    <div class="team-captain">Captain: John Smith</div>
+  </div>
+  @if (showTeamAverages()) {
+  <div class="team-avg-rating">
+    <div class="rating-badge"><i class="bi bi-star-fill"></i> 7.8</div>
+    <small class="text-white-50">Avg Rating</small>
+  </div>
+  }
+</div>
+```
+
+**Calculation**:
+
+- Average all player ratings assigned to the team
+- Formula: `sum(player.rating) / count(players)` where `player.rating != null`
+- Exclude players with `null` ratings from calculation
+- If no players have ratings, show "N/A"
+
+**UI Design**:
+
+```html
+<div class="team-card-header">
+  <div>
+    <h5>Blue Demons</h5>
+    <div class="team-captain">Captain: John Smith</div>
+  </div>
+  <div class="team-avg-rating">
+    <div class="rating-badge"><i class="bi bi-star-fill"></i> 7.8</div>
+    <small class="text-white-50">Avg Rating</small>
+  </div>
+</div>
+```
+
+**Styling**:
+
+- Badge with white background, semi-transparent
+- Gold star icon
+- Display 1 decimal place precision
+- Update in real-time as players are added/removed
+- Visual goal indicator: Highlight teams significantly above/below average
+  - Green border if within 0.5 of session average
+  - Yellow border if 0.5-1.0 above/below average
+  - Red border if >1.0 above/below average
+
+**Component Logic** (admin-draft.component.ts):
+
+```typescript
+showTeamAverages = signal<boolean>(true);
+
+toggleTeamAverages() {
+  this.showTeamAverages.set(!this.showTeamAverages());
+}
+
+calculateTeamAvgRating(team: Team): number | null {
+  const playersWithRatings = team.players.filter(p => p.rating !== null);
+  if (playersWithRatings.length === 0) return null;
+
+  const sum = playersWithRatings.reduce((acc, p) => acc + (p.rating || 0), 0);
+  return sum / playersWithRatings.length;
+}
+
+calculateSessionAvgRating(): number {
+  const allPlayers = this.teams().flatMap(t => t.players);
+  const playersWithRatings = allPlayers.filter(p => p.rating !== null);
+  if (playersWithRatings.length === 0) return 0;
+
+  const sum = playersWithRatings.reduce((acc, p) => acc + (p.rating || 0), 0);
+  return sum / playersWithRatings.length;
+}
+
+getTeamRatingClass(teamAvg: number | null): string {
+  if (teamAvg === null) return '';
+  const sessionAvg = this.calculateSessionAvgRating();
+  const diff = Math.abs(teamAvg - sessionAvg);
+
+  if (diff <= 0.5) return 'balanced';
+  if (diff <= 1.0) return 'slightly-unbalanced';
+  return 'unbalanced';
+}
+```
+
+**CSS Classes**:
+
+```css
+.rating-badge {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.rating-badge i {
+  color: #ffc107; /* Gold star */
+}
+
+.team-card.balanced {
+  border-color: #10b981 !important;
+  border-width: 2px;
+}
+
+.team-card.slightly-unbalanced {
+  border-color: #f59e0b !important;
+  border-width: 2px;
+}
+
+.team-card.unbalanced {
+  border-color: #ef4444 !important;
+  border-width: 2px;
+}
+```
+
+**User Experience**:
+
+- Helps admin quickly identify which teams need balancing
+- Encourages fair distribution of skilled players
+- Real-time feedback during drag-and-drop operations
+- Visual cues prevent lopsided matchups
+
+---
+
 ### 1. Database Changes - Game Tracking
 
 #### New Table: Games

@@ -35,6 +35,10 @@ public partial class Session
 
     public DateTime? LastModified { get; set; }
 
+    public bool DraftEnabled { get; set; }
+
+    public bool DraftPublished { get; set; }
+
     public virtual League League { get; set; } = null!;
 
     public virtual ICollection<SessionRegistration> SessionRegistrations { get; set; } = new List<SessionRegistration>();

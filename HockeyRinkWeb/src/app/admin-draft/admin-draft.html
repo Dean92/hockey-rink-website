@@ -30,6 +30,23 @@
         <i class="bi bi-eye{{ showRatings() ? '' : '-slash' }}-fill"></i>
         {{ showRatings() ? "Ratings Visible" : "Ratings Hidden" }}
       </button>
+      <button
+        class="btn btn-sm"
+        [class.btn-success]="draftPublished()"
+        [class.btn-outline-success]="!draftPublished()"
+        [class.text-white]="draftPublished()"
+        (click)="togglePublishDraft()"
+        title="{{
+          draftPublished()
+            ? 'Unpublish draft (hide from players)'
+            : 'Publish draft (show to players)'
+        }}"
+      >
+        <i
+          class="bi bi-{{ draftPublished() ? 'check-circle' : 'upload' }}-fill"
+        ></i>
+        {{ draftPublished() ? "Published" : "Publish Draft" }}
+      </button>
     </div>
   </header>
 

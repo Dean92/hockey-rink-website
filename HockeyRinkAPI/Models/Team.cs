@@ -13,6 +13,8 @@ public partial class Team
 
     public string? CaptainName { get; set; }
 
+    public string? CaptainUserId { get; set; }
+
     public int SessionId { get; set; }
 
     public string TeamName { get; set; } = null!;
@@ -20,6 +22,8 @@ public partial class Team
     public DateTime UpdatedAt { get; set; }
 
     public int? MaxPlayers { get; set; }
+
+    public virtual ApplicationUser? Captain { get; set; }
 
     public virtual ICollection<Player> Players { get; set; } = new List<Player>();
 
