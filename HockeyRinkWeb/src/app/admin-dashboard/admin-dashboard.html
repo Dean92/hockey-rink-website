@@ -141,7 +141,9 @@
                     <strong>{{ session.name }}</strong>
                   </td>
                   <td>{{ session.leagueName || "N/A" }}</td>
-                  <td>{{ session.startDate | date : "short" }}</td>
+                  <td>
+                    {{ formatDateInCentralTime(session.startDate) }}
+                  </td>
                   <td class="text-center">
                     <span
                       class="badge"
@@ -215,7 +217,9 @@
                     <strong>{{ session.name }}</strong>
                   </td>
                   <td>{{ session.leagueName || "N/A" }}</td>
-                  <td>{{ session.startDate | date : "short" }}</td>
+                  <td>
+                    {{ session.startDate | date : "short" : "America/Chicago" }}
+                  </td>
                   <td class="text-center">
                     <span class="badge bg-info">
                       {{ session.registeredCount }} / {{ session.maxPlayers }}
@@ -283,7 +287,7 @@
               </div>
               <small class="text-muted">
                 <i class="bi bi-clock me-1"></i
-                >{{ reg.registrationDate | date : "short" }}
+                >{{ formatDateInCentralTime(reg.registrationDate) }}
               </small>
             </div>
             }

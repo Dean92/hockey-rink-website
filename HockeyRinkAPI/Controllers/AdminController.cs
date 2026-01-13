@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
@@ -116,7 +116,13 @@ public class AdminController : ControllerBase
                     u.LastName,
                     u.Email,
                     u.LeagueId,
-                    LeagueName = u.League != null ? u.League.Name : null,
+                    // Get league name from user's LeagueId or their most recent session registration
+                    LeagueName = u.League != null ? u.League.Name :
+                        _dbContext.SessionRegistrations
+                            .Where(sr => sr.UserId == u.Id)
+                            .OrderByDescending(sr => sr.RegistrationDate)
+                            .Select(sr => sr.Session.League.Name)
+                            .FirstOrDefault(),
                     u.EmailConfirmed,
                     u.CreatedAt,
                 })
@@ -144,7 +150,7 @@ public class AdminController : ControllerBase
 
             var sessions = await _dbContext
                 .Sessions.Include(s => s.League)
-                .Include(s => s.Registrations)
+                .Include(s => s.SessionRegistrations)
                 .ToListAsync();
 
             // Auto-activate/deactivate sessions based on dates
@@ -241,9 +247,11 @@ public class AdminController : ControllerBase
                     s.EndDate,
                     s.Fee,
                     s.IsActive,
+                    s.DraftEnabled,
+                    s.DraftPublished,
                     s.LeagueId,
                     LeagueName = s.League != null ? s.League.Name : null,
-                    RegistrationCount = s.Registrations.Count,
+                    RegistrationCount = s.SessionRegistrations.Count,
                     s.CreatedAt,
                     s.MaxPlayers,
                     s.RegistrationOpenDate,
@@ -260,6 +268,45 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching all sessions");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    [HttpGet("sessions/{id}")]
+    public async Task<IActionResult> GetSession(int id)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var session = await _dbContext
+                .Sessions
+                .Include(s => s.League)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (session == null)
+            {
+                return NotFound(new { message = "Session not found" });
+            }
+
+            return Ok(new
+            {
+                session.Id,
+                session.Name,
+                session.StartDate,
+                session.EndDate,
+                session.Fee,
+                session.IsActive,
+                session.LeagueId,
+                LeagueName = session.League?.Name
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching session {SessionId}", id);
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
     }
@@ -309,6 +356,7 @@ public class AdminController : ControllerBase
                 EndDate = model.EndDate,
                 Fee = model.RegularPrice ?? model.Fee, // Use RegularPrice as Fee if provided
                 IsActive = isActive,
+                DraftEnabled = model.DraftEnabled,
                 LeagueId = model.LeagueId,
                 MaxPlayers = model.MaxPlayers,
                 RegistrationOpenDate = model.RegistrationOpenDate,
@@ -380,6 +428,7 @@ public class AdminController : ControllerBase
             // Respect admin's manual status setting
             // Only auto-activate/deactivate if no RegistrationOpenDate is set
             session.IsActive = model.IsActive;
+            session.DraftEnabled = model.DraftEnabled;
 
             session.LeagueId = model.LeagueId;
             session.MaxPlayers = model.MaxPlayers;
@@ -417,7 +466,7 @@ public class AdminController : ControllerBase
             }
 
             var session = await _dbContext
-                .Sessions.Include(s => s.Registrations)
+                .Sessions.Include(s => s.SessionRegistrations)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (session == null)
@@ -426,7 +475,7 @@ public class AdminController : ControllerBase
             }
 
             // Check if there are any registrations
-            if (session.Registrations.Any())
+            if (session.SessionRegistrations.Any())
             {
                 // Instead of deleting, deactivate the session
                 session.IsActive = false;
@@ -468,7 +517,7 @@ public class AdminController : ControllerBase
             }
 
             var session = await _dbContext
-                .Sessions.Include(s => s.Registrations)
+                .Sessions.Include(s => s.SessionRegistrations)
                 .ThenInclude(r => r.User)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -477,7 +526,7 @@ public class AdminController : ControllerBase
                 return NotFound(new { message = "Session not found" });
             }
 
-            var registrations = session.Registrations.Select(r => new
+            var registrations = session.SessionRegistrations.Select(r => new
             {
                 r.Id,
                 r.Name,
@@ -529,7 +578,7 @@ public class AdminController : ControllerBase
             }
 
             var session = await _dbContext
-                .Sessions.Include(s => s.Registrations)
+                .Sessions.Include(s => s.SessionRegistrations)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (session == null)
@@ -538,13 +587,13 @@ public class AdminController : ControllerBase
             }
 
             // Check capacity
-            if (session.Registrations.Count >= session.MaxPlayers)
+            if (session.SessionRegistrations.Count >= session.MaxPlayers)
             {
                 return BadRequest(new { message = "Session is at full capacity" });
             }
 
             // Check for duplicate registration by email
-            if (session.Registrations.Any(r => r.Email.ToLower() == model.Email.ToLower()))
+            if (session.SessionRegistrations.Any(r => r.Email.ToLower() == model.Email.ToLower()))
             {
                 return Conflict(new { message = "User is already registered for this session" });
             }
@@ -603,7 +652,7 @@ public class AdminController : ControllerBase
                 City = model.City,
                 State = model.State,
                 ZipCode = model.ZipCode,
-                DateOfBirth = model.DateOfBirth,
+                DateOfBirth = DateOnly.FromDateTime(model.DateOfBirth),
                 Position = model.Position,
                 RegistrationDate = DateTime.UtcNow,
                 AmountPaid = model.AmountPaid
@@ -680,7 +729,7 @@ public class AdminController : ControllerBase
             registration.City = model.City;
             registration.State = model.State;
             registration.ZipCode = model.ZipCode;
-            registration.DateOfBirth = model.DateOfBirth;
+            registration.DateOfBirth = DateOnly.FromDateTime(model.DateOfBirth);
             registration.Position = model.Position;
             registration.AmountPaid = model.AmountPaid;
 
@@ -785,7 +834,7 @@ public class AdminController : ControllerBase
             // Get all active sessions with registration details
             var activeSessions = await _dbContext.Sessions
                 .Include(s => s.League)
-                .Include(s => s.Registrations)
+                .Include(s => s.SessionRegistrations)
                 .Where(s => s.IsActive)
                 .OrderBy(s => s.StartDate)
                 .Select(s => new
@@ -796,9 +845,9 @@ public class AdminController : ControllerBase
                     s.StartDate,
                     s.EndDate,
                     s.MaxPlayers,
-                    RegisteredCount = s.Registrations.Count,
-                    SpotsRemaining = s.MaxPlayers - s.Registrations.Count,
-                    TotalRevenue = s.Registrations.Sum(r => r.AmountPaid),
+                    RegisteredCount = s.SessionRegistrations.Count,
+                    SpotsRemaining = s.MaxPlayers - s.SessionRegistrations.Count,
+                    TotalRevenue = s.SessionRegistrations.Sum(r => r.AmountPaid),
                     s.RegularPrice
                 })
                 .ToListAsync();
@@ -828,7 +877,7 @@ public class AdminController : ControllerBase
                     s.Name,
                     LeagueName = s.League != null ? s.League.Name : null,
                     s.StartDate,
-                    RegisteredCount = s.Registrations.Count,
+                    RegisteredCount = s.SessionRegistrations.Count,
                     s.MaxPlayers
                 })
                 .ToListAsync();
@@ -994,6 +1043,56 @@ public class AdminController : ControllerBase
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Publish or unpublish a draft to make teams visible to players
+    /// </summary>
+    [HttpPut("sessions/{sessionId}/publish-draft")]
+    public async Task<IActionResult> PublishDraft(int sessionId, [FromBody] PublishDraftModel model)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var session = await _dbContext.Sessions.FindAsync(sessionId);
+
+            if (session == null)
+            {
+                return NotFound(new { message = "Session not found" });
+            }
+
+            if (!session.DraftEnabled)
+            {
+                return BadRequest(new { message = "Draft is not enabled for this session" });
+            }
+
+            session.DraftPublished = model.Published;
+            await _dbContext.SaveChangesAsync();
+
+            var status = model.Published ? "published" : "unpublished";
+            _logger.LogInformation("Draft for session {SessionId} {Status}", sessionId, status);
+
+            return Ok(new
+            {
+                message = $"Draft successfully {status}",
+                sessionId = session.Id,
+                draftPublished = session.DraftPublished
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error publishing draft for session {SessionId}", sessionId);
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+}
+
+public class PublishDraftModel
+{
+    public bool Published { get; set; }
 }
 
 public class CreateSessionModel
@@ -1003,6 +1102,7 @@ public class CreateSessionModel
     public DateTime EndDate { get; set; }
     public decimal Fee { get; set; }
     public bool IsActive { get; set; } = false;
+    public bool DraftEnabled { get; set; } = false;
     public int LeagueId { get; set; }
     public int MaxPlayers { get; set; } = 20;
     public DateTime? RegistrationOpenDate { get; set; }
@@ -1019,6 +1119,7 @@ public class UpdateSessionModel
     public DateTime EndDate { get; set; }
     public decimal Fee { get; set; }
     public bool IsActive { get; set; }
+    public bool DraftEnabled { get; set; }
     public int LeagueId { get; set; }
     public int MaxPlayers { get; set; } = 20;
     public DateTime? RegistrationOpenDate { get; set; }

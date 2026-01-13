@@ -33,7 +33,16 @@ export class Leagues implements OnInit {
 
     this.dataService.getLeagues().subscribe({
       next: (data) => {
-        this.leagues.set(data);
+        // Filter out leagues where registration has closed
+        const now = new Date();
+        const activeLeagues = data.filter((league) => {
+          if (!league.registrationCloseDate) {
+            return true; // No close date means always visible
+          }
+          const closeDate = new Date(league.registrationCloseDate);
+          return closeDate > now; // Only show if close date is in the future
+        });
+        this.leagues.set(activeLeagues);
         this.isLoading.set(false);
       },
       error: (err) => {

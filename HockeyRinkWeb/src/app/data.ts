@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, tap, catchError } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { AuthService } from './auth';
 import { environment } from '../environments/environment';
 import { League, Session, SessionRegistrationRequest } from './models';
@@ -120,9 +121,9 @@ export class DataService {
   }
 
   // Registration management methods
-  getSessionRegistrations(sessionId: number): Observable<any[]> {
+  getSessionRegistrations(sessionId: number): Observable<any> {
     const headers = this.authService.getAuthHeaders();
-    return this.http.get<any[]>(
+    return this.http.get<any>(
       `${this.apiUrl}/admin/sessions/${sessionId}/registrations`,
       {
         headers,
@@ -234,5 +235,74 @@ export class DataService {
         withCredentials: true,
       }
     );
+  }
+
+  // Team management methods
+  getTeamsForSession(sessionId: number): Observable<any[]> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get<any[]>(
+      `${this.apiUrl}/admin/sessions/${sessionId}/teams`,
+      {
+        ...(headers && { headers }),
+        withCredentials: true,
+      }
+    );
+  }
+
+  createTeam(sessionId: number, team: any): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.post(
+      `${this.apiUrl}/admin/sessions/${sessionId}/teams`,
+      team,
+      {
+        ...(headers && { headers }),
+        withCredentials: true,
+      }
+    );
+  }
+
+  updateTeam(teamId: number, team: any): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put(
+      `${this.apiUrl}/admin/sessions/teams/${teamId}`,
+      team,
+      {
+        ...(headers && { headers }),
+        withCredentials: true,
+      }
+    );
+  }
+
+  deleteTeam(teamId: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.delete(`${this.apiUrl}/admin/sessions/teams/${teamId}`, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  getSessionById(sessionId: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get(`${this.apiUrl}/admin/sessions/${sessionId}`, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  // Player dashboard methods
+  getMyTeams(): Observable<any[]> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get<any[]>(`${this.apiUrl}/users/my-teams`, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  getMyTeam(sessionId: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get<any>(`${this.apiUrl}/users/my-team/${sessionId}`, {
+      headers,
+      withCredentials: true,
+    });
   }
 }

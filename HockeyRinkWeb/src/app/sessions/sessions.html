@@ -86,6 +86,17 @@
           <h5 class="session-card-title">{{ session.name }}</h5>
         </div>
 
+        <!-- Starting Soon Notification -->
+        @if (isSessionStartingSoon(session)) {
+        <div
+          class="alert alert-warning mb-0 mx-3 mt-3 py-2 px-3 d-flex align-items-center"
+          style="font-size: 0.875rem"
+        >
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <span><strong>Starting Soon!</strong> Registration is closed.</span>
+        </div>
+        }
+
         <div class="session-card-body">
           <!-- Dates -->
           <div class="info-item">
@@ -116,6 +127,14 @@
             <div>
               <span class="d-block text-muted small">Registration Opens</span>
               {{ session.registrationOpenDate | date : "mediumDate" }}
+            </div>
+          </div>
+          } @if (session.registrationCloseDate) {
+          <div class="info-item">
+            <div class="info-icon"><i class="bi bi-door-closed"></i></div>
+            <div>
+              <span class="d-block text-muted small">Registration Closes</span>
+              {{ session.registrationCloseDate | date : "mediumDate" }}
             </div>
           </div>
           }

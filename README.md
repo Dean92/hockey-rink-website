@@ -56,31 +56,37 @@ A full-stack web application for managing local hockey leagues, player sessions,
 
 ### ▶️ Running the Backend (`HockeyRinkAPI`)
 
-#### Step 1: Trust HTTPS Certificate (First Time Only)
+#### Step 1: Navigate to API Directory
+
+```powershell
+cd HockeyRinkAPI
+```
+
+#### Step 2: Start the API
+
+**Option A** – HTTP (Recommended for Development):
+
+```powershell
+dotnet build
+dotnet run --no-build --launch-profile http
+```
+
+**Option B** – HTTPS (Requires Certificate Trust):
+
+First-time HTTPS setup:
 
 ```powershell
 dotnet dev-certs https --trust
 ```
 
-#### Step 2: Start the API
-
-**Option A** – Visual Studio Open:
+Then run:
 
 ```powershell
-cd HockeyRinkAPI
-dotnet build
-dotnet run --no-build --launch-profile https
-```
-
-**Option B** – Visual Studio Closed:
-
-```powershell
-cd HockeyRinkAPI
 dotnet run --launch-profile https
 ```
 
 **Option C** – Visual Studio GUI:
-Open `HockeyRinkWebsite.sln`, press F5 or click "https" in the toolbar.
+Open `HockeyRinkWebsite.sln`, press F5 or select "http" or "https" in the toolbar.
 
 #### Step 3: Verify API
 
@@ -262,6 +268,86 @@ taskkill /PID <PID> /F
 - Upcoming sessions view with countdown
 - Past sessions history table
 - Session cancellation feature
+
+---
+
+### ✅ Week 8: Team Draft System & Admin UI Redesign (Completed - December 2024)
+
+#### Team Draft System
+
+- **Player Rating System**: Session-specific ratings (0.0-10.0 scale) on SessionRegistrations table
+- **Team Management**: Full CRUD with captain assignment, max players (1-50), player count tracking
+- **Draft API Endpoints**: GetDraftPlayers, AssignPlayerToTeam, RemovePlayerFromTeam, GetTeamPlayers, SetPlayerRating
+- **Draft Page UI**: Professional dashboard with Angular CDK drag-and-drop
+  - Sidebar draft pool with goalie-first sorting (position priority)
+  - Grid layout for team cards (responsive, 800px max height)
+  - Bidirectional drag-drop: pool↔teams, team↔team
+  - Position badges with color coding (F=blue, D=orange, G=green)
+  - Remove buttons on hover as alternative to drag-to-pool
+  - Inline captain display with star icon in team headers
+
+#### Team Captain Feature
+
+- Captain dropdown populated from session registrations
+- Captain auto-clears when removed from team
+- Inline badge display: "⭐ [Captain Name]"
+- Fixed data loading bug in getSessionRegistrations
+
+#### Admin UI Redesign
+
+- **Admin Sessions Page**: Modern card-based layout with toolbar, filter pills (gap-2 spacing), table cards
+- **Modal Polish**: Icon headers, summary cards, table cards for registrations
+- **Professional Styling**: Bootstrap 5 cards with shadows, rounded corners, responsive design
+
+#### Session Visibility Logic Update
+
+- Sessions remain visible until 7 days after session start (not when registration closes)
+- "Starting Soon!" notification when registration closed but session hasn't started
+- Backend auto-deactivation updated to 7-day window
+- Frontend filtering with isSessionStartingSoon() method
+
+#### Database Changes
+
+- Rating field: DECIMAL(3,1) on SessionRegistrations
+- Player-SessionRegistration link: SessionRegistrationId FK with unique index
+- MaxPlayers field: INT on Teams with validation (1-50 range)
+- Simplified model: Players link directly to Teams (no junction table)
+
+#### Technical Implementation
+
+- Angular CDK @angular/cdk@^20.0.0 for drag-and-drop
+- Signal-based reactivity for state management
+- Optimistic UI updates with API error rollback
+- Goalie-first sorting: Position 'G' or 'GOALIE' (case-insensitive)
+- Toast notifications for user feedback
+
+**Status**: ✅ Completed with expanded scope (professional UI/UX, session visibility enhancements)
+
+**Not Implemented**: Auto-draft algorithm, user-facing team views (deferred to future sprint)
+
+---
+
+### 📋 Week 9: User Profile & Admin Enhancements (Planned)
+
+#### User Management - Clickable User Rows
+
+- Click user row to view detailed profile with admin-specific information
+- Admin notes field (NVARCHAR(MAX)) on ApplicationUser
+- Comprehensive user statistics: registrations, payments, session attendance
+- PUT /api/admin/users/{id}/notes endpoint
+
+#### Editable User Profile
+
+- Phone number field on ApplicationUser
+- PUT /api/users/profile endpoint
+- Edit mode toggle for profile form
+- Client-side validation for email/phone formats
+
+#### Additional Features
+
+- Team color management enhancements
+- Footer with contact information
+- Home page redesign
 
 ---
 

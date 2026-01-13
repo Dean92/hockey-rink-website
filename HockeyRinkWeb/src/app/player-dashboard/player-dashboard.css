@@ -1,0 +1,26 @@
+.team-card {
+  transition: transform 0.2s;
+  border: none;
+}
+
+.team-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.team-card .card-header {
+  border-bottom: none;
+  padding: 1rem 1.25rem;
+}
+
+.team-card .card-body {
+  padding: 1.25rem;
+}
+
+.team-card .card-footer {
+  padding: 1rem 1.25rem;
+}
+
+.modal-backdrop-custom {
+  background-color: rgba(0, 0, 0, 0.5);
+}

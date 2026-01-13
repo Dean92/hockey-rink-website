@@ -251,22 +251,29 @@ namespace HockeyRinkAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("AssignedAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("SessionRegistrationId")
+                        .HasColumnType("int");
 
                     b.Property<int>("TeamId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("SessionRegistrationId")
+                        .IsUnique();
+
                     b.HasIndex("TeamId");
 
-                    b.HasIndex("UserId", "TeamId")
-                        .IsUnique()
-                        .HasFilter("[UserId] IS NOT NULL");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Players");
                 });
@@ -281,6 +288,12 @@ namespace HockeyRinkAPI.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("DraftEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DraftPublished")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("EarlyBirdEndDate")
                         .HasColumnType("datetime2");
@@ -302,7 +315,7 @@ namespace HockeyRinkAPI.Migrations
                     b.Property<DateTime?>("LastModified")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("LeagueId")
+                    b.Property<int>("LeagueId")
                         .HasColumnType("int");
 
                     b.Property<int>("MaxPlayers")
@@ -310,8 +323,7 @@ namespace HockeyRinkAPI.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("RegistrationCloseDate")
                         .HasColumnType("datetime2");
@@ -342,32 +354,28 @@ namespace HockeyRinkAPI.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("AmountPaid")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
                     b.Property<string>("City")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("DateOfBirth")
+                    b.Property<DateOnly>("DateOfBirth")
                         .HasColumnType("date");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("datetime2");
@@ -376,12 +384,14 @@ namespace HockeyRinkAPI.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Position")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Rating")
+                        .HasPrecision(3, 1)
+                        .HasColumnType("decimal(3,1)");
 
                     b.Property<DateTime>("RegistrationDate")
                         .HasColumnType("datetime2");
@@ -390,15 +400,13 @@ namespace HockeyRinkAPI.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("State")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ZipCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -419,18 +427,45 @@ namespace HockeyRinkAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CaptainId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CaptainName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CaptainUserId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("LeagueId")
+                    b.Property<int?>("LeagueId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Name")
+                    b.Property<int?>("MaxPlayers")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SessionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TeamColor")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TeamName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CaptainId");
+
                     b.HasIndex("LeagueId");
+
+                    b.HasIndex("SessionId", "TeamName")
+                        .IsUnique();
 
                     b.ToTable("Teams");
                 });
@@ -571,7 +606,7 @@ namespace HockeyRinkAPI.Migrations
             modelBuilder.Entity("HockeyRinkAPI.Models.ApplicationUser", b =>
                 {
                     b.HasOne("HockeyRinkAPI.Models.League", "League")
-                        .WithMany()
+                        .WithMany("ApplicationUsers")
                         .HasForeignKey("LeagueId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -590,27 +625,35 @@ namespace HockeyRinkAPI.Migrations
 
             modelBuilder.Entity("HockeyRinkAPI.Models.Payment", b =>
                 {
-                    b.HasOne("HockeyRinkAPI.Models.SessionRegistration", "Registration")
+                    b.HasOne("HockeyRinkAPI.Models.SessionRegistration", "SessionRegistration")
                         .WithMany("Payments")
                         .HasForeignKey("SessionRegistrationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Registration");
+                    b.Navigation("SessionRegistration");
                 });
 
             modelBuilder.Entity("HockeyRinkAPI.Models.Player", b =>
                 {
+                    b.HasOne("HockeyRinkAPI.Models.SessionRegistration", "SessionRegistration")
+                        .WithMany()
+                        .HasForeignKey("SessionRegistrationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("HockeyRinkAPI.Models.Team", "Team")
                         .WithMany("Players")
                         .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("HockeyRinkAPI.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("SessionRegistration");
 
                     b.Navigation("Team");
 
@@ -620,8 +663,10 @@ namespace HockeyRinkAPI.Migrations
             modelBuilder.Entity("HockeyRinkAPI.Models.Session", b =>
                 {
                     b.HasOne("HockeyRinkAPI.Models.League", "League")
-                        .WithMany()
-                        .HasForeignKey("LeagueId");
+                        .WithMany("Sessions")
+                        .HasForeignKey("LeagueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("League");
                 });
@@ -629,7 +674,7 @@ namespace HockeyRinkAPI.Migrations
             modelBuilder.Entity("HockeyRinkAPI.Models.SessionRegistration", b =>
                 {
                     b.HasOne("HockeyRinkAPI.Models.Session", "Session")
-                        .WithMany("Registrations")
+                        .WithMany("SessionRegistrations")
                         .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -646,13 +691,23 @@ namespace HockeyRinkAPI.Migrations
 
             modelBuilder.Entity("HockeyRinkAPI.Models.Team", b =>
                 {
-                    b.HasOne("HockeyRinkAPI.Models.League", "League")
+                    b.HasOne("HockeyRinkAPI.Models.ApplicationUser", "Captain")
+                        .WithMany()
+                        .HasForeignKey("CaptainId");
+
+                    b.HasOne("HockeyRinkAPI.Models.League", null)
                         .WithMany("Teams")
-                        .HasForeignKey("LeagueId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasForeignKey("LeagueId");
+
+                    b.HasOne("HockeyRinkAPI.Models.Session", "Session")
+                        .WithMany("Teams")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("League");
+                    b.Navigation("Captain");
+
+                    b.Navigation("Session");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -708,12 +763,18 @@ namespace HockeyRinkAPI.Migrations
 
             modelBuilder.Entity("HockeyRinkAPI.Models.League", b =>
                 {
+                    b.Navigation("ApplicationUsers");
+
+                    b.Navigation("Sessions");
+
                     b.Navigation("Teams");
                 });
 
             modelBuilder.Entity("HockeyRinkAPI.Models.Session", b =>
                 {
-                    b.Navigation("Registrations");
+                    b.Navigation("SessionRegistrations");
+
+                    b.Navigation("Teams");
                 });
 
             modelBuilder.Entity("HockeyRinkAPI.Models.SessionRegistration", b =>

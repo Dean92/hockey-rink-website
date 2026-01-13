@@ -23,10 +23,14 @@ namespace HockeyRinkAPI.Data
 
             builder
                 .Entity<Team>()
-                .HasOne(t => t.League)
-                .WithMany(l => l.Teams)
-                .HasForeignKey(t => t.LeagueId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(t => t.Session)
+                .WithMany(s => s.Teams)
+                .HasForeignKey(t => t.SessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Team>()
+                .HasIndex(t => new { t.SessionId, t.TeamName })
+                .IsUnique();
 
             builder
                 .Entity<Player>()
@@ -37,12 +41,15 @@ namespace HockeyRinkAPI.Data
 
             builder
                 .Entity<Player>()
-                .HasOne(p => p.Team)
-                .WithMany(t => t.Players)
-                .HasForeignKey(p => p.TeamId)
+                .HasOne(p => p.SessionRegistration)
+                .WithMany()
+                .HasForeignKey(p => p.SessionRegistrationId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Player>().HasIndex(p => new { p.UserId, p.TeamId }).IsUnique();
+            builder
+                .Entity<Player>()
+                .HasIndex(p => p.SessionRegistrationId)
+                .IsUnique(); // Each registration can only be on one team
 
             builder
                 .Entity<SessionRegistration>()
@@ -54,13 +61,13 @@ namespace HockeyRinkAPI.Data
             builder
                 .Entity<SessionRegistration>()
                 .HasOne(sr => sr.Session)
-                .WithMany(s => s.Registrations)
+                .WithMany(s => s.SessionRegistrations)
                 .HasForeignKey(sr => sr.SessionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder
                 .Entity<Payment>()
-                .HasOne(p => p.Registration)
+                .HasOne(p => p.SessionRegistration)
                 .WithMany(sr => sr.Payments)
                 .HasForeignKey(p => p.SessionRegistrationId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -85,16 +92,18 @@ namespace HockeyRinkAPI.Data
             builder.Entity<Payment>().Property(p => p.Amount).HasPrecision(10, 2);
 
             builder.Entity<SessionRegistration>().Property(sr => sr.AmountPaid).HasPrecision(10, 2);
-            
+
+            builder.Entity<SessionRegistration>().Property(sr => sr.Rating).HasPrecision(3, 1);
+
             builder.Entity<SessionRegistration>().Property(sr => sr.DateOfBirth).HasColumnType("date");
-            
+
             builder.Entity<SessionRegistration>().HasIndex(sr => sr.RegistrationDate);
 
             // Configure ApplicationUser LeagueId as optional
             builder
                 .Entity<ApplicationUser>()
                 .HasOne(u => u.League)
-                .WithMany()
+                .WithMany(l => l.ApplicationUsers)
                 .HasForeignKey(u => u.LeagueId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);

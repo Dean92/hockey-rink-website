@@ -74,39 +74,29 @@ public class Program
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
 
-        // Configure authentication
-        builder
-            .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(options =>
+        // Configure Identity's application cookie to prevent redirects
+        builder.Services.ConfigureApplicationCookie(options =>
+        {
+            options.LoginPath = null; // Prevent automatic redirects
+            options.AccessDeniedPath = null; // Prevent automatic redirects
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SameSite = SameSiteMode.None;
+            options.ExpireTimeSpan = TimeSpan.FromHours(24);
+            options.SlidingExpiration = true;
+            options.Events.OnRedirectToLogin = context =>
             {
-                options.LoginPath = "/api/auth/login";
-                options.AccessDeniedPath = "/api/auth/access-denied";
-                options.Cookie.HttpOnly = false;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                options.Cookie.SameSite = SameSiteMode.Lax;
-                options.ExpireTimeSpan = TimeSpan.FromHours(24);
-                options.SlidingExpiration = true;
-                options.Events.OnRedirectToLogin = context =>
-                {
-                    if (context.Request.Path.StartsWithSegments("/api"))
-                    {
-                        context.Response.StatusCode = 401;
-                        context.Response.Headers["Content-Type"] = "application/json";
-                        return context.Response.WriteAsync("{\"error\": \"Unauthorized\"}");
-                    }
-                    return Task.CompletedTask;
-                };
-                options.Events.OnRedirectToAccessDenied = context =>
-                {
-                    if (context.Request.Path.StartsWithSegments("/api"))
-                    {
-                        context.Response.StatusCode = 403;
-                        context.Response.Headers["Content-Type"] = "application/json";
-                        return context.Response.WriteAsync("{\"error\": \"Forbidden\"}");
-                    }
-                    return Task.CompletedTask;
-                };
-            });
+                context.Response.StatusCode = 401;
+                context.Response.Headers["Content-Type"] = "application/json";
+                return context.Response.WriteAsync("{\"error\": \"Unauthorized\"}");
+            };
+            options.Events.OnRedirectToAccessDenied = context =>
+            {
+                context.Response.StatusCode = 403;
+                context.Response.Headers["Content-Type"] = "application/json";
+                return context.Response.WriteAsync("{\"error\": \"Forbidden\"}");
+            };
+        });
 
         builder.Services.AddTransient<MockStripeService>();
         builder.Services.AddScoped<IPaymentService, MockPaymentService>();
