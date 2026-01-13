@@ -66,6 +66,18 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var league = await db.Leagues.FirstOrDefaultAsync();
+            if (league == null)
+            {
+                league = new League
+                {
+                    Name = "Test League",
+                    Description = "Test league",
+                    CreatedAt = DateTime.UtcNow
+                };
+                db.Leagues.Add(league);
+                await db.SaveChangesAsync();
+            }
+
             var session = new Session
             {
                 Name = "Future Session",
@@ -75,7 +87,7 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
                 IsActive = true,
                 MaxPlayers = 20,
                 CreatedAt = DateTime.UtcNow,
-                LeagueId = league?.Id
+                LeagueId = league.Id
             };
             db.Sessions.Add(session);
             await db.SaveChangesAsync();
@@ -88,7 +100,11 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
             sessionId = sessionId,
             name = "Test User",
             email = email,
-            dateOfBirth = new DateTime(1990, 1, 1)
+            dateOfBirth = new DateTime(1990, 1, 1),
+            cardNumber = "4111111111111111", // Test card number
+            expiryDate = "12/25",
+            cvv = "123",
+            cardholderName = "Test User"
         };
         var response = await client.PostAsJsonAsync("/api/sessions/register", registrationData);
 

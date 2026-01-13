@@ -16,6 +16,7 @@ public class TestAuthHelper
 {
     private readonly HttpClient _client;
     private readonly IServiceProvider _serviceProvider;
+    private string? _currentToken;
 
     public TestAuthHelper(HttpClient client, IServiceProvider serviceProvider)
     {
@@ -59,50 +60,46 @@ public class TestAuthHelper
             await db.SaveChangesAsync();
         }
 
-        // Remove all users with the same email using UserManager
-        var existingUsers = await userManager.Users
-            .Where(u => u.Email == email)
-            .ToListAsync();
+        // Check if user already exists
+        var existingUser = await userManager.FindByEmailAsync(email);
 
-        foreach (var existingUser in existingUsers)
+        if (existingUser == null)
         {
-            var deleteResult = await userManager.DeleteAsync(existingUser);
-            if (!deleteResult.Succeeded)
+            // Create and confirm new user
+            var user = new ApplicationUser
             {
-                logger.LogWarning("Failed to delete user {Email}: {Errors}", existingUser.Email, string.Join(", ", deleteResult.Errors.Select(e => e.Description)));
+                UserName = email,
+                Email = email,
+                NormalizedEmail = email.ToUpperInvariant(),
+                NormalizedUserName = email.ToUpperInvariant(),
+                FirstName = "Test",
+                LastName = "User",
+                IsSubAvailable = false,
+                LeagueId = leisureLeague.Id,
+                EmailConfirmed = false
+            };
+
+            var createResult = await userManager.CreateAsync(user, password);
+            if (!createResult.Succeeded)
+            {
+                logger.LogWarning("User creation failed: {Errors}", string.Join(", ", createResult.Errors.Select(e => e.Description)));
+                return;
             }
+
+            var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+            var confirmResult = await userManager.ConfirmEmailAsync(user, token);
+            if (!confirmResult.Succeeded)
+            {
+                logger.LogWarning("Email confirmation failed for new user {Email}: {Errors}", email, string.Join(", ", confirmResult.Errors.Select(e => e.Description)));
+                return;
+            }
+
+            logger.LogInformation("User {Email} created and confirmed", email);
         }
-
-        // Create and confirm new user
-        var user = new ApplicationUser
+        else
         {
-            UserName = email,
-            Email = email,
-            NormalizedEmail = email.ToUpperInvariant(),
-            NormalizedUserName = email.ToUpperInvariant(),
-            FirstName = "Test",
-            LastName = "User",
-            IsSubAvailable = false,
-            LeagueId = leisureLeague.Id,
-            EmailConfirmed = false
-        };
-
-        var createResult = await userManager.CreateAsync(user, password);
-        if (!createResult.Succeeded)
-        {
-            logger.LogWarning("User creation failed: {Errors}", string.Join(", ", createResult.Errors.Select(e => e.Description)));
-            return;
+            logger.LogInformation("User {Email} already exists, skipping creation", email);
         }
-
-        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
-        var confirmResult = await userManager.ConfirmEmailAsync(user, token);
-        if (!confirmResult.Succeeded)
-        {
-            logger.LogWarning("Email confirmation failed for new user {Email}: {Errors}", email, string.Join(", ", confirmResult.Errors.Select(e => e.Description)));
-            return;
-        }
-
-        logger.LogInformation("User {Email} created and confirmed", email);
 
         // Attempt login
         var loginModel = new
@@ -114,15 +111,36 @@ public class TestAuthHelper
 
         logger.LogInformation("Attempting login for {Email}", email);
         var response = await _client.PostAsJsonAsync("/api/auth/login", loginModel);
-        var content = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
         {
+            var content = await response.Content.ReadAsStringAsync();
             logger.LogError("Login failed: StatusCode={StatusCode}, Content={Content}", response.StatusCode, content);
             throw new HttpRequestException($"Login failed: {response.StatusCode} ({content})");
         }
 
-        logger.LogInformation("Login successful for {Email}", email);
+        // Extract token from response
+        var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
+        if (loginResponse?.Token != null)
+        {
+            _currentToken = loginResponse.Token;
+            _client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _currentToken);
+            logger.LogInformation("Login successful for {Email}, IsAdmin: {IsAdmin}", email, loginResponse.IsAdmin);
+        }
+        else
+        {
+            logger.LogWarning("Login succeeded but no token received for {Email}", email);
+        }
+    }
+
+    private class LoginResponse
+    {
+        public string? Token { get; set; }
+        public string? Message { get; set; }
+        public string? UserId { get; set; }
+        public string? Email { get; set; }
+        public bool IsAdmin { get; set; }
     }
 }
 

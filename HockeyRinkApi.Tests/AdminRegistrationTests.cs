@@ -50,10 +50,27 @@ public class AdminRegistrationTests : IClassFixture<CustomWebApplicationFactory<
         if (user != null)
         {
             await userManager.AddToRoleAsync(user, "Admin");
+            // Ensure role is committed to database
+            await db.SaveChangesAsync();
         }
+
+        // Login again to get Admin role in claims
+        await authHelper.LoginAsync(email, "Test123!");
 
         // Create a test session
         var league = await db.Leagues.FirstOrDefaultAsync();
+        if (league == null)
+        {
+            league = new League
+            {
+                Name = "Test League",
+                Description = "Test league for registration tests",
+                CreatedAt = DateTime.UtcNow
+            };
+            db.Leagues.Add(league);
+            await db.SaveChangesAsync();
+        }
+
         var session = new Session
         {
             Name = "Test Session for Registration",
@@ -64,7 +81,7 @@ public class AdminRegistrationTests : IClassFixture<CustomWebApplicationFactory<
             IsActive = true,
             MaxPlayers = 20,
             CreatedAt = DateTime.UtcNow,
-            LeagueId = league?.Id
+            LeagueId = league.Id
         };
 
         db.Sessions.Add(session);
@@ -262,32 +279,35 @@ public class AdminRegistrationTests : IClassFixture<CustomWebApplicationFactory<
             registrationData
         );
 
-        // Get registration ID
+        // Get registration ID - use new scope after POST
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var registration = await db.SessionRegistrations
             .Include(r => r.Payments)
             .FirstOrDefaultAsync(r => r.Email == registrationData.email);
         Assert.NotNull(registration);
+        var registrationId = registration.Id;
         var paymentId = registration.Payments.FirstOrDefault()?.Id;
 
         // Act
         var response = await client.DeleteAsync(
-            $"/api/admin/sessions/{sessionId}/registrations/{registration.Id}"
+            $"/api/admin/sessions/{sessionId}/registrations/{registrationId}"
         );
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // Verify deletion
-        var deletedRegistration = await db.SessionRegistrations
-            .FirstOrDefaultAsync(r => r.Id == registration.Id);
+        // Verify deletion - use new scope after DELETE
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var deletedRegistration = await verifyDb.SessionRegistrations
+            .FirstOrDefaultAsync(r => r.Id == registrationId);
         Assert.Null(deletedRegistration);
 
         // Verify payment is also deleted
         if (paymentId.HasValue)
         {
-            var deletedPayment = await db.Payments
+            var deletedPayment = await verifyDb.Payments
                 .FirstOrDefaultAsync(p => p.Id == paymentId.Value);
             Assert.Null(deletedPayment);
         }
@@ -349,6 +369,18 @@ public class AdminRegistrationTests : IClassFixture<CustomWebApplicationFactory<
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var league = await db.Leagues.FirstOrDefaultAsync();
+            if (league == null)
+            {
+                league = new League
+                {
+                    Name = "Test League",
+                    Description = "Test league",
+                    CreatedAt = DateTime.UtcNow
+                };
+                db.Leagues.Add(league);
+                await db.SaveChangesAsync();
+            }
+
             var session = new Session
             {
                 Name = "Test Session",
@@ -358,7 +390,7 @@ public class AdminRegistrationTests : IClassFixture<CustomWebApplicationFactory<
                 IsActive = true,
                 MaxPlayers = 20,
                 CreatedAt = DateTime.UtcNow,
-                LeagueId = league?.Id
+                LeagueId = league.Id
             };
             db.Sessions.Add(session);
             await db.SaveChangesAsync();
