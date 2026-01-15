@@ -50,9 +50,9 @@ export class PlayerDashboard implements OnInit {
   pastTeams = signal<TeamAssignment[]>([]);
   isLoading = signal<boolean>(true);
   errorMessage = signal<string | null>(null);
-  showTeamModal = signal<boolean>(false);
-  selectedTeam = signal<TeamDetails | null>(null);
-  loadingTeamDetails = signal<boolean>(false);
+  expandedTeamId = signal<number | null>(null);
+  teamDetails = signal<Map<number, TeamDetails>>(new Map());
+  loadingTeamId = signal<number | null>(null);
 
   constructor(
     private dataService: DataService,
@@ -100,30 +100,50 @@ export class PlayerDashboard implements OnInit {
     });
   }
 
-  viewTeamDetails(sessionId: number) {
-    this.loadingTeamDetails.set(true);
-    this.showTeamModal.set(true);
-    this.selectedTeam.set(null);
+  toggleRoster(sessionId: number) {
+    // If clicking the same team, collapse it
+    if (this.expandedTeamId() === sessionId) {
+      this.expandedTeamId.set(null);
+      return;
+    }
 
+    // If team details already loaded, just expand
+    const details = this.teamDetails();
+    if (details.has(sessionId)) {
+      this.expandedTeamId.set(sessionId);
+      return;
+    }
+
+    // Load team details
+    this.loadingTeamId.set(sessionId);
     this.dataService.getMyTeam(sessionId).subscribe({
       next: (team) => {
-        this.selectedTeam.set(team);
-        this.loadingTeamDetails.set(false);
+        const updatedDetails = new Map(this.teamDetails());
+        updatedDetails.set(sessionId, team);
+        this.teamDetails.set(updatedDetails);
+        this.expandedTeamId.set(sessionId);
+        this.loadingTeamId.set(null);
       },
       error: (err) => {
         console.error('Error loading team details:', err);
         this.errorMessage.set(
           err.error?.message || 'Failed to load team details'
         );
-        this.loadingTeamDetails.set(false);
-        this.showTeamModal.set(false);
+        this.loadingTeamId.set(null);
       },
     });
   }
 
-  closeTeamModal() {
-    this.showTeamModal.set(false);
-    this.selectedTeam.set(null);
+  isExpanded(sessionId: number): boolean {
+    return this.expandedTeamId() === sessionId;
+  }
+
+  isLoadingRoster(sessionId: number): boolean {
+    return this.loadingTeamId() === sessionId;
+  }
+
+  getTeamDetails(sessionId: number): TeamDetails | undefined {
+    return this.teamDetails().get(sessionId);
   }
 
   formatDate(dateString: string): string {
