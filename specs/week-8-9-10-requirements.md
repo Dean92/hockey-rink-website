@@ -2,7 +2,22 @@
 
 ## Week 8 Completion: Draft Publish & User Team Views ✅ COMPLETED
 
-### Status: COMPLETE - All features implemented and tested
+### Status: COMPLETE - January 15, 2026 - All features implemented and tested
+
+**Completion Date**: January 15, 2026
+
+**Final Features Delivered**:
+
+- ✅ All test files passing (12/12 tests)
+- ✅ Bearer token authentication properly implemented
+- ✅ Test helper refactored to preserve user roles across logins
+- ✅ Dashboard date/time displays removed from "Happening Now" and "Upcoming Sessions"
+- ✅ My Teams page converted from modal to expandable inline roster view with caret toggle
+- ✅ Roster data cached for improved performance
+- ✅ Draft publish/unpublish functionality with admin toggle
+- ✅ Player dashboard showing current and past team assignments
+- ✅ Team captain display with badges and conditional email visibility
+- ✅ Navigation links added for "My Teams" in menu and quick actions
 
 ---
 
@@ -1078,17 +1093,31 @@ CREATE TABLE GoalieStats (
 
 ## Implementation Priority
 
-### Week 8 Completion ✅ COMPLETE:
+### Week 8 Completion ✅ COMPLETE - January 15, 2026:
 
 1. ✅ Database: DraftEnabled, DraftPublished fields - Migration applied
 2. ✅ Backend: Publish draft + Get my team endpoints - Implemented in AdminController and UsersController
 3. ✅ Backend: Authentication fix - ConfigureApplicationCookie prevents login redirects
-4. ✅ Frontend: Admin publish button - Toggle publish/unpublish on draft page
-5. ✅ Frontend: Draft status column - Shows Disabled/Not Started/In Progress/Completed badges
-6. ✅ Frontend: Player dashboard team card - Shows current team with color stripe and captain badge
-7. ✅ Frontend: Team detail modal - Full roster with conditional email display for captains
-8. ✅ Frontend: Navigation links - "My Teams" in nav menu and quick actions
-9. ✅ Backend: Team captain support - CaptainUserId field and UpdateTeamModel enhancement
+4. ✅ Backend: Bearer token authentication - Properly extracts and validates tokens from Authorization header
+5. ✅ Backend: Test infrastructure - All 12 tests passing with proper authentication flow
+6. ✅ Frontend: Admin publish button - Toggle publish/unpublish on draft page
+7. ✅ Frontend: Draft status column - Shows Disabled/Not Started/In Progress/Completed badges
+8. ✅ Frontend: Player dashboard team card - Shows current team with color stripe and captain badge
+9. ✅ Frontend: Team detail modal converted to expandable inline view - Caret toggle for roster display
+10. ✅ Frontend: Navigation links - "My Teams" in nav menu and quick actions
+11. ✅ Frontend: Dashboard UI polish - Removed date/time from "Happening Now" and "Upcoming Sessions"
+12. ✅ Backend: Team captain support - CaptainUserId field and UpdateTeamModel enhancement
+13. ✅ Backend: Test helper refactored - Preserves user roles across multiple login calls
+14. ✅ Frontend: Roster caching - Team details cached in Map for improved performance
+15. ✅ Testing: Session registration test - Added required payment fields validation
+
+**Key Technical Achievements**:
+
+- Fixed critical authentication bug where `TestAuthHelper` was deleting/recreating users, losing Admin role assignments
+- Implemented token extraction and storage in test authentication flow
+- Converted modal-based roster view to expandable inline view with state management
+- Ensured single-team expansion at a time for better UX
+- All integration tests passing with proper Bearer token authentication
 
 ### Week 9 (Next Priority):
 

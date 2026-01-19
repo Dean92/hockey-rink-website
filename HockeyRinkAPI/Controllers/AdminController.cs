@@ -831,11 +831,13 @@ public class AdminController : ControllerBase
                 .Where(r => r.RegistrationDate >= today && r.RegistrationDate < tomorrow)
                 .ToListAsync();
 
-            // Get all active sessions with registration details
+            // Get all active sessions with registration details (sessions that haven't ended yet)
+            var now = DateTime.UtcNow;
+
             var activeSessions = await _dbContext.Sessions
                 .Include(s => s.League)
                 .Include(s => s.SessionRegistrations)
-                .Where(s => s.IsActive)
+                .Where(s => s.EndDate >= now)
                 .OrderBy(s => s.StartDate)
                 .Select(s => new
                 {
@@ -861,10 +863,6 @@ public class AdminController : ControllerBase
                 .Where(r => r.RegistrationDate >= thisMonthStart)
                 .SumAsync(r => r.AmountPaid);
 
-            // Get total active registrations
-            var activeRegistrationsCount = await _dbContext.SessionRegistrations
-                .CountAsync(r => r.Session != null && r.Session.IsActive);
-
             // Get upcoming sessions (next 7 days)
             var nextWeek = DateTime.UtcNow.AddDays(7);
             var upcomingSessions = await _dbContext.Sessions
@@ -877,6 +875,7 @@ public class AdminController : ControllerBase
                     s.Name,
                     LeagueName = s.League != null ? s.League.Name : null,
                     s.StartDate,
+                    s.EndDate,
                     RegisteredCount = s.SessionRegistrations.Count,
                     s.MaxPlayers
                 })
@@ -886,7 +885,6 @@ public class AdminController : ControllerBase
             {
                 todaysRegistrationsCount = todaysRegistrations.Count,
                 activeSessionsCount = activeSessions.Count,
-                activeRegistrationsCount,
                 totalRevenue,
                 monthRevenue,
                 activeSessions,

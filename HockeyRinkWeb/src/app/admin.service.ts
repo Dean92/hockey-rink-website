@@ -7,7 +7,6 @@ import { environment } from '../environments/environment';
 export interface AdminDashboardData {
   todaysRegistrationsCount: number;
   activeSessionsCount: number;
-  activeRegistrationsCount: number;
   totalRevenue: number;
   monthRevenue: number;
   activeSessions: ActiveSessionSummary[];
@@ -33,6 +32,7 @@ export interface UpcomingSession {
   name: string;
   leagueName: string | null;
   startDate: string;
+  endDate: string;
   registeredCount: number;
   maxPlayers: number;
 }

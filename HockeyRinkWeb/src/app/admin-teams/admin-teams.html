@@ -150,10 +150,19 @@
           <!-- Captain Name -->
           <div class="mb-3">
             <label class="form-label">Captain Name</label>
-            <select class="form-select" formControlName="captainName">
+            <select
+              class="form-select"
+              [(ngModel)]="selectedCaptainValue"
+              (ngModelChange)="onCaptainChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+            >
               <option value="">Select a captain (optional)</option>
-              @for (player of registeredPlayers(); track player.id) {
-              <option [value]="player.name">{{ player.name }}</option>
+              @for (player of getEligibleCaptains(); track player.id) {
+              <option
+                [value]="(player.userId || player.UserId) + '|' + player.name"
+              >
+                {{ player.name }}
+              </option>
               }
             </select>
           </div>

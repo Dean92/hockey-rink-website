@@ -1109,10 +1109,10 @@
     "estimated_completion": "End of Week 7 (mid-December 2025)"
   },
   "week_8": {
-    "status": "✅ Completed - December 2024",
-    "focus": "Team Draft System & Player Management + Admin UI Redesign + Session Visibility Logic",
+    "status": "✅ Completed - January 15, 2026",
+    "focus": "Team Draft System & Player Management + Admin UI Redesign + Session Visibility Logic + Draft Publish & User Team Views",
     "estimated_hours": "15-18 hours",
-    "actual_completion": "December 2024 - Expanded scope with professional UI/UX, session visibility enhancements",
+    "actual_completion": "January 15, 2026 - All features including draft publish, user team views, and testing infrastructure completed",
     "deliverables": [
       {
         "player_rating_system": {
@@ -1876,8 +1876,8 @@
         }
       },
       {
-        "draft_status_and_visibility": {
-          "status": "❌ Not Implemented",
+        "draft_publish_and_user_team_views": {
+          "status": "✅ Completed - January 15, 2026",
           "description": "Show draft results to users after draft is complete",
           "admin_controls": {
             "publish_draft_toggle": {
@@ -1918,7 +1918,7 @@
             }
           }
         }
-      },
+      },{
           "description": "Show draft results to users after admin publishes the draft",
           "note": "✅ IMPLEMENTED January 2026 - Players can view team assignments after admin publishes draft",
           "admin_controls": {
@@ -2016,14 +2016,21 @@
               "✅ View Registrations modal shows all registrations correctly",
               "✅ Sessions remain visible after registration closes",
               "✅ 'Starting Soon' notification appears when registration closed but session not started",
-              "✅ Sessions disappear 7 days after session start date"
+              "✅ Sessions disappear 7 days after session start date",
+              "✅ Publish draft feature with toggle button on draft page",
+              "✅ User views their team assignment on player dashboard",
+              "✅ User who is captain sees captain badge indicator",
+              "✅ Team roster displayed via expandable inline view (not modal)",
+              "✅ Caret toggle for showing/hiding roster",
+              "✅ Roster data cached for performance",
+              "✅ Dashboard date/time removed from sessions display",
+              "✅ All integration tests passing (12/12)",
+              "✅ Bearer token authentication properly implemented",
+              "✅ Test helper preserves user roles across logins"
             ],
             "not_implemented": [
               "❌ Use auto-draft feature",
-              "❌ Clear all assignments",
-              "❌ Publish draft",
-              "❌ User views their team assignment",
-              "❌ User who is captain sees indicator"
+              "❌ Clear all assignments"
             ],
             "edge_cases_tested": [
               "✅ Try to drag player already on team (prevented by API)",
@@ -2033,10 +2040,12 @@
               "✅ Team with no players shows empty state"
             ]
           }
+          }
         }
-      }
-    ],
-    "priority_order_actual": [
+      ]
+    },
+    "week_9": {
+      "priority_order_actual": [
       "1. ✅ Database migrations: Rating on SessionRegistrations, Player-SessionRegistration link, MaxPlayers on Teams",
       "2. ✅ Backend models: Team with MaxPlayers, Player with SessionRegistrationId",
       "3. ✅ Backend: Draft player endpoints (GetDraftPlayers, SetPlayerRating, AssignPlayerToTeam, RemovePlayerFromTeam, GetTeamPlayers)",
@@ -2054,15 +2063,20 @@
       "15. ✅ Frontend: Session filtering and 'Starting Soon' notifications",
       "16. ✅ Bug fixes: Registration data loading, TypeScript type errors, button spacing",
       "17. ✅ Draft publish feature: DraftEnabled and DraftPublished fields with toggle UI",
-      "18. ✅ User-facing team views: Player dashboard with team card and roster modal",
+      "18. ✅ User-facing team views: Player dashboard with team card and expandable roster",
       "19. ✅ Backend authentication fix: ConfigureApplicationCookie prevents unwanted redirects",
       "20. ✅ Team captain support: CaptainUserId field, UpdateTeamModel enhancement, captain badge display",
       "21. ✅ Navigation enhancements: My Teams link in menu and quick actions",
       "22. ✅ Draft status column: Admin sessions table shows draft progress badges",
-      "23. ❌ Auto-draft algorithm (not implemented)"
+      "23. ✅ Testing infrastructure: All 12 integration tests passing with Bearer token auth",
+      "24. ✅ Test helper refactored: Preserves user roles across multiple login calls",
+      "25. ✅ UI/UX improvements: Removed date/time from dashboard session displays",
+      "26. ✅ Roster view enhancement: Converted from modal to expandable inline view with caret toggle",
+      "27. ✅ Performance optimization: Team roster caching in Map for faster subsequent views",
+      "28. ❌ Auto-draft algorithm (not implemented)"
     ],
-    "estimated_completion": "End of Week 8 (late December 2024)",
-    "actual_completion": "January 9, 2026 - All core features including draft publish and user team views completed",
+    "estimated_completion": "End of Week 8 (late December 2025)",
+    "actual_completion": "January 15, 2026 - All core features including draft publish, user team views, testing infrastructure, and UI enhancements completed",
     "notes": [
       "✅ Rating field stored on SessionRegistrations (not ApplicationUser) for session-specific context",
       "✅ Simplified database design - Players link directly to SessionRegistrations (no junction table)",
@@ -2079,17 +2093,24 @@
       "✅ 'Starting Soon' notification displays when registration closed but session not started",
       "✅ Draft publish feature: Admin can publish/unpublish drafts via toggle button on draft page",
       "✅ Player dashboard: Users see current/past team assignments with team color and captain badge",
-      "✅ Team roster modal: Players can view full roster, captains see teammate emails",
+      "✅ Team roster view: Expandable inline view with caret toggle replaces modal",
+      "✅ Roster caching: Team details stored in Map for improved performance",
       "✅ Draft status badges: Admin sessions table displays Disabled/Not Started/In Progress/Completed",
       "✅ Backend authentication: ConfigureApplicationCookie prevents 404 redirects to /Account/Login",
+      "✅ Bearer token authentication: Properly extracts token from login response and sets in Authorization header",
+      "✅ Test infrastructure: TestAuthHelper refactored to preserve user roles across multiple login calls",
+      "✅ Integration tests: All 12 tests passing with proper authentication flow",
       "✅ Captain functionality: CaptainUserId field in Teams table, displayed in player dashboard",
       "✅ Navigation: My Teams link added to main menu and dashboard quick actions",
-      "✅ Week 8 FULLY COMPLETE - All planned features implemented and tested",
+      "✅ Dashboard UI polish: Removed date/time displays from 'Happening Now' and 'Upcoming Sessions'",
+      "✅ Week 8 FULLY COMPLETE - All planned features implemented, tested, and polished",
       "❌ Auto-draft algorithm not implemented - manual draft via drag-and-drop only",
       "Consider adding draft history/audit log in future for transparency",
       "MaxPlayers field added as enhancement beyond original plan",
       "Delete team confirmation shows player count warning",
-      "Rating not displayed in UI - used for backend sorting only to maintain privacy"
+      "Rating not displayed in UI - used for backend sorting only to maintain privacy",
+      "Expandable roster view provides better UX than modal - keeps context visible",
+      "Single team expansion enforced for cleaner interface"
     ]
   },
   "week_9": {
