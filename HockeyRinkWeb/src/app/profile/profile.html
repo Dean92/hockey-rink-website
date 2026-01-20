@@ -1,7 +1,13 @@
 <div class="container py-5">
   <app-toast-container></app-toast-container>
 
-  @if (isLoading()) {
+  @if (isAdmin() && userId()) {
+  <div class="mb-3">
+    <button class="btn btn-outline-secondary" (click)="backToUsers()">
+      <i class="bi bi-arrow-left me-2"></i>Back to User Management
+    </button>
+  </div>
+  } @if (isLoading()) {
   <div class="text-center py-5">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
@@ -51,7 +57,14 @@
           {{ profile()!.firstName }} {{ profile()!.lastName }}
         </h2>
         <p class="text-muted mb-0">
-          <i class="bi bi-envelope me-2"></i>{{ profile()!.email }}
+          <i class="bi bi-envelope me-2"></i>
+          @if (isAdmin() && userId()) {
+          <a href="mailto:{{ profile()!.email }}" class="text-decoration-none">
+            {{ profile()!.email }}
+          </a>
+          } @else {
+          {{ profile()!.email }}
+          }
         </p>
       </div>
 
@@ -97,6 +110,26 @@
                 </div>
               </div>
             </div>
+            @if (isAdmin() && userId()) {
+            <div class="col-md-6">
+              <div class="info-group">
+                <label class="info-label">Player Rating</label>
+                <div class="info-value">
+                  <i class="bi bi-star-fill text-warning"></i>
+                  {{ profile()!.rating || "Not rated" }}
+                </div>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="info-group">
+                <label class="info-label">Player Notes (Admin Only)</label>
+                <div class="info-value">
+                  <i class="bi bi-sticky"></i>
+                  {{ profile()!.playerNotes || "No notes" }}
+                </div>
+              </div>
+            </div>
+            }
           </div>
         </div>
 
@@ -112,7 +145,7 @@
                 <label class="info-label">Phone</label>
                 <div class="info-value">
                   <i class="bi bi-telephone"></i>
-                  {{ profile()!.phone || "Not provided" }}
+                  {{ formatPhone(profile()!.phone || "") || "Not provided" }}
                 </div>
               </div>
             </div>
@@ -148,6 +181,7 @@
       <!-- Edit Mode -->
       @if (isEditing()) {
       <form [formGroup]="profileForm" (ngSubmit)="onSaveProfile()">
+        @if (!isAdmin() || !userId()) {
         <div class="alert alert-info mb-4 border-0 bg-primary bg-opacity-10">
           <i class="bi bi-info-circle-fill me-2 text-primary"></i>
           <span class="text-muted"
@@ -155,12 +189,64 @@
             needed.</span
           >
         </div>
+        }
 
         <div class="row g-4">
           <!-- Personal Info Edit -->
           <div class="col-lg-6">
             <h5 class="section-title">Personal Information</h5>
             <div class="row g-3">
+              @if (isAdmin() && userId()) {
+              <div class="col-md-6">
+                <label class="form-label"
+                  >First Name <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="firstName"
+                  placeholder="Enter first name"
+                  [class.is-invalid]="hasError('firstName', 'required')"
+                />
+                @if (hasError('firstName', 'required')) {
+                <div class="invalid-feedback">First name is required</div>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label"
+                  >Last Name <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="lastName"
+                  placeholder="Enter last name"
+                  [class.is-invalid]="hasError('lastName', 'required')"
+                />
+                @if (hasError('lastName', 'required')) {
+                <div class="invalid-feedback">Last name is required</div>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label"
+                  >Email <span class="text-danger">*</span></label
+                >
+                <input
+                  type="email"
+                  class="form-control"
+                  formControlName="email"
+                  placeholder="Enter email address"
+                  [class.is-invalid]="
+                    hasError('email', 'required') || hasError('email', 'email')
+                  "
+                />
+                @if (hasError('email', 'required')) {
+                <div class="invalid-feedback">Email is required</div>
+                } @if (hasError('email', 'email')) {
+                <div class="invalid-feedback">Please enter a valid email</div>
+                }
+              </div>
+              }
               <div class="col-12">
                 <label class="form-label"
                   >Position <span class="text-danger">*</span></label
@@ -195,8 +281,21 @@
                 <div class="invalid-feedback">Date of birth is required</div>
                 }
               </div>
+
               <div class="col-12">
                 <label class="form-label">Current League</label>
+                @if (isAdmin() && userId()) {
+                <select class="form-select" formControlName="leagueId">
+                  <option [value]="null">No League Assigned</option>
+                  @for (league of leagues(); track league.id) {
+                  <option [value]="league.id">{{ league.name }}</option>
+                  }
+                </select>
+                <div class="form-text">
+                  <i class="bi bi-info-circle me-1"></i>Assign player to a
+                  league
+                </div>
+                } @else {
                 <div
                   class="form-control bg-light text-muted"
                   style="cursor: not-allowed"
@@ -208,7 +307,41 @@
                   <i class="bi bi-lock me-1"></i>League assignment is managed by
                   administrators
                 </div>
+                }
               </div>
+
+              <!-- Admin-only fields -->
+              @if (isAdmin() && userId()) {
+              <div class="col-12">
+                <label class="form-label">Player Rating (Admin Only)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  formControlName="rating"
+                  min="1"
+                  max="5"
+                  step="0.5"
+                  placeholder="1-5"
+                  [class.is-invalid]="
+                    hasError('rating', 'min') || hasError('rating', 'max')
+                  "
+                />
+                @if (hasError('rating', 'min') || hasError('rating', 'max')) {
+                <div class="invalid-feedback">
+                  Rating must be between 1 and 5
+                </div>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label">Player Notes (Admin Only)</label>
+                <textarea
+                  class="form-control"
+                  formControlName="playerNotes"
+                  rows="3"
+                  placeholder="Admin notes about this player..."
+                ></textarea>
+              </div>
+              }
             </div>
           </div>
 

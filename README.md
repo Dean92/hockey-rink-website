@@ -327,27 +327,69 @@ taskkill /PID <PID> /F
 
 ---
 
-### 📋 Week 9: User Profile & Admin Enhancements (Planned)
+### ✅ Week 9: Player Rating System & Admin Profile Management (In Progress - January 2026)
 
-#### User Management - Clickable User Rows
+#### Player Rating & Notes System ✅ COMPLETED
 
-- Click user row to view detailed profile with admin-specific information
-- Admin notes field (NVARCHAR(MAX)) on ApplicationUser
-- Comprehensive user statistics: registrations, payments, session attendance
-- PUT /api/admin/users/{id}/notes endpoint
+- **Database Schema**: Added Rating (decimal 3,1) and PlayerNotes (nvarchar) to ApplicationUser
+- **Admin Endpoints**: PUT /api/admin/users/{userId}/profile for complete profile management
+- **Rating Scale**: 1.0 to 5.0 with 0.5 increments
+- **Draft Integration**: Team average rating calculation uses ApplicationUser.Rating
+- **Visual Balance Indicators**: Green/Yellow/Red borders on draft teams based on rating distribution
 
-#### Editable User Profile
+#### Admin User Management Enhancements ✅ COMPLETED
 
-- Phone number field on ApplicationUser
-- PUT /api/users/profile endpoint
-- Edit mode toggle for profile form
-- Client-side validation for email/phone formats
+- **Full Profile Editing**: Admins can edit firstName, lastName, email with duplicate checking
+- **League Assignment**: Dropdown to assign users to leagues
+- **Email Change Validation**: Prevents duplicate emails, updates username automatically
+- **Last Login Tracking**: LastLoginAt field displays when users last logged in
+- **Clickable User Rows**: Navigate to profile page with userId query parameter
+- **User Management Table**: Added "Last Login" column showing formatted timestamp or "Never"
 
-#### Additional Features
+#### Profile Page Enhancements ✅ COMPLETED
 
-- Team color management enhancements
-- Footer with contact information
-- Home page redesign
+- **Admin-Only Fields**: Rating, notes, email, name editing visible only when admin views another user
+- **View Mode**: Displays rating with star icon, notes, clickable mailto email link
+- **Edit Mode**: Editable fields for name, email, phone, position, rating, notes, league
+- **Phone Formatting**: Auto-formats to (XXX) XXX-XXXX on save and in view mode
+- **Navigation**: "Back to User Management" button when admin views user profile
+- **Validation**: Email format, duplicate checking, rating range (1-5)
+
+#### Draft Page Improvements ✅ COMPLETED
+
+- **Position Badge Logic**: "Forward/Defense" displays as 'B' (for "Both")
+- **Team Average Rating Toggle**: Show/hide team averages on draft page
+- **Rating Calculation**: Excludes goalies, displays 1 decimal place
+- **Balance Indicators**: Visual borders (green/yellow/red) based on session average
+
+#### Technical Implementation
+
+- **Migrations Applied**:
+  - AddRatingAndNotesToApplicationUser (January 20, 2026)
+  - AddLastLoginAt (January 20, 2026)
+- **Authentication**: Login endpoint updates LastLoginAt timestamp
+- **Security**: Email changes use ASP.NET Identity's ChangeEmailAsync with token validation
+- **UX**: Toast notifications, inline validation, conditional field visibility
+
+**Status**: ✅ Major features completed - Player rating system, admin profile management, last login tracking
+
+**In Progress**: GameStats and GoalieStats database migrations
+
+---
+
+### 📋 Week 10: Statistics & League Standings (Planned)
+
+#### League Standings Page
+
+- Win/Loss/Tie records by team
+- Points calculation and ranking
+- Season statistics display
+
+#### Game Statistics Entry
+
+- Admin game entry form
+- Player statistics tracking (goals, assists, +/-)
+- Goalie statistics (saves, goals against)
 
 ---
 

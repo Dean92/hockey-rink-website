@@ -2114,9 +2114,31 @@
     ]
   },
   "week_9": {
-    "status": "Planned",
-    "focus": "League Management, User Profile, Home Page Redesign, and Footer Enhancement",
-    "estimated_hours": "12-15 hours",
+    "status": "In Progress - Started January 19, 2026",
+    "focus": "League Standings & Statistics",
+    "estimated_hours": "15-20 hours",
+    "completed_features": [
+      "✅ Draft Page Enhancement: Position Badge Logic - 'Forward/Defense' displays as 'B' (January 19, 2026)",
+      "✅ Draft Page Enhancement: Team Average Rating Toggle Button added (January 19, 2026)",
+      "✅ Draft Page Enhancement: Team Average Rating Calculation (excludes goalies) (January 19, 2026)",
+      "✅ Draft Page Enhancement: Visual Balance Indicators - Green/Yellow/Red borders based on session average (January 19, 2026)",
+      "✅ Database Migration: Games Table created and applied (January 19, 2026)",
+      "✅ Player Rating System: Admin can rate players 1-5 with decimal increments and add notes (January 20, 2026)",
+      "✅ Database Migration: AddRatingAndNotesToApplicationUser (January 20, 2026)",
+      "✅ Database Migration: AddLastLoginAt (January 20, 2026)",
+      "✅ Admin User Management: Full profile editing including email/name changes with duplicate checking (January 20, 2026)",
+      "✅ Admin User Management: League assignment via dropdown (January 20, 2026)",
+      "✅ User Management: Last Login column displays timestamp of user's last successful login (January 20, 2026)",
+      "✅ Profile Page: Admin-only fields for rating, notes, email, and name editing (January 20, 2026)",
+      "✅ Profile Page: Phone number formatting in view mode (January 20, 2026)",
+      "✅ Profile Page: Clickable email addresses (mailto links) for admins (January 20, 2026)",
+      "✅ UX: Clickable user rows in admin table navigate to profile page (January 20, 2026)",
+      "✅ UX: Back to User Management button on profile when viewing as admin (January 20, 2026)"
+    ],
+    "in_progress": [
+      "🔄 Database Migration: GameStats Table (player statistics per game)",
+      "🔄 Database Migration: GoalieStats Table (goalie statistics per game)"
+    ],
     "features": [
       {
         "name": "Admin League Management (Full CRUD)",

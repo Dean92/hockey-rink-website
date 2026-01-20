@@ -19,27 +19,54 @@
   } @if (!isLoading() && users().length > 0) {
   <div class="card shadow">
     <div class="card-body">
+      <p class="text-muted mb-3">
+        <i class="bi bi-info-circle"></i> Click on a user to view and edit their
+        profile, rating, and notes
+      </p>
       <div class="table-responsive">
         <table class="table table-hover">
           <thead>
             <tr>
               <th>Name</th>
               <th>Email</th>
+              <th>Position</th>
               <th>League</th>
+              <th>Player Rating</th>
               <th>Email Confirmed</th>
               <th>Created At</th>
+              <th>Last Login</th>
             </tr>
           </thead>
           <tbody>
             @for (user of users(); track user.id) {
-            <tr>
+            <tr
+              (click)="viewUserProfile(user.id)"
+              style="cursor: pointer"
+              class="user-row"
+            >
               <td>{{ user.firstName }} {{ user.lastName }}</td>
               <td>{{ user.email }}</td>
+              <td>
+                @if (user.position) {
+                <span class="badge bg-info">{{ user.position }}</span>
+                } @else {
+                <span class="text-muted">Not set</span>
+                }
+              </td>
               <td>
                 @if (user.leagueName) {
                 <span class="badge bg-secondary">{{ user.leagueName }}</span>
                 } @else {
                 <span class="text-muted">Not assigned</span>
+                }
+              </td>
+              <td>
+                @if (user.rating) {
+                <span class="badge bg-warning">
+                  <i class="bi bi-star-fill"></i> {{ user.rating }}
+                </span>
+                } @else {
+                <span class="text-muted">Not rated</span>
                 }
               </td>
               <td>
@@ -50,6 +77,13 @@
                 }
               </td>
               <td>{{ formatDateInCentralTime(user.createdAt) }}</td>
+              <td>
+                @if (user.lastLoginAt) {
+                <span>{{ formatDateInCentralTime(user.lastLoginAt) }}</span>
+                } @else {
+                <span class="text-muted">Never</span>
+                }
+              </td>
             </tr>
             }
           </tbody>

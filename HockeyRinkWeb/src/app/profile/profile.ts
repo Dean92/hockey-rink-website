@@ -10,6 +10,9 @@ import {
 import { UserProfile } from '../models';
 import { ToastService } from '../services/toast.service';
 import { ToastContainerComponent } from '../toast-container/toast-container.component';
+import { ActivatedRoute, Router } from '@angular/router';
+import { AdminService } from '../admin.service';
+import { AuthService } from '../auth';
 
 @Component({
   selector: 'app-profile',
@@ -28,15 +31,24 @@ export class Profile implements OnInit {
   isSaving = signal<boolean>(false);
   showChangePassword = signal<boolean>(false);
   isChangingPassword = signal<boolean>(false);
+  userId = signal<string | null>(null);
+  isAdmin = signal<boolean>(false);
   profileForm: FormGroup;
   changePasswordForm: FormGroup;
 
   constructor(
     private dataService: DataService,
     private formBuilder: FormBuilder,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private adminService: AdminService,
+    private authService: AuthService
   ) {
     this.profileForm = this.formBuilder.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
       address: ['', Validators.required],
       city: ['', Validators.required],
       state: ['', Validators.required],
@@ -44,6 +56,9 @@ export class Profile implements OnInit {
       phone: ['', [Validators.required, Validators.pattern(/^[\d\s()+-]+$/)]],
       dateOfBirth: ['', Validators.required],
       position: ['', Validators.required],
+      rating: [null, [Validators.min(1), Validators.max(5)]],
+      playerNotes: [''],
+      leagueId: [null],
     });
 
     this.changePasswordForm = this.formBuilder.group(
@@ -52,11 +67,25 @@ export class Profile implements OnInit {
         newPassword: ['', [Validators.required, Validators.minLength(6)]],
         confirmPassword: ['', Validators.required],
       },
-      { validators: this.passwordMatchValidator }
+      { validators: this.passwordMatchValidator.bind(this) }
     );
   }
 
   ngOnInit() {
+    // Check if viewing another user's profile (admin only)
+    this.route.queryParams.subscribe((params) => {
+      const userId = params['userId'];
+      if (userId) {
+        this.userId.set(userId);
+        console.log('UserId set to:', userId);
+      }
+    });
+
+    // Check if current user is admin
+    const adminStatus = this.authService.isAdmin();
+    this.isAdmin.set(adminStatus);
+    console.log('Is Admin:', adminStatus, 'UserId:', this.userId());
+
     this.loadProfile();
     this.loadLeagues();
   }
@@ -74,24 +103,72 @@ export class Profile implements OnInit {
 
   loadProfile() {
     this.isLoading.set(true);
-    this.dataService.getProfile().subscribe({
-      next: (data) => {
-        this.profile.set(data);
-        this.populateForm(data);
+    const userId = this.userId();
+
+    // If userId is set and user is admin, load that user's profile
+    if (userId && this.isAdmin()) {
+      this.loadUserProfile(userId);
+    } else {
+      // Otherwise load current user's profile
+      this.dataService.getProfile().subscribe({
+        next: (data) => {
+          this.profile.set(data);
+          this.populateForm(data);
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error('Error fetching profile:', err);
+          this.errorMessage.set(
+            err.error?.message || 'Failed to fetch profile. Please try again.'
+          );
+          this.isLoading.set(false);
+        },
+      });
+    }
+  }
+
+  loadUserProfile(userId: string) {
+    // Load user via admin endpoint to get rating and notes
+    this.adminService.getUsers().subscribe({
+      next: (users) => {
+        const user = users.find((u) => u.id === userId);
+        if (user) {
+          console.log('Found user:', user);
+          const profileData: any = {
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            position: user.position,
+            rating: user.rating,
+            playerNotes: user.playerNotes,
+            address: user.address,
+            city: user.city,
+            state: user.state,
+            zipCode: user.zipCode,
+            phone: user.phone,
+            dateOfBirth: user.dateOfBirth,
+            leagueId: user.leagueId,
+            leagueName: user.leagueName,
+          };
+          console.log('Profile data set:', profileData);
+          this.profile.set(profileData);
+          this.populateForm(profileData);
+        }
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error('Error fetching profile:', err);
-        this.errorMessage.set(
-          err.error?.message || 'Failed to fetch profile. Please try again.'
-        );
+        console.error('Error fetching user profile:', err);
+        this.errorMessage.set('Failed to fetch user profile');
         this.isLoading.set(false);
       },
     });
   }
 
-  populateForm(profile: UserProfile) {
+  populateForm(profile: any) {
     this.profileForm.patchValue({
+      firstName: profile.firstName || '',
+      lastName: profile.lastName || '',
+      email: profile.email || '',
       address: profile.address || '',
       city: profile.city || '',
       state: profile.state || '',
@@ -101,6 +178,9 @@ export class Profile implements OnInit {
         ? new Date(profile.dateOfBirth).toISOString().split('T')[0]
         : '',
       position: profile.position || '',
+      rating: profile.rating || null,
+      playerNotes: profile.playerNotes || '',
+      leagueId: profile.leagueId || null,
     });
   }
 
@@ -134,31 +214,58 @@ export class Profile implements OnInit {
     this.isSaving.set(true);
     this.errorMessage.set(null);
 
-    this.dataService.updateProfile(this.profileForm.value).subscribe({
-      next: (response) => {
-        this.profile.set(response);
-        this.populateForm(response);
-        this.isEditing.set(false);
-        this.isSaving.set(false);
-        this.toastService.success(
-          'Profile Updated',
-          'Your profile has been successfully updated'
-        );
-        // Reload profile to ensure we have all updated data
-        this.loadProfile();
-      },
-      error: (err) => {
-        console.error('Error updating profile:', err);
-        this.errorMessage.set(
-          err.error?.message || 'Failed to update profile. Please try again.'
-        );
-        this.toastService.error(
-          'Update Failed',
-          err.error?.message || 'Failed to update profile'
-        );
-        this.isSaving.set(false);
-      },
-    });
+    // Format phone before saving
+    const formValue = { ...this.profileForm.value };
+    formValue.phone = this.formatPhone(formValue.phone);
+
+    // If viewing another user's profile as admin, update via admin endpoint
+    if (this.userId() && this.isAdmin()) {
+      this.adminService.updateUserProfile(this.userId()!, formValue).subscribe({
+        next: () => {
+          this.isSaving.set(false);
+          this.isEditing.set(false);
+          this.toastService.success(
+            'Success',
+            'Player profile updated successfully'
+          );
+          this.loadProfile();
+        },
+        error: (err) => {
+          console.error('Error updating profile:', err);
+          this.isSaving.set(false);
+          const errorMessage =
+            err.error?.message || 'Failed to update player information';
+          this.toastService.error('Update Failed', errorMessage);
+        },
+      });
+    } else {
+      // Regular profile update for current user
+      this.dataService.updateProfile(formValue).subscribe({
+        next: (response) => {
+          this.profile.set(response);
+          this.populateForm(response);
+          this.isEditing.set(false);
+          this.isSaving.set(false);
+          this.toastService.success(
+            'Profile Updated',
+            'Your profile has been successfully updated'
+          );
+          // Reload profile to ensure we have all updated data
+          this.loadProfile();
+        },
+        error: (err) => {
+          console.error('Error updating profile:', err);
+          this.errorMessage.set(
+            err.error?.message || 'Failed to update profile. Please try again.'
+          );
+          this.toastService.error(
+            'Update Failed',
+            err.error?.message || 'Failed to update profile'
+          );
+          this.isSaving.set(false);
+        },
+      });
+    }
   }
 
   hasError(field: string, errorType: string): boolean {
@@ -264,5 +371,9 @@ export class Profile implements OnInit {
       return `(${cleaned}`;
     }
     return phone; // Return original if no digits
+  }
+
+  backToUsers() {
+    this.router.navigate(['/admin/users']);
   }
 }

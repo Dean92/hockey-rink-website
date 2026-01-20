@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { AdminService, AdminUser } from '../admin.service';
 
 @Component({
@@ -14,7 +15,7 @@ export class AdminUsers implements OnInit {
   errorMessage = signal<string | null>(null);
   isLoading = signal<boolean>(true);
 
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService, private router: Router) {}
 
   ngOnInit() {
     this.loadUsers();
@@ -50,5 +51,9 @@ export class AdminUsers implements OnInit {
         this.isLoading.set(false);
       },
     });
+  }
+
+  viewUserProfile(userId: string) {
+    this.router.navigate(['/profile'], { queryParams: { userId } });
   }
 }

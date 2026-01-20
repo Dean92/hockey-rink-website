@@ -11,6 +11,7 @@ namespace HockeyRinkAPI.Models
         public bool IsSubAvailable { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? LastLoginAt { get; set; }
 
         // Extended profile info (Week 7)
         public string? Address { get; set; }
@@ -20,6 +21,10 @@ namespace HockeyRinkAPI.Models
         public string? Phone { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public string? Position { get; set; } // Forward, Defense, Forward/Defense, Goalie
+
+        // Admin-only fields (Week 9)
+        public decimal? Rating { get; set; } // Player skill rating (1.0 to 5.0)
+        public string? PlayerNotes { get; set; } // Admin notes about player
 
         // Manual registration support (Week 7)
         public bool IsManuallyRegistered { get; set; } = false;

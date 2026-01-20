@@ -83,6 +83,22 @@
   max-height: 800px;
 }
 
+/* Team Balance Visual Indicators */
+.team-card.balanced-green {
+  border: 3px solid #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.team-card.balanced-yellow {
+  border: 3px solid #eab308;
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2);
+}
+
+.team-card.balanced-red {
+  border: 3px solid #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
 .team-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);

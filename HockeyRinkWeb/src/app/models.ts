@@ -53,6 +53,8 @@ export interface UserProfile {
   phone?: string;
   dateOfBirth?: string;
   position?: string;
+  rating?: number;
+  playerNotes?: string;
 }
 
 export interface DashboardData {

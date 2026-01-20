@@ -518,17 +518,119 @@ viewTeam(sessionId: number) {
 
 ## Week 9: League Standings & Statistics
 
+### Status: IN PROGRESS - Started January 19, 2026
+
+**Completed Features**:
+
+- ✅ Position Badge Logic - "Forward/Defense" displays as 'B' (January 19, 2026)
+- ✅ Team Average Rating Toggle Button added to Draft Page (January 19, 2026)
+- ✅ Team Average Rating Calculation Logic (excludes goalies) (January 19, 2026)
+- ✅ Visual Balance Indicators - Green/Yellow/Red borders (January 19, 2026)
+- ✅ Games Table Database Migration created and applied (January 19, 2026)
+- ✅ Player Rating System - Admin can rate players 1-5 with notes (January 20, 2026)
+- ✅ Admin User Profile Editing - Full profile management including email/name changes (January 20, 2026)
+- ✅ Last Login Tracking - Displays when users last logged in (January 20, 2026)
+
+**In Progress**:
+
+- 🔄 GameStats Table Database Migration
+- 🔄 GoalieStats Table Database Migration
+
 ### Priority: MEDIUM-HIGH
 
 ---
 
-### 0. Draft Page Enhancement - Team Average Rating Display
+### 0. Player Rating & Admin Profile Management ✅ COMPLETED
+
+**Status**: COMPLETE - January 20, 2026
+
+**Purpose**: Enable admins to rate players and manage complete user profiles for better team balancing and user management.
+
+#### Database Changes ✅ COMPLETED
+
+**ApplicationUser Table - New Fields**:
+
+- `Rating` (decimal(3,1), nullable): Player skill rating from 1.0 to 5.0
+- `PlayerNotes` (nvarchar, nullable): Admin-only notes about the player
+- `LastLoginAt` (datetime2, nullable): Timestamp of user's last successful login
+
+**Migrations Applied**:
+
+- `AddRatingAndNotesToApplicationUser` - January 20, 2026
+- `AddLastLoginAt` - January 20, 2026
+
+#### Backend API Endpoints ✅ COMPLETED
+
+**Admin User Management**:
+
+- `PUT /api/admin/users/{userId}/profile` - Update complete user profile including:
+  - First Name, Last Name, Email (with duplicate checking)
+  - Address, City, State, ZipCode, Phone
+  - Date of Birth, Position
+  - Rating (1-5), Player Notes
+  - League Assignment
+- `GET /api/admin/users` - Returns all users with LastLoginAt included
+
+**Authentication Enhancement**:
+
+- Login endpoint now updates `LastLoginAt` timestamp on successful login
+
+**Email Change Validation**:
+
+- Duplicate email checking prevents conflicts
+- Username automatically updated to match new email
+- Users can login immediately with new email address
+
+#### Frontend Implementation ✅ COMPLETED
+
+**Admin Users Page Enhancements**:
+
+- Clickable user rows navigate to profile page with `userId` query parameter
+- Added "Last Login" column showing formatted timestamp or "Never"
+- Removed inline editing in favor of dedicated profile view
+
+**Profile Page - Admin Features**:
+
+- View Mode:
+  - Player Rating displayed with star icon
+  - Player Notes displayed (admin-only)
+  - Clickable email address (mailto link) for admins
+  - Phone number formatting: (XXX) XXX-XXXX
+- Edit Mode (Admin viewing another user):
+  - Editable fields: First Name, Last Name, Email
+  - Email validation and duplicate checking
+  - League assignment dropdown
+  - Player Rating (1-5 with 0.5 increments)
+  - Player Notes (free-text area)
+  - All standard profile fields (address, phone, position, etc.)
+- Navigation:
+  - "Back to User Management" button when admin views user profile
+  - Breadcrumb-style navigation
+
+**Draft Integration**:
+
+- Team average rating calculation uses `ApplicationUser.Rating`
+- Rating displayed in draft pool with colored badges
+- Team balance indicators (green/yellow/red) based on rating distribution
+
+**UX Improvements**:
+
+- Phone number auto-formatting on save
+- Toast notifications for success/error states
+- Form validation with inline error messages
+- Conditional field visibility based on admin status
+
+---
+
+### 0. Draft Page Enhancement - Team Average Rating Display ✅ COMPLETED
+
+**Status**: COMPLETE - January 19, 2026
 
 **Location**: Admin Draft Page - Team Cards
 
 **Purpose**: Help admins balance teams by showing real-time average rating for each team during the draft process.
 
-#### Position Badge Display Logic
+#### Position Badge Display Logic ✅ COMPLETED
 
 **Draft Pool Player Icons**:
 
@@ -697,27 +799,36 @@ getTeamRatingClass(teamAvg: number | null): string {
 
 ---
 
-### 1. Database Changes - Game Tracking
+### 1. Database Changes - Game Tracking ✅ COMPLETED (Games Table)
 
-#### New Table: Games
+**Status**: Games table completed January 19, 2026. GameStats and GoalieStats tables pending.
+
+#### New Table: Games ✅ COMPLETED
+
+**Migration**: `CreateGamesTable` - Applied January 19, 2026
 
 ```sql
 CREATE TABLE Games (
   Id INT PRIMARY KEY IDENTITY,
-  SessionId INT NOT NULL FOREIGN KEY REFERENCES Sessions(Id),
+  SessionId INT NOT NULL FOREIGN KEY REFERENCES Sessions(Id) ON DELETE CASCADE,
   GameDate DATETIME2 NOT NULL,
-  Rink NVARCHAR(100) NULL,
-  HomeTeamId INT NOT NULL FOREIGN KEY REFERENCES Teams(Id),
-  AwayTeamId INT NOT NULL FOREIGN KEY REFERENCES Teams(Id),
+  Location NVARCHAR(100) NULL,
+  HomeTeamId INT NOT NULL FOREIGN KEY REFERENCES Teams(Id) ON DELETE NO ACTION,
+  AwayTeamId INT NOT NULL FOREIGN KEY REFERENCES Teams(Id) ON DELETE NO ACTION,
   HomeScore INT NULL,
   AwayScore INT NULL,
-  Status NVARCHAR(20) DEFAULT 'Scheduled',  -- Scheduled, Completed, Cancelled
+  Status NVARCHAR(20) DEFAULT 'Scheduled',  -- Scheduled, InProgress, Completed, Cancelled
   CreatedAt DATETIME2 DEFAULT GETDATE(),
   UpdatedAt DATETIME2 DEFAULT GETDATE()
 );
+
+-- Index for efficient queries
+CREATE INDEX IX_Games_SessionId_GameDate ON Games(SessionId, GameDate);
 ```
 
-#### New Table: GameStats (Player Stats)
+**Model Created**: `Game.cs` with navigation properties to Session, HomeTeam, and AwayTeam
+
+#### New Table: GameStats (Player Stats) - PENDING
 
 ```sql
 CREATE TABLE GameStats (

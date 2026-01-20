@@ -103,7 +103,9 @@ public class UsersController : ControllerBase
                     user.ZipCode,
                     user.Phone,
                     user.DateOfBirth,
-                    user.Position
+                    user.Position,
+                    user.Rating,
+                    user.PlayerNotes
                 }
             );
         }

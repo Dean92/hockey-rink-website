@@ -48,6 +48,7 @@ export class AdminDraft implements OnInit {
   isLoading = signal<boolean>(true);
   errorMessage = signal<string | null>(null);
   showRatings = signal<boolean>(true);
+  showTeamAvgRating = signal<boolean>(false);
   draftPublished = signal<boolean>(false);
 
   constructor(
@@ -168,6 +169,76 @@ export class AdminDraft implements OnInit {
 
   toggleRatings() {
     this.showRatings.set(!this.showRatings());
+  }
+
+  toggleTeamAvgRating() {
+    this.showTeamAvgRating.set(!this.showTeamAvgRating());
+  }
+
+  calculateTeamAvgRating(teamId: number): number | null {
+    const team = this.teams().find((t) => t.id === teamId);
+    if (!team || team.players.length === 0) {
+      return null;
+    }
+
+    const playersWithRatings = team.players.filter(
+      (p) =>
+        p.rating !== null && p.rating !== undefined && p.position !== 'Goalie'
+    );
+
+    if (playersWithRatings.length === 0) {
+      return null;
+    }
+
+    const sum = playersWithRatings.reduce(
+      (acc, player) => acc + (player.rating || 0),
+      0
+    );
+    return Math.round((sum / playersWithRatings.length) * 10) / 10;
+  }
+
+  calculateSessionAvgRating(): number | null {
+    const allPlayers = [
+      ...this.availablePlayers(),
+      ...this.teams().flatMap((t) => t.players),
+    ];
+
+    const playersWithRatings = allPlayers.filter(
+      (p) => p.rating !== null && p.rating !== undefined
+    );
+
+    if (playersWithRatings.length === 0) {
+      return null;
+    }
+
+    const sum = playersWithRatings.reduce(
+      (acc, player) => acc + (player.rating || 0),
+      0
+    );
+    return Math.round((sum / playersWithRatings.length) * 10) / 10;
+  }
+
+  getTeamBalanceClass(teamId: number): string {
+    if (!this.showTeamAvgRating()) {
+      return '';
+    }
+
+    const teamAvg = this.calculateTeamAvgRating(teamId);
+    const sessionAvg = this.calculateSessionAvgRating();
+
+    if (teamAvg === null || sessionAvg === null) {
+      return '';
+    }
+
+    const difference = Math.abs(teamAvg - sessionAvg);
+
+    if (difference <= 0.5) {
+      return 'balanced-green';
+    } else if (difference <= 1.0) {
+      return 'balanced-yellow';
+    } else {
+      return 'balanced-red';
+    }
   }
 
   drop(event: CdkDragDrop<DraftPlayer[]>, targetTeamId?: number) {
@@ -346,5 +417,11 @@ export class AdminDraft implements OnInit {
     return this.teams()
       .filter((team) => team.id !== currentTeamId)
       .map((team) => `team-${team.id}`);
+  }
+
+  getPositionLetter(position: string | null): string {
+    if (!position) return '?';
+    if (position === 'Forward/Defense') return 'B';
+    return position.charAt(0);
   }
 }

@@ -104,6 +104,10 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Invalid email or password" });
             }
 
+            // Update last login time
+            user.LastLoginAt = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+
             await _signInManager.SignInAsync(user, isPersistent: false);
             var token = GenerateToken(user);
 
