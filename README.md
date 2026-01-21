@@ -361,6 +361,16 @@ taskkill /PID <PID> /F
 - **Team Average Rating Toggle**: Show/hide team averages on draft page
 - **Rating Calculation**: Excludes goalies, displays 1 decimal place
 - **Balance Indicators**: Visual borders (green/yellow/red) based on session average
+- **Player Notes Display**: Toggle button inline with player name to show/hide notes (January 21, 2026)
+- **Draft API Enhancement**: GetDraftPlayers includes PlayerNotes field (January 21, 2026)
+
+#### User Management UX Improvements ✅ COMPLETED (January 21, 2026)
+
+- **Search Functionality**: Filter users by first or last name (case-insensitive)
+- **Pagination**: Display 25 users per page with Previous/Next navigation
+- **Smart Search Integration**: Automatically resets to page 1 when search term changes
+- **Page Indicator**: Shows "Showing X to Y of Z users" above pagination controls
+- **Streamlined UI**: Removed redundant "Back to Admin Dashboard" button
 
 #### Technical Implementation
 

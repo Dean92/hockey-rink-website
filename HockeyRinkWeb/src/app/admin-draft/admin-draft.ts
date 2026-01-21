@@ -18,6 +18,7 @@ interface DraftPlayer {
   name: string;
   position: string;
   rating: number | null;
+  playerNotes: string | null;
   email: string;
   teamId: number | null;
   teamName: string | null;
@@ -50,6 +51,7 @@ export class AdminDraft implements OnInit {
   showRatings = signal<boolean>(true);
   showTeamAvgRating = signal<boolean>(false);
   draftPublished = signal<boolean>(false);
+  expandedNotes = signal<Set<number>>(new Set());
 
   constructor(
     private route: ActivatedRoute,
@@ -423,5 +425,34 @@ export class AdminDraft implements OnInit {
     if (!position) return '?';
     if (position === 'Forward/Defense') return 'B';
     return position.charAt(0);
+  }
+
+  getSortedPlayers(players: any[]): any[] {
+    const positionOrder: { [key: string]: number } = {
+      Forward: 1,
+      'Forward/Defense': 2,
+      Defense: 3,
+      Goalie: 4,
+    };
+
+    return [...players].sort((a, b) => {
+      const orderA = positionOrder[a.position] || 99;
+      const orderB = positionOrder[b.position] || 99;
+      return orderA - orderB;
+    });
+  }
+
+  toggleNotes(playerId: number) {
+    const expanded = new Set(this.expandedNotes());
+    if (expanded.has(playerId)) {
+      expanded.delete(playerId);
+    } else {
+      expanded.add(playerId);
+    }
+    this.expandedNotes.set(expanded);
+  }
+
+  isNotesExpanded(playerId: number): boolean {
+    return this.expandedNotes().has(playerId);
   }
 }

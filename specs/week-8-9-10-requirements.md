@@ -620,6 +620,21 @@ viewTeam(sessionId: number) {
 - Form validation with inline error messages
 - Conditional field visibility based on admin status
 
+**User Management Page Enhancements** ✅ COMPLETED January 21, 2026:
+
+- Search by name: Filter users by first or last name (case-insensitive)
+- Pagination: Display 25 users per page with Previous/Next navigation
+- Search integration: Automatically resets to page 1 when search term changes
+- Page indicator: Shows "Showing X to Y of Z users"
+- Removed "Back to Admin Dashboard" button for cleaner UI
+
+**Draft Page Enhancements** ✅ COMPLETED January 21, 2026:
+
+- Player notes display: Toggle button (plus/minus icon) inline with player name
+- Notes visibility: Click to expand/collapse player notes below name
+- Consistent across views: Available players pool and team rosters
+- Backend integration: GetDraftPlayers API includes PlayerNotes field
+
 ---
 
 ### 0. Draft Page Enhancement - Team Average Rating Display ✅ COMPLETED

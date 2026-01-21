@@ -2133,7 +2133,14 @@
       "✅ Profile Page: Phone number formatting in view mode (January 20, 2026)",
       "✅ Profile Page: Clickable email addresses (mailto links) for admins (January 20, 2026)",
       "✅ UX: Clickable user rows in admin table navigate to profile page (January 20, 2026)",
-      "✅ UX: Back to User Management button on profile when viewing as admin (January 20, 2026)"
+      "✅ UX: Back to User Management button on profile when viewing as admin (January 20, 2026)",
+      "✅ User Management: Search by name filter - case-insensitive first/last name search (January 21, 2026)",
+      "✅ User Management: Pagination - 25 users per page with Previous/Next navigation (January 21, 2026)",
+      "✅ User Management: Search pagination integration - auto-resets to page 1 on search (January 21, 2026)",
+      "✅ User Management: Removed redundant 'Back to Admin Dashboard' button (January 21, 2026)",
+      "✅ Draft Page: Player notes display with toggle button (plus/minus icon) inline with name (January 21, 2026)",
+      "✅ Backend API: GetDraftPlayers enhanced to include PlayerNotes field (January 21, 2026)",
+      "✅ Draft Page: Notes toggle works consistently in available pool and team rosters (January 21, 2026)"
     ],
     "in_progress": [
       "🔄 Database Migration: GameStats Table (player statistics per game)",
