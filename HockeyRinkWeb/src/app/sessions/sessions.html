@@ -1,10 +1,16 @@
 <!-- Hero Section -->
-<div class="sessions-hero text-white text-center">
+<div class="sessions-hero text-white">
   <div class="container">
-    <h1 class="display-4 fw-bold mb-3">Find Your Session</h1>
-    <p class="lead opacity-75 mb-0">
-      Browse upcoming hockey sessions, leagues, and events.
-    </p>
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h1 class="h2 fw-bold mb-2">
+          <i class="bi bi-calendar-event me-2"></i>Available Sessions
+        </h1>
+        <p class="mb-0 opacity-90" style="font-size: 0.95rem">
+          Register for upcoming sessions
+        </p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -19,43 +25,6 @@
   </div>
   }
 
-  <!-- Filter Section -->
-  <div class="card filter-card mb-5">
-    <div class="card-body p-4">
-      <h5 class="card-title mb-4 fw-bold text-primary">
-        <i class="bi bi-funnel-fill me-2"></i>Filter Sessions
-      </h5>
-      <form [formGroup]="filterForm">
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label for="leagueFilter" class="form-label">League</label>
-            <select
-              id="leagueFilter"
-              formControlName="league"
-              class="form-select"
-            >
-              <option value="">All Leagues</option>
-              @for (league of leagues(); track league.id) {
-              <option [value]="league.id">
-                {{ league.name }}
-              </option>
-              }
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label for="dateFilter" class="form-label">Date</label>
-            <input
-              id="dateFilter"
-              type="date"
-              formControlName="date"
-              class="form-control"
-            />
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- Loading State -->
   @if (isLoading()) {
   <div class="text-center py-5">
@@ -69,13 +38,38 @@
     <p class="mt-3 text-muted">Loading sessions...</p>
   </div>
   } @else { @if (sessions().length) {
-  <div class="row g-4">
+  <div class="row g-4 mt-4">
     @for (session of sessions(); track session.id) {
     <div class="col-lg-4 col-md-6">
       <div
-        class="card session-card h-100"
+        class="card session-card h-100 shadow-sm border-0"
         [class.preferred-league]="isUserPreferredLeague(session)"
       >
+        <!-- Opening Soon Badge - Top of Card -->
+        @if (isRegistrationOpeningSoon(session)) {
+        <div class="card-header bg-info text-white border-0 py-2">
+          <div class="d-flex align-items-center justify-content-center">
+            <i class="bi bi-clock-fill me-2"></i>
+            <span class="fw-semibold small"
+              >Registration Opens
+              {{ session.registrationOpenDate | date : "MMM d, y" }}</span
+            >
+          </div>
+        </div>
+        }
+
+        <!-- Starting Soon Badge - Top of Card -->
+        @if (isSessionStartingSoon(session)) {
+        <div class="card-header bg-warning text-dark border-0 py-2">
+          <div class="d-flex align-items-center justify-content-center">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span class="fw-semibold small"
+              >Starting Soon - Registration Closed</span
+            >
+          </div>
+        </div>
+        }
+
         <div class="session-card-header">
           <div class="session-league-badge">
             {{ session.league?.name || "Open Session" }}
@@ -86,37 +80,19 @@
           <h5 class="session-card-title">{{ session.name }}</h5>
         </div>
 
-        <!-- Starting Soon Notification -->
-        @if (isSessionStartingSoon(session)) {
-        <div
-          class="alert alert-warning mb-0 mx-3 mt-3 py-2 px-3 d-flex align-items-center"
-          style="font-size: 0.875rem"
-        >
-          <i class="bi bi-exclamation-triangle-fill me-2"></i>
-          <span><strong>Starting Soon!</strong> Registration is closed.</span>
-        </div>
-        }
-
         <div class="session-card-body">
           <!-- Dates -->
           <div class="info-item">
             <div class="info-icon"><i class="bi bi-calendar-event"></i></div>
             <div>
               <strong>Start:</strong>
-              {{ session.startDate | date : "mediumDate" }}<br />
-              <small class="text-muted">{{
-                session.startDate | date : "shortTime"
-              }}</small>
+              {{ session.startDate | date : "mediumDate" }}
             </div>
           </div>
           <div class="info-item">
             <div class="info-icon"><i class="bi bi-calendar-check"></i></div>
             <div>
-              <strong>End:</strong> {{ session.endDate | date : "mediumDate"
-              }}<br />
-              <small class="text-muted">{{
-                session.endDate | date : "shortTime"
-              }}</small>
+              <strong>End:</strong> {{ session.endDate | date : "mediumDate" }}
             </div>
           </div>
 

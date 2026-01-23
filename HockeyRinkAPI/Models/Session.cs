@@ -19,7 +19,7 @@ public partial class Session
 
     public DateTime CreatedAt { get; set; }
 
-    public int LeagueId { get; set; }
+    public int? LeagueId { get; set; }
 
     public DateTime? EarlyBirdEndDate { get; set; }
 
@@ -39,7 +39,7 @@ public partial class Session
 
     public bool DraftPublished { get; set; }
 
-    public virtual League League { get; set; } = null!;
+    public virtual League? League { get; set; }
 
     public virtual ICollection<SessionRegistration> SessionRegistrations { get; set; } = new List<SessionRegistration>();
 

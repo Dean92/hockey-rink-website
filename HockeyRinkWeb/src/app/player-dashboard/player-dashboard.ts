@@ -15,6 +15,7 @@ interface TeamAssignment {
   isCaptain: boolean;
   sessionRecord: string | null;
   standing: string | null;
+  jerseyNumber?: number | null;
 }
 
 interface TeamDetails {
@@ -29,12 +30,14 @@ interface TeamDetails {
   leagueName: string | null;
   sessionRecord: string | null;
   standing: string | null;
+  jerseyNumber?: number | null;
 }
 
 interface Teammate {
   name: string;
   position: string;
   email: string | null;
+  jerseyNumber?: number | null;
 }
 
 @Component({

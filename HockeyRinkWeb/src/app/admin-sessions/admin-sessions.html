@@ -263,25 +263,17 @@
           </div>
 
           <div class="mb-3">
-            <label for="leagueId" class="form-label">League *</label>
+            <label for="leagueId" class="form-label">League</label>
             <select
               class="form-select"
               id="leagueId"
               formControlName="leagueId"
-              [class.is-invalid]="
-                sessionForm.get('leagueId')?.invalid &&
-                sessionForm.get('leagueId')?.touched
-              "
             >
-              <option value="">Select a league</option>
+              <option value="">No league (optional)</option>
               @for (league of leagues(); track league.id) {
               <option [value]="league.id">{{ league.name }}</option>
               }
             </select>
-            @if (sessionForm.get('leagueId')?.invalid &&
-            sessionForm.get('leagueId')?.touched) {
-            <div class="invalid-feedback">League is required</div>
-            }
           </div>
 
           <div class="row">
@@ -613,6 +605,8 @@
                     <th>Email</th>
                     <th>Phone</th>
                     <th>Position</th>
+                    <th class="text-nowrap">Assigned Team</th>
+                    <th class="text-nowrap">Jersey #</th>
                     <th class="text-nowrap">Registered</th>
                     <th class="text-nowrap">Amount Paid</th>
                     <th class="text-end text-nowrap">Actions</th>
@@ -625,6 +619,23 @@
                     <td class="text-muted">{{ reg.email }}</td>
                     <td class="text-nowrap">{{ formatPhone(reg.phone) }}</td>
                     <td class="text-nowrap">{{ reg.position }}</td>
+                    <td class="text-nowrap">
+                      @if (reg.assignedTeam) {
+                      {{ reg.assignedTeam }}
+                      } @else {
+                      <span class="text-muted">—</span>
+                      }
+                    </td>
+                    <td class="text-nowrap">
+                      @if (reg.jerseyNumber !== null && reg.jerseyNumber !==
+                      undefined) {
+                      <span class="badge bg-secondary"
+                        >#{{ reg.jerseyNumber }}</span
+                      >
+                      } @else {
+                      <span class="text-muted">—</span>
+                      }
+                    </td>
                     <td class="text-nowrap">
                       {{ formatDate(reg.registrationDate) }}
                     </td>
@@ -920,6 +931,7 @@
                 <option value="">Select position...</option>
                 <option value="Forward">Forward</option>
                 <option value="Defense">Defense</option>
+                <option value="Forward/Defense">Forward/Defense</option>
                 <option value="Goalie">Goalie</option>
               </select>
               <div class="invalid-feedback">Position is required</div>
@@ -948,6 +960,33 @@
               </div>
             </div>
           </div>
+          @if (isEditingRegistration() && currentRegistrationHasTeam()) {
+          <div class="mb-3">
+            <label for="jerseyNumber" class="form-label">
+              <i class="bi bi-hash"></i> Jersey Number
+            </label>
+            <select
+              id="jerseyNumber"
+              class="form-select"
+              formControlName="jerseyNumber"
+              [class.is-invalid]="jerseyConflictError()"
+            >
+              <option [value]="null">No jersey assigned</option>
+              @for (num of jerseyNumbers; track num) {
+              <option [value]="num">{{ num }}</option>
+              }
+            </select>
+            @if (jerseyConflictError()) {
+            <div class="invalid-feedback d-block">
+              {{ jerseyConflictError() }}
+            </div>
+            } @else {
+            <div class="form-text">
+              Assign a jersey number (0-99) for this player on their team
+            </div>
+            }
+          </div>
+          }
         </div>
         <div class="modal-footer">
           <button

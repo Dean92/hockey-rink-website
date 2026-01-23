@@ -59,6 +59,7 @@ export class AdminSessions implements OnInit {
   registrationsCurrentPage = signal<number>(1);
   registrationsPageSize = 25;
   Math = Math; // For template access
+  jerseyNumbers = Array.from({ length: 100 }, (_, i) => i); // 0-99
 
   filteredRegistrations = computed(() => {
     const term = this.registrationsSearchTerm().toLowerCase().trim();
@@ -83,6 +84,7 @@ export class AdminSessions implements OnInit {
     );
   });
   passwordSetupLink = signal<string | null>(null);
+  jerseyConflictError = signal<string | null>(null);
 
   constructor(private dataService: DataService, private fb: FormBuilder) {
     // Reset to page 1 when search term changes
@@ -98,7 +100,7 @@ export class AdminSessions implements OnInit {
       fee: [0],
       isActive: [false],
       draftEnabled: [false],
-      leagueId: ['', Validators.required],
+      leagueId: [''],
       maxPlayers: [
         20,
         [Validators.required, Validators.min(1), Validators.max(250)],
@@ -130,7 +132,15 @@ export class AdminSessions implements OnInit {
       dateOfBirth: ['', Validators.required],
       position: ['', Validators.required],
       amountPaid: [0, [Validators.required, Validators.min(0)]],
+      jerseyNumber: [null], // Optional jersey number
     });
+
+    // Clear jersey conflict error when jersey number changes
+    this.manualRegistrationForm
+      .get('jerseyNumber')
+      ?.valueChanges.subscribe(() => {
+        this.jerseyConflictError.set(null);
+      });
   }
 
   ngOnInit(): void {
@@ -233,8 +243,8 @@ export class AdminSessions implements OnInit {
     const formData = this.sessionForm.value;
 
     // Helper function to convert local datetime-local input to UTC ISO string
-    const toUTC = (dateTimeLocal: string | null): string | null => {
-      if (!dateTimeLocal) return null;
+    const toUTC = (dateTimeLocal: string | null): string | undefined => {
+      if (!dateTimeLocal) return undefined;
       // datetime-local gives us a string like "2025-12-16T16:20"
       // We need to treat this as local time and convert to UTC
       const localDate = new Date(dateTimeLocal);
@@ -243,18 +253,25 @@ export class AdminSessions implements OnInit {
 
     // Convert empty strings to null for datetime fields and convert to UTC
     const cleanedData = {
-      ...formData,
+      name: formData.name,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      fee: Number(formData.fee) || 0,
+      isActive: Boolean(formData.isActive),
+      draftEnabled: Boolean(formData.draftEnabled),
+      leagueId:
+        formData.leagueId === '' || formData.leagueId === null
+          ? undefined
+          : Number(formData.leagueId),
+      maxPlayers: Number(formData.maxPlayers) || 20,
       registrationOpenDate: toUTC(formData.registrationOpenDate),
       registrationCloseDate: toUTC(formData.registrationCloseDate),
+      earlyBirdPrice: formData.earlyBirdPrice
+        ? Number(formData.earlyBirdPrice)
+        : undefined,
       earlyBirdEndDate: toUTC(formData.earlyBirdEndDate),
+      regularPrice: Number(formData.regularPrice) || 0,
     };
-
-    // Log the datetime values being sent
-    console.log('Form data being submitted:', {
-      registrationOpenDate: cleanedData.registrationOpenDate,
-      registrationCloseDate: cleanedData.registrationCloseDate,
-      earlyBirdEndDate: cleanedData.earlyBirdEndDate,
-    });
 
     if (this.isEditMode() && this.currentSessionId) {
       // Update existing session
@@ -466,6 +483,7 @@ export class AdminSessions implements OnInit {
     this.isEditingRegistration.set(false);
     this.currentRegistrationId = null;
     this.manualRegistrationForm.reset();
+    this.jerseyConflictError.set(null);
   }
 
   submitManualRegistration(): void {
@@ -500,9 +518,17 @@ export class AdminSessions implements OnInit {
           },
           error: (err) => {
             console.error('Error updating registration:', err);
-            this.errorMessage.set(
-              err.error?.message || 'Failed to update registration'
-            );
+            const errorMsg =
+              err.error?.message || 'Failed to update registration';
+            // Check if it's a jersey conflict error
+            if (
+              errorMsg.includes('Jersey number') &&
+              errorMsg.includes('already assigned')
+            ) {
+              this.jerseyConflictError.set(errorMsg);
+            } else {
+              this.errorMessage.set(errorMsg);
+            }
             this.isLoading.set(false);
           },
         });
@@ -572,9 +598,19 @@ export class AdminSessions implements OnInit {
       dateOfBirth: registration.dateOfBirth?.split('T')[0], // Format for date input
       position: registration.position,
       amountPaid: registration.amountPaid,
+      jerseyNumber: registration.jerseyNumber,
     });
 
     this.showAddRegistrationModal.set(true);
+  }
+
+  // Helper method to check if current registration has a team assignment
+  currentRegistrationHasTeam(): boolean {
+    const registrations = this.registrations();
+    const currentReg = registrations.find(
+      (r) => r.id === this.currentRegistrationId
+    );
+    return currentReg?.assignedTeam != null;
   }
 
   // Remove User from Session
