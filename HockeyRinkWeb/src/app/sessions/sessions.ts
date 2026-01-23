@@ -1,7 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { DataService } from '../data';
 import { CommonModule, DatePipe } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { tap, catchError, of } from 'rxjs';
 import { Session } from '../models';
@@ -9,25 +8,18 @@ import { Session } from '../models';
 @Component({
   selector: 'app-sessions',
   standalone: true,
-  imports: [CommonModule, DatePipe, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, DatePipe, RouterLink],
   templateUrl: './sessions.html',
   styleUrls: ['./sessions.css'],
 })
 export class Sessions implements OnInit {
-  leagues = signal<any[]>([]);
   sessions = signal<Session[]>([]);
   userProfile = signal<any>(null);
   errorMessage = signal<string | null>(null);
   isLoading = signal<boolean>(true);
-  filterForm: FormGroup;
   currentDate = new Date();
 
-  constructor(private dataService: DataService, private fb: FormBuilder) {
-    this.filterForm = this.fb.group({
-      league: [''],
-      date: [''],
-    });
-  }
+  constructor(private dataService: DataService) {}
 
   isEarlyBirdActive(session: Session): boolean {
     if (!session.earlyBirdPrice || !session.earlyBirdEndDate) {
@@ -58,6 +50,15 @@ export class Sessions implements OnInit {
       !registrationClose || registrationClose > this.currentDate;
 
     return hasOpened && hasNotClosed;
+  }
+
+  isRegistrationOpeningSoon(session: Session): boolean {
+    const registrationOpen = session.registrationOpenDate
+      ? new Date(session.registrationOpenDate)
+      : null;
+
+    // Check if registration has a future open date
+    return !!registrationOpen && registrationOpen > this.currentDate;
   }
 
   isSessionStartingSoon(session: Session): boolean {
@@ -94,56 +95,29 @@ export class Sessions implements OnInit {
       },
     });
 
-    this.dataService
-      .getLeagues()
-      .pipe(
-        tap((data) => {
-          console.log('Leagues loaded:', data);
-          this.leagues.set(data);
-        }),
-        catchError((err) => {
-          console.error('Error fetching leagues:', err);
-          this.errorMessage.set(
-            err.error?.message || 'Failed to fetch leagues. Please try again.'
-          );
-          return of([]);
-        })
-      )
-      .subscribe();
-
-    this.applyFilters();
-
-    this.filterForm.valueChanges
-      .pipe(tap(() => this.applyFilters()))
-      .subscribe();
+    this.loadSessions();
   }
 
-  applyFilters(): void {
+  loadSessions(): void {
     this.isLoading.set(true);
-    const { league, date } = this.filterForm.value;
-    const selectedLeagueId = league ? Number(league) : undefined;
-    const selectedDate = date ? new Date(date) : undefined;
-
-    console.log('Applying filters:', { selectedLeagueId, selectedDate });
 
     this.dataService
-      .getSessions(selectedLeagueId, selectedDate)
+      .getSessions()
       .pipe(
         tap((data) => {
           console.log('Sessions loaded:', data);
-          // Filter out sessions that started more than 7 days ago
-          const now = new Date();
-          const activeSessions = data.filter((session) => {
-            const startDate = new Date(session.startDate);
-            const sevenDaysAfterStart = new Date(startDate);
-            sevenDaysAfterStart.setDate(sevenDaysAfterStart.getDate() + 7);
-            return sevenDaysAfterStart > now; // Only show if less than 7 days since start
+          // Filter to only show sessions that are opening soon or open for registration
+          const relevantSessions = data.filter((session) => {
+            return (
+              this.isRegistrationOpeningSoon(session) ||
+              this.isRegistrationOpen(session)
+            );
           });
           console.log(
-            'Active sessions (within 7 days of start):',
-            activeSessions
+            'Relevant sessions (opening soon or open):',
+            relevantSessions
           );
-          this.sessions.set(activeSessions);
+          this.sessions.set(relevantSessions);
           this.errorMessage.set(null);
           this.isLoading.set(false);
         }),

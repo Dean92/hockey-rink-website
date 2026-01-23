@@ -1,21 +1,9 @@
 .sessions-hero {
-  background: #1565c0;
-  padding-top: 4rem;
-  padding-bottom: 6rem;
-  margin-bottom: 0;
-  border-radius: 0 0 0 0;
-  position: relative;
-}
-
-.sessions-hero::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4rem;
-  background: linear-gradient(to bottom right, transparent 49%, #f8f9fa 50%);
-  display: none; /* Optional: slanted edge effect if desired, keeping simple for now */
+  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  border-bottom: 3px solid #e3f2fd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .filter-card {

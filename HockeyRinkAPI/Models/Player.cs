@@ -17,6 +17,8 @@ public partial class Player
 
     public DateTime UpdatedAt { get; set; }
 
+    public int? JerseyNumber { get; set; }
+
     public virtual Team Team { get; set; } = null!;
 
     public virtual ApplicationUser? User { get; set; }

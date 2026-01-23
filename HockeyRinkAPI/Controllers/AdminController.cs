@@ -134,7 +134,11 @@ public class AdminController : ControllerBase
                     u.ZipCode,
                     u.Phone,
                     u.DateOfBirth,
-                    u.LastLoginAt
+                    u.LastLoginAt,
+                    u.EmergencyContactName,
+                    u.EmergencyContactPhone,
+                    u.HockeyRegistrationNumber,
+                    u.HockeyRegistrationType
                 })
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
@@ -536,22 +540,43 @@ public class AdminController : ControllerBase
                 return NotFound(new { message = "Session not found" });
             }
 
-            var registrations = session.SessionRegistrations.Select(r => new
+            // Get player assignments with team and jersey info
+            var playerAssignments = await _dbContext.Players
+                .Include(p => p.Team)
+                .Include(p => p.SessionRegistration)
+                .Where(p => p.Team.SessionId == id)
+                .Select(p => new
+                {
+                    RegistrationId = p.SessionRegistrationId,
+                    TeamId = p.TeamId,
+                    TeamName = p.Team.TeamName,
+                    JerseyNumber = p.JerseyNumber
+                })
+                .ToListAsync();
+
+            var registrations = session.SessionRegistrations.Select(r =>
             {
-                r.Id,
-                r.Name,
-                r.Email,
-                r.Phone,
-                r.Position,
-                r.DateOfBirth,
-                r.Address,
-                r.City,
-                r.State,
-                r.ZipCode,
-                r.RegistrationDate,
-                r.AmountPaid,
-                UserId = r.User?.Id,
-                UserEmail = r.User?.Email
+                var assignment = playerAssignments.FirstOrDefault(pa => pa.RegistrationId == r.Id);
+                return new
+                {
+                    r.Id,
+                    r.Name,
+                    r.Email,
+                    r.Phone,
+                    r.Position,
+                    r.DateOfBirth,
+                    r.Address,
+                    r.City,
+                    r.State,
+                    r.ZipCode,
+                    r.RegistrationDate,
+                    r.AmountPaid,
+                    UserId = r.User?.Id,
+                    UserEmail = r.User?.Email,
+                    AssignedTeam = assignment?.TeamName,
+                    TeamId = assignment?.TeamId,
+                    JerseyNumber = assignment?.JerseyNumber
+                };
             }).OrderByDescending(r => r.RegistrationDate).ToList();
 
             return Ok(new
@@ -751,6 +776,30 @@ public class AdminController : ControllerBase
             if (payment != null)
             {
                 payment.Amount = model.AmountPaid;
+            }
+
+            // Update jersey number if player is assigned to a team
+            if (model.JerseyNumber.HasValue)
+            {
+                var player = await _dbContext.Players
+                    .FirstOrDefaultAsync(p => p.SessionRegistrationId == registrationId);
+
+                if (player != null)
+                {
+                    // Check for jersey number conflicts within the same team
+                    var conflictingPlayer = await _dbContext.Players
+                        .FirstOrDefaultAsync(p => p.TeamId == player.TeamId &&
+                                                  p.JerseyNumber == model.JerseyNumber &&
+                                                  p.Id != player.Id);
+
+                    if (conflictingPlayer != null)
+                    {
+                        return BadRequest(new { message = $"Jersey number {model.JerseyNumber} is already assigned to another player on this team" });
+                    }
+
+                    player.JerseyNumber = model.JerseyNumber;
+                    player.UpdatedAt = DateTime.UtcNow;
+                }
             }
 
             await _dbContext.SaveChangesAsync();
@@ -1229,7 +1278,7 @@ public class CreateSessionModel
     public decimal Fee { get; set; }
     public bool IsActive { get; set; } = false;
     public bool DraftEnabled { get; set; } = false;
-    public int LeagueId { get; set; }
+    public int? LeagueId { get; set; }
     public int MaxPlayers { get; set; } = 20;
     public DateTime? RegistrationOpenDate { get; set; }
     public DateTime? RegistrationCloseDate { get; set; }
@@ -1246,7 +1295,7 @@ public class UpdateSessionModel
     public decimal Fee { get; set; }
     public bool IsActive { get; set; }
     public bool DraftEnabled { get; set; }
-    public int LeagueId { get; set; }
+    public int? LeagueId { get; set; }
     public int MaxPlayers { get; set; } = 20;
     public DateTime? RegistrationOpenDate { get; set; }
     public DateTime? RegistrationCloseDate { get; set; }
@@ -1301,6 +1350,9 @@ public class ManualRegistrationModel
     [Required]
     [Range(0, 10000)]
     public decimal AmountPaid { get; set; }
+
+    [Range(0, 99)]
+    public int? JerseyNumber { get; set; }
 }
 
 public class UpdatePlayerRatingModel

@@ -54,7 +54,13 @@
             <p class="mb-2">
               <strong>Date:</strong> {{ formatDate(team.sessionDate) }}
             </p>
-            @if (team.sessionRecord) {
+            @if (team.jerseyNumber !== null && team.jerseyNumber !== undefined)
+            {
+            <p class="mb-2">
+              <strong>Your Jersey:</strong>
+              <span class="badge bg-secondary">#{{ team.jerseyNumber }}</span>
+            </p>
+            } @if (team.sessionRecord) {
             <p class="mb-2">
               <strong>Record:</strong> {{ team.sessionRecord }}
             </p>
@@ -106,6 +112,7 @@
                     <tr>
                       <th>Name</th>
                       <th>Position</th>
+                      <th>Jersey</th>
                       @if (getTeamDetails(team.sessionId)!.isCaptain) {
                       <th>Email</th>
                       }
@@ -117,6 +124,16 @@
                     <tr>
                       <td>{{ player.name }}</td>
                       <td>{{ player.position }}</td>
+                      <td>
+                        @if (player.jerseyNumber !== null && player.jerseyNumber
+                        !== undefined) {
+                        <span class="badge bg-secondary"
+                          >#{{ player.jerseyNumber }}</span
+                        >
+                        } @else {
+                        <span class="text-muted">—</span>
+                        }
+                      </td>
                       @if (getTeamDetails(team.sessionId)!.isCaptain) {
                       <td class="small">{{ player.email || "N/A" }}</td>
                       }

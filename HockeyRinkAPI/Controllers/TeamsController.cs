@@ -503,7 +503,8 @@ public class TeamsController : ControllerBase
                 RegistrationId = p.SessionRegistrationId,
                 p.SessionRegistration.Name,
                 p.SessionRegistration.Position,
-                p.SessionRegistration.Rating
+                p.SessionRegistration.Rating,
+                p.JerseyNumber
             }).ToList();
 
             return Ok(new

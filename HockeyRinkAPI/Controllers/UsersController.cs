@@ -675,7 +675,8 @@ public class UsersController : ControllerBase
                 {
                     Name = p.SessionRegistration.Name,
                     Position = p.SessionRegistration.Position,
-                    Email = isCaptain ? p.SessionRegistration.User!.Email : null
+                    Email = isCaptain ? p.SessionRegistration.User!.Email : null,
+                    JerseyNumber = p.JerseyNumber
                 })
                 .ToListAsync();
 
@@ -691,7 +692,8 @@ public class UsersController : ControllerBase
                 SessionDate = session.StartDate,
                 LeagueName = session.League?.Name,
                 SessionRecord = (string?)null,
-                Standing = (string?)null
+                Standing = (string?)null,
+                JerseyNumber = player.JerseyNumber
             });
         }
         catch (Exception ex)
@@ -740,7 +742,8 @@ public class UsersController : ControllerBase
                     TeamColor = x.Player.Team.TeamColor,
                     IsCaptain = x.Player.Team.CaptainUserId == userId,
                     SessionRecord = (string?)null,
-                    Standing = (string?)null
+                    Standing = (string?)null,
+                    JerseyNumber = x.Player.JerseyNumber
                 })
                 .OrderByDescending(x => x.SessionDate)
                 .ToListAsync();
