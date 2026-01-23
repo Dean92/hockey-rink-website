@@ -243,7 +243,139 @@ taskkill /PID <PID> /F
 
 ---
 
-### 🚀 Week 7: Payment & Profile Features (Planned - December 2025)
+### ✅ Week 7-8: Draft System & Team Management (Completed - January 15, 2026)
+
+#### Draft System
+
+- Drag-and-drop player assignment with Angular CDK
+- Team cards with position badges and captain display
+- Draft publish/unpublish functionality
+- Player dashboard with team assignments
+- Expandable team roster views
+
+#### Testing Infrastructure
+
+- 12 passing integration tests with Bearer token authentication
+- CustomWebApplicationFactory for test isolation
+- Fixed authentication bug in test helper
+
+---
+
+### ✅ Week 9: Player Rating & Admin User Management (Completed - January 22, 2026)
+
+#### Player Rating System
+
+- Admin can rate players 1-5 with decimal increments
+- Player notes field for admin observations
+- Draft integration showing player ratings
+- Team average rating calculation with visual balance indicators
+
+#### Admin User Management Enhancements
+
+- Full profile editing (name, email, league assignment)
+- Email duplicate checking with automatic username updates
+- Last login tracking and display
+- Clickable user rows navigate to profile page
+- Phone number formatting and mailto links
+
+#### User Management UX Improvements
+
+- **Search functionality**: Filter users by first or last name (case-insensitive)
+- **Pagination**: Display 25 users per page with Previous/Next navigation
+- **Smart search integration**: Automatically resets to page 1 when search term changes
+- **Page indicator**: Shows "Showing X to Y of Z users"
+- **Streamlined UI**: Removed redundant navigation buttons
+
+#### Registrations Modal Enhancements
+
+- **Pagination**: Display 25 registrations per page
+- **Search by name**: Filter registrations by first or last name
+- **Search integration**: Auto-resets to page 1 on search term change
+- **Consistent UX**: Matches user management pagination patterns
+
+#### Draft Page Improvements
+
+- **Player notes display**: Toggle button (plus/minus icon) inline with player name
+- **Notes visibility**: Click to expand/collapse notes below player name
+- **Consistent across views**: Works in both available pool and team rosters
+- **Draft API enhancement**: GetDraftPlayers includes PlayerNotes field
+- **Position sorting**: Goalies appear first in draft pool
+- **Team average rating**: Toggle display with color-coded balance indicators
+- **Position badges**: Special handling for "Forward/Defense" as "B" (Both)
+
+#### Database Enhancements
+
+- AddRatingAndNotesToApplicationUser migration
+- AddLastLoginAt migration
+- Games table foundation (for future statistics in Week 11)
+
+---
+
+### 🚀 Week 10: Emergency Contact & Jersey Number Management (Planned)
+
+#### Emergency Contact
+
+- Emergency contact name and phone required during registration
+- Editable by user on profile page
+- Stored in ApplicationUser table
+
+#### Hockey Registration Number
+
+- Optional USA Hockey or AAU Hockey registration number field
+- User can specify registration type and number on profile page
+- Numbers updated annually
+- Future: Admin view to track all registration numbers and expirations
+
+#### Jersey Number Management
+
+- Admin assigns jersey numbers per session (0-99, unique per team)
+- New admin dashboard quick link: "Manage Jersey Numbers"
+- Jersey Management page:
+  - View all sessions (filterable by active/inactive)
+  - Clickable session cards
+  - Jersey assignment table for all players in session
+  - Individual or batch save options
+- User Views:
+  - Jersey number displayed on user dashboard
+  - Jersey numbers shown in "My Teams" roster view
+  - New "Jersey #" column in team roster tables
+
+#### Admin User Detail Page
+
+- Click user row to view detailed profile
+- User statistics (registrations, payments, attendance)
+- Registration and payment history tables
+
+#### Additional Enhancements
+
+- Team color management with color picker
+- Footer with contact info and social links
+- Home page testimonials and feature highlights
+
+---
+
+### 🚀 Week 11: League Standings & Statistics (Planned)
+
+#### Database Tables
+
+- GameStats table (player goals, assists, penalty minutes per game)
+- GoalieStats table (saves, goals against, W-L-T per game)
+
+#### Backend API
+
+- League standings calculation endpoints
+- Top players/goalies statistics
+- Game score entry and validation
+
+#### Frontend Features
+
+- League standings page with team rankings
+- Admin game management interface
+- Player/goalie statistics displays
+
+---
+
+### 🚀 Week 7 (Original Plan): Payment & Profile Features
 
 #### Mock Payment Integration
 

@@ -175,6 +175,80 @@
             </div>
           </div>
         </div>
+
+        <!-- Emergency Contact & Hockey Registration -->
+        <div class="row g-5 mt-2">
+          <!-- Emergency Contact -->
+          <div class="col-lg-6">
+            <h5 class="section-title">
+              <i class="bi bi-telephone-fill me-2 text-primary"></i>Emergency
+              Contact
+            </h5>
+
+            <div class="row g-3">
+              <div class="col-12">
+                <div class="info-group">
+                  <label class="info-label">Emergency Contact Name</label>
+                  <div class="info-value">
+                    <i class="bi bi-person"></i>
+                    {{ profile()!.emergencyContactName || "Not provided" }}
+                  </div>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="info-group">
+                  <label class="info-label">Emergency Contact Phone</label>
+                  <div class="info-value">
+                    <i class="bi bi-telephone"></i>
+                    {{
+                      formatPhone(profile()!.emergencyContactPhone || "") ||
+                        "Not provided"
+                    }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hockey Registration -->
+          <div class="col-lg-6">
+            <h5 class="section-title">
+              <i class="bi bi-card-text me-2 text-primary"></i>Hockey
+              Registration
+            </h5>
+
+            <div class="row g-3">
+              <div class="col-12">
+                <div class="info-group">
+                  <label class="info-label">Registration Type</label>
+                  <div class="info-value">
+                    <i class="bi bi-shield-check"></i>
+                    {{ profile()!.hockeyRegistrationType || "Not provided" }}
+                  </div>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="info-group">
+                  <label class="info-label">Registration Number</label>
+                  <div class="info-value">
+                    <i class="bi bi-hash"></i>
+                    @if (profile()!.hockeyRegistrationType &&
+                    profile()!.hockeyRegistrationNumber) {
+                    {{ profile()!.hockeyRegistrationType }} #:
+                    {{ profile()!.hockeyRegistrationNumber }}
+                    } @else { Not provided }
+                  </div>
+                </div>
+              </div>
+              <div class="col-12">
+                <small class="text-muted">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Registration numbers must be renewed annually
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       }
 
@@ -431,6 +505,73 @@
                 @if (hasError('zipCode', 'required')) {
                 <div class="invalid-feedback">Zip code is required</div>
                 }
+              </div>
+            </div>
+          </div>
+
+          <!-- Emergency Contact Edit -->
+          <div class="col-lg-6">
+            <h5 class="section-title">Emergency Contact</h5>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label"> Emergency Contact Name </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="emergencyContactName"
+                  placeholder="Enter emergency contact name"
+                />
+                <div class="form-text">
+                  <i class="bi bi-info-circle me-1"></i>Filled during session
+                  registration
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label"> Emergency Contact Phone </label>
+                <input
+                  type="tel"
+                  class="form-control"
+                  formControlName="emergencyContactPhone"
+                  (input)="onPhoneInput($event)"
+                  placeholder="Enter phone number"
+                  maxlength="14"
+                />
+                <div class="form-text">
+                  <i class="bi bi-info-circle me-1"></i>Who should we contact in
+                  case of emergency?
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hockey Registration Edit -->
+          <div class="col-lg-6">
+            <h5 class="section-title">Hockey Registration</h5>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Registration Type</label>
+                <select
+                  class="form-select"
+                  formControlName="hockeyRegistrationType"
+                >
+                  <option value="">None</option>
+                  <option value="USA Hockey">USA Hockey</option>
+                  <option value="AAU Hockey">AAU Hockey</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Registration Number</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="hockeyRegistrationNumber"
+                  placeholder="Enter registration number"
+                  [disabled]="!profileForm.get('hockeyRegistrationType')?.value"
+                />
+                <div class="form-text">
+                  <i class="bi bi-info-circle me-1"></i>Your USA Hockey or AAU
+                  Hockey registration number (updated annually)
+                </div>
               </div>
             </div>
           </div>

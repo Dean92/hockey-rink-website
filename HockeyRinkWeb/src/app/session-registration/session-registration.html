@@ -288,6 +288,55 @@
           >
         </div>
 
+        <!-- Emergency Contact Section -->
+        <h5 class="mb-3 text-secondary mt-4">
+          <i class="bi bi-telephone-fill me-2"></i>Emergency Contact
+        </h5>
+        <p class="text-muted small mb-3">
+          Who should we contact in case of emergency during the session?
+        </p>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="emergencyContactName" class="form-label">
+              <span class="text-danger">*</span> Emergency Contact Name
+            </label>
+            <input
+              type="text"
+              formControlName="emergencyContactName"
+              class="form-control"
+              id="emergencyContactName"
+              placeholder="John Doe"
+              [class.is-invalid]="hasError('emergencyContactName', 'required')"
+            />
+            @if (hasError('emergencyContactName', 'required')) {
+            <div class="invalid-feedback">
+              Emergency contact name is required.
+            </div>
+            }
+          </div>
+
+          <div class="col-md-6">
+            <label for="emergencyContactPhone" class="form-label">
+              <span class="text-danger">*</span> Emergency Contact Phone
+            </label>
+            <input
+              type="tel"
+              formControlName="emergencyContactPhone"
+              class="form-control"
+              id="emergencyContactPhone"
+              mask="(000) 000-0000"
+              placeholder="(555) 555-5555"
+              [class.is-invalid]="hasError('emergencyContactPhone', 'required')"
+            />
+            @if (hasError('emergencyContactPhone', 'required')) {
+            <div class="invalid-feedback">
+              Emergency contact phone is required.
+            </div>
+            }
+          </div>
+        </div>
+
         <!-- Terms and Conditions -->
         <div class="mb-4">
           <div class="form-check">

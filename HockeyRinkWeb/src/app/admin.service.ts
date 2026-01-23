@@ -65,6 +65,10 @@ export interface AdminUser {
   phone?: string;
   dateOfBirth?: string;
   lastLoginAt?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  hockeyRegistrationNumber?: string;
+  hockeyRegistrationType?: string;
 }
 
 export interface AdminSession {

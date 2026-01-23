@@ -59,6 +59,10 @@ export class Profile implements OnInit {
       rating: [null, [Validators.min(1), Validators.max(5)]],
       playerNotes: [''],
       leagueId: [null],
+      emergencyContactName: [''], // Optional - filled during session registration
+      emergencyContactPhone: [''], // Optional - filled during session registration
+      hockeyRegistrationNumber: [''],
+      hockeyRegistrationType: [''],
     });
 
     this.changePasswordForm = this.formBuilder.group(
@@ -149,6 +153,10 @@ export class Profile implements OnInit {
             dateOfBirth: user.dateOfBirth,
             leagueId: user.leagueId,
             leagueName: user.leagueName,
+            emergencyContactName: user.emergencyContactName,
+            emergencyContactPhone: user.emergencyContactPhone,
+            hockeyRegistrationNumber: user.hockeyRegistrationNumber,
+            hockeyRegistrationType: user.hockeyRegistrationType,
           };
           console.log('Profile data set:', profileData);
           this.profile.set(profileData);
@@ -181,6 +189,10 @@ export class Profile implements OnInit {
       rating: profile.rating || null,
       playerNotes: profile.playerNotes || '',
       leagueId: profile.leagueId || null,
+      emergencyContactName: profile.emergencyContactName || '',
+      emergencyContactPhone: profile.emergencyContactPhone || '',
+      hockeyRegistrationNumber: profile.hockeyRegistrationNumber || '',
+      hockeyRegistrationType: profile.hockeyRegistrationType || '',
     });
   }
 

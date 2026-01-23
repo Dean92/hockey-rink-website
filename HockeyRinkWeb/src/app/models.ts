@@ -55,6 +55,10 @@ export interface UserProfile {
   position?: string;
   rating?: number;
   playerNotes?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  hockeyRegistrationNumber?: string;
+  hockeyRegistrationType?: string;
 }
 
 export interface DashboardData {

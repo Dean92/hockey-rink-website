@@ -516,9 +516,9 @@ viewTeam(sessionId: number) {
 
 ---
 
-## Week 9: League Standings & Statistics
+## Week 9: Player Rating & Admin User Management
 
-### Status: IN PROGRESS - Started January 19, 2026
+### Status: ✅ COMPLETE - January 22, 2026
 
 **Completed Features**:
 
@@ -530,13 +530,19 @@ viewTeam(sessionId: number) {
 - ✅ Player Rating System - Admin can rate players 1-5 with notes (January 20, 2026)
 - ✅ Admin User Profile Editing - Full profile management including email/name changes (January 20, 2026)
 - ✅ Last Login Tracking - Displays when users last logged in (January 20, 2026)
+- ✅ User Management Search & Pagination - 25 users per page (January 21, 2026)
+- ✅ Draft Page Player Notes Display - Toggle to show/hide notes (January 21, 2026)
+- ✅ Registrations Modal Search & Pagination - 25 per page (January 22, 2026)
 
-**In Progress**:
+**Deferred to Week 11**:
 
-- 🔄 GameStats Table Database Migration
-- 🔄 GoalieStats Table Database Migration
+- 📅 GameStats Table Database Migration
+- 📅 GoalieStats Table Database Migration
+- 📅 League Standings API endpoints
+- 📅 League Standings Frontend page
+- 📅 Admin Game Management
 
-### Priority: MEDIUM-HIGH
+### Priority: COMPLETED
 
 ---
 
@@ -1188,32 +1194,254 @@ CREATE TABLE GoalieStats (
 
 ## Week 10: Additional Enhancements
 
-### 1. User Profile Enhancements
+**Status**: PLANNED
+**Estimated Hours**: 12-15 hours
+**Priority**: MEDIUM
 
-- Phone number field (editable)
-- Emergency contact
-- Jersey number preference
-- Profile photo upload
+---
+
+### 1. Emergency Contact & Jersey Number Management
+
+**Status**: PLANNED
+
+#### A. Emergency Contact (User Registration & Profile)
+
+**Database Changes**:
+
+- Add to `ApplicationUser` table:
+  - `EmergencyContactName` (NVARCHAR(100), NOT NULL)
+  - `EmergencyContactPhone` (NVARCHAR(20), NOT NULL)
+
+**Backend API**:
+
+- Update `POST /api/auth/register` to require emergency contact fields
+- Update `PUT /api/users/profile` to allow editing emergency contact
+- Validation: Both name and phone required
+
+**Frontend - Registration Page**:
+
+- Add "Emergency Contact" section to registration form
+- Fields:
+  - Emergency Contact Name (text input, required)
+  - Emergency Contact Phone (text input, required, phone format validation)
+- Form validation: Cannot submit without emergency contact
+- Help text: "Who should we contact in case of emergency?"
+
+**Frontend - User Profile Page**:
+
+- Add "Emergency Contact" section (editable by user)
+- Display emergency contact in view mode
+- Allow editing in edit mode
+- Validation on save
+
+---
+
+#### B. Hockey Registration Number (USA Hockey / AAU Hockey)
+
+**Database Changes**:
+
+- Add to `ApplicationUser` table:
+  - `HockeyRegistrationNumber` (NVARCHAR(50), NULLABLE)
+  - `HockeyRegistrationType` (NVARCHAR(20), NULLABLE) - Values: "USA Hockey", "AAU Hockey", or NULL
+
+**Backend API**:
+
+- Update `PUT /api/users/profile` to allow editing hockey registration fields
+- No validation required (optional field)
+- Future enhancement: Admin view to see all registration numbers and expiration tracking
+
+**Frontend - User Profile Page**:
+
+- Add "Hockey Registration" section (editable by user)
+- Fields:
+  - Registration Type dropdown: [None, USA Hockey, AAU Hockey]
+  - Registration Number (text input, enabled only if type selected)
+- Display in view mode:
+  - "USA Hockey #: 123456" or "AAU Hockey #: 789012"
+  - "Not Provided" if no registration number
+- Optional field - can be left blank
+- Help text: "Your USA Hockey or AAU Hockey registration number (updated annually)"
+
+**Future Enhancement** (Post Week 10):
+
+- Admin page to view all users with registration numbers
+- Filter by registration type
+- Track expiration dates (since numbers are renewed annually)
+- Bulk export capability
+- Reminder system for expired registrations
+
+---
+
+#### C. Admin Jersey Number Assignment
+
+**Database Changes**:
+
+- Add to `Players` table:
+  - `JerseyNumber` (INT, NULLABLE)
+  - Constraint: JerseyNumber BETWEEN 0 AND 99
+  - Unique per team (within same SessionId/TeamId combination)
+
+**Backend API - New Endpoints**:
+
+- `GET /api/admin/sessions` - Get all sessions with filters
+
+  - Query params: `?isActive=true|false` (optional)
+  - Returns: Sessions ordered by StartDate (active sessions first)
+  - Response includes: Id, Name, StartDate, EndDate, LeagueId, IsActive, PlayerCount, TeamCount
+
+- `GET /api/admin/sessions/{sessionId}/players` - Get all players for a session
+
+  - Returns: List of players with:
+    - PlayerId, UserId, FirstName, LastName, TeamId, TeamName, Position, JerseyNumber, Rating
+  - Ordered by: TeamName ASC, Position (Goalie first), LastName ASC
+
+- `PUT /api/admin/players/{playerId}/jersey` - Assign jersey number
+
+  - Body: `{ "jerseyNumber": 10 }`
+  - Validation:
+    - Must be 0-99
+    - Must be unique within team
+    - Cannot assign if player not on a team
+  - Returns: Updated player object
+
+- `PUT /api/admin/sessions/{sessionId}/jerseys` - Batch update jersey numbers
+  - Body: `[{ "playerId": 1, "jerseyNumber": 10 }, { "playerId": 2, "jerseyNumber": 23 }]`
+  - Validation: Same as single update
+  - Returns: Success/error summary
+
+**Frontend - Admin Dashboard Enhancement**:
+
+- Add new quick action card: "Manage Jersey Numbers"
+- Icon: `<i class="bi bi-123"></i>` or `<i class="bi bi-card-list"></i>`
+- Route: `/admin/jersey-management`
+
+**Frontend - New Component: `admin-jersey-management.component.ts`**
+
+**Route**: `/admin/jersey-management`
+
+**Page Structure**:
+
+1. **Header Section**:
+
+   - Page title: "Jersey Number Management"
+   - Filter toggle: "Active Sessions" / "All Sessions"
+   - Session count display
+
+2. **Sessions List (Card View)**:
+
+   - Display sessions as clickable cards (4 per row on desktop, responsive)
+   - Each card shows:
+     - Session name (e.g., "Monday Night League - Spring 2026")
+     - Start Date → End Date
+     - League name
+     - Player count / Team count
+     - Status badge: "Active" (green) or "Inactive" (gray)
+   - Ordered by: Active first, then by StartDate ascending
+   - Click card → navigate to session jersey assignment page
+
+3. **Session Jersey Assignment Page** (`admin-jersey-assignment.component.ts`):
+
+**Route**: `/admin/jersey-management/sessions/{sessionId}`
+
+**Features**:
+
+- Breadcrumb: Admin Dashboard → Jersey Management → [Session Name]
+- Session header with name, dates, league
+- Filter by team dropdown (optional - show all teams or filter by one)
+- Table displaying all players:
+
+| Player Name | Team        | Position | Jersey # | Actions |
+| ----------- | ----------- | -------- | -------- | ------- |
+| John Smith  | Blue Demons | G        | [input]  | Save    |
+| Jane Doe    | Red Wings   | F        | [input]  | Save    |
+
+**Table Details**:
+
+- **Player Name**: FirstName LastName (clickable link to user profile)
+- **Team**: Team name with color badge
+- **Position**: G / F / D / B badge
+- **Jersey Number**: Editable input field (0-99)
+  - Real-time validation: Must be 0-99, unique per team
+  - Shows error if duplicate within team
+- **Actions**:
+  - "Save" button per row (disabled if no changes)
+  - OR "Save All" button at bottom (batch update)
+- Sorted by: Team ASC, Position (Goalie first), LastName ASC
+
+**Validation & UX**:
+
+- Inline validation: Red border if invalid or duplicate
+- Toast notification on successful save
+- Error message if save fails
+- Confirmation: "Jersey number updated successfully"
+
+---
+
+#### D. Jersey Number Display - User Views
+
+**Frontend - User Dashboard Enhancement**:
+
+**Location**: My Team card (when user has a team for a session)
+
+**Display**:
+
+- Add jersey number badge next to player name
+- Example: "Your Team: Blue Demons | Position: G | Jersey: #29"
+- If no jersey assigned yet, show "Jersey: Not Assigned"
+
+**Frontend - My Teams Page Enhancement**:
+
+**Location**: Team roster table (when user clicks "View Team")
+
+**Table Update**:
+
+- Add new column: "Jersey #"
+- Display jersey number or "—" if not assigned
+- Column positioned after Position column
+
+| Player         | Position | Jersey # | Rating |
+| -------------- | -------- | -------- | ------ |
+| John Smith (C) | G        | 29       | 4.5    |
+| Jane Doe       | F        | 10       | 3.8    |
+
+**Styling**:
+
+- Jersey numbers in bold or badge format
+- Captain indicator: (C) after name
+
+---
 
 ### 2. Admin User Detail Page
 
+**Status**: PLANNED
+
 - Click user row in User Management → view detailed profile
-- Admin notes field (NVARCHAR(MAX))
-- User statistics (registrations, payments, attendance)
-- Registration history table
+- User statistics (registrations count, total payments, sessions attended)
+- Registration history table (sortable, filterable)
 - Payment history table
+- Admin notes section (separate from player notes)
+
+---
 
 ### 3. Team Color Management
 
-- Admin can customize team colors with color picker
-- Predefined color palette
-- Custom hex code input
+**Status**: PLANNED
 
-### 4. Footer & Home Page
+- Admin can customize team colors with color picker
+- Predefined color palette (common hockey team colors)
+- Custom hex code input
+- Live preview on team cards
+
+---
+
+### 4. Footer & Home Page Enhancements
+
+**Status**: PLANNED
 
 - Footer with contact info, social links
 - Home page redesign with testimonials
-- Feature highlights
+- Feature highlights section
+- Professional landing page polish
 
 ---
 
