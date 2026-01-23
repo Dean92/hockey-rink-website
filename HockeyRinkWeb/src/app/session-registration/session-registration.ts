@@ -59,6 +59,8 @@ export class SessionRegistration implements OnInit {
       state: [''],
       zipCode: [''],
       position: [''],
+      emergencyContactName: ['', Validators.required],
+      emergencyContactPhone: ['', Validators.required],
       agreeToTerms: [false, Validators.requiredTrue],
       // Step 2: Payment Information
       cardNumber: ['', [Validators.required, Validators.pattern(/^\d{16}$/)]],
@@ -128,6 +130,15 @@ export class SessionRegistration implements OnInit {
 
         if (profile.position) {
           patchData.position = profile.position;
+        }
+
+        // Pre-fill emergency contact if available
+        if (profile.emergencyContactName) {
+          patchData.emergencyContactName = profile.emergencyContactName;
+        }
+
+        if (profile.emergencyContactPhone) {
+          patchData.emergencyContactPhone = profile.emergencyContactPhone;
         }
 
         this.registrationForm.patchValue(patchData);

@@ -52,4 +52,12 @@ export class AdminDashboard implements OnInit {
       hour12: true,
     });
   }
+
+  getCurrentMonthYear(): string {
+    const now = new Date();
+    return now.toLocaleString('en-US', {
+      month: 'long',
+      year: 'numeric',
+    });
+  }
 }

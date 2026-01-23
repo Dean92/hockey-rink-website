@@ -53,6 +53,12 @@ export interface UserProfile {
   phone?: string;
   dateOfBirth?: string;
   position?: string;
+  rating?: number;
+  playerNotes?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  hockeyRegistrationNumber?: string;
+  hockeyRegistrationType?: string;
 }
 
 export interface DashboardData {

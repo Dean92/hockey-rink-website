@@ -43,7 +43,7 @@
           [class.btn-outline-success]="activeFilter() !== 'active'"
           (click)="setFilter('active')"
         >
-          Active
+          Active Registration Status
         </button>
         <button
           type="button"
@@ -52,7 +52,7 @@
           [class.btn-outline-secondary]="activeFilter() !== 'inactive'"
           (click)="setFilter('inactive')"
         >
-          Inactive
+          Inactive Registration Status
         </button>
       </div>
 
@@ -436,7 +436,7 @@
           </div>
 
           <div class="mb-3">
-            <label for="isActive" class="form-label">Status</label>
+            <label for="isActive" class="form-label">Registration Status</label>
             <div class="form-check form-switch">
               <input
                 class="form-check-input"
@@ -451,7 +451,9 @@
           </div>
 
           <div class="mb-3">
-            <label for="draftEnabled" class="form-label">Team Draft</label>
+            <label for="draftEnabled" class="form-label"
+              >Team Draft Status</label
+            >
             <div class="form-check form-switch">
               <input
                 class="form-check-input"
@@ -576,12 +578,25 @@
                 {{ currentSession()?.maxPlayers }}
               </span>
             </div>
-            <button
-              class="btn btn-sm btn-success"
-              (click)="openAddRegistrationModal()"
-            >
-              <i class="bi bi-person-plus me-1"></i> Add User
-            </button>
+            <div class="d-flex gap-2 align-items-center">
+              <button
+                class="btn btn-sm btn-success"
+                (click)="openAddRegistrationModal()"
+              >
+                <i class="bi bi-person-plus me-1"></i> Add User
+              </button>
+              <div class="input-group" style="width: 250px">
+                <span class="input-group-text bg-white">
+                  <i class="bi bi-search"></i>
+                </span>
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="Search by name..."
+                  [(ngModel)]="registrationsSearchTerm"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -604,7 +619,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (reg of registrations(); track reg.id) {
+                  @for (reg of paginatedRegistrations(); track reg.id) {
                   <tr>
                     <td class="fw-semibold">{{ reg.name }}</td>
                     <td class="text-muted">{{ reg.email }}</td>
@@ -637,7 +652,70 @@
             </div>
           </div>
         </div>
-        }
+
+        <!-- Pagination Controls -->
+        @if (registrationsTotalPages() > 1) {
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <div class="text-muted">
+            Showing
+            {{ (registrationsCurrentPage() - 1) * registrationsPageSize + 1 }}
+            to
+            {{
+              Math.min(
+                registrationsCurrentPage() * registrationsPageSize,
+                filteredRegistrations().length
+              )
+            }}
+            of {{ filteredRegistrations().length }} registrations
+          </div>
+          <nav aria-label="Registrations pagination">
+            <ul class="pagination mb-0">
+              <li
+                class="page-item"
+                [class.disabled]="registrationsCurrentPage() === 1"
+              >
+                <button
+                  class="page-link"
+                  (click)="previousRegistrationsPage()"
+                  [disabled]="registrationsCurrentPage() === 1"
+                >
+                  Previous
+                </button>
+              </li>
+              @for (page of [].constructor(registrationsTotalPages()); track
+              $index) {
+              <li
+                class="page-item"
+                [class.active]="registrationsCurrentPage() === $index + 1"
+              >
+                <button
+                  class="page-link"
+                  (click)="goToRegistrationsPage($index + 1)"
+                >
+                  {{ $index + 1 }}
+                </button>
+              </li>
+              }
+              <li
+                class="page-item"
+                [class.disabled]="
+                  registrationsCurrentPage() === registrationsTotalPages()
+                "
+              >
+                <button
+                  class="page-link"
+                  (click)="nextRegistrationsPage()"
+                  [disabled]="
+                    registrationsCurrentPage() === registrationsTotalPages()
+                  "
+                >
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+        } }
       </div>
       <div class="modal-footer">
         <button

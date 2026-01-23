@@ -125,6 +125,16 @@ public class AdminController : ControllerBase
                             .FirstOrDefault(),
                     u.EmailConfirmed,
                     u.CreatedAt,
+                    u.Rating,
+                    u.PlayerNotes,
+                    u.Position,
+                    u.Address,
+                    u.City,
+                    u.State,
+                    u.ZipCode,
+                    u.Phone,
+                    u.DateOfBirth,
+                    u.LastLoginAt
                 })
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
@@ -831,11 +841,13 @@ public class AdminController : ControllerBase
                 .Where(r => r.RegistrationDate >= today && r.RegistrationDate < tomorrow)
                 .ToListAsync();
 
-            // Get all active sessions with registration details
+            // Get all active sessions with registration details (sessions that haven't ended yet)
+            var now = DateTime.UtcNow;
+
             var activeSessions = await _dbContext.Sessions
                 .Include(s => s.League)
                 .Include(s => s.SessionRegistrations)
-                .Where(s => s.IsActive)
+                .Where(s => s.EndDate >= now)
                 .OrderBy(s => s.StartDate)
                 .Select(s => new
                 {
@@ -861,10 +873,6 @@ public class AdminController : ControllerBase
                 .Where(r => r.RegistrationDate >= thisMonthStart)
                 .SumAsync(r => r.AmountPaid);
 
-            // Get total active registrations
-            var activeRegistrationsCount = await _dbContext.SessionRegistrations
-                .CountAsync(r => r.Session != null && r.Session.IsActive);
-
             // Get upcoming sessions (next 7 days)
             var nextWeek = DateTime.UtcNow.AddDays(7);
             var upcomingSessions = await _dbContext.Sessions
@@ -877,6 +885,7 @@ public class AdminController : ControllerBase
                     s.Name,
                     LeagueName = s.League != null ? s.League.Name : null,
                     s.StartDate,
+                    s.EndDate,
                     RegisteredCount = s.SessionRegistrations.Count,
                     s.MaxPlayers
                 })
@@ -886,7 +895,6 @@ public class AdminController : ControllerBase
             {
                 todaysRegistrationsCount = todaysRegistrations.Count,
                 activeSessionsCount = activeSessions.Count,
-                activeRegistrationsCount,
                 totalRevenue,
                 monthRevenue,
                 activeSessions,
@@ -1088,6 +1096,124 @@ public class AdminController : ControllerBase
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
     }
+
+    [HttpPut("users/{userId}/rating")]
+    public async Task<IActionResult> UpdatePlayerRating(string userId, [FromBody] UpdatePlayerRatingModel model)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            // Update rating and notes
+            user.Rating = model.Rating;
+            user.PlayerNotes = model.PlayerNotes;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { message = "Failed to update user", errors = result.Errors });
+            }
+
+            return Ok(new
+            {
+                message = "Player rating and notes updated successfully",
+                userId = user.Id,
+                rating = user.Rating,
+                playerNotes = user.PlayerNotes
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating player rating for user {UserId}", userId);
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    [HttpPut("users/{userId}/profile")]
+    public async Task<IActionResult> UpdateUserProfile(string userId, [FromBody] UpdateUserProfileModel model)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            // Update user profile fields
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.Address = model.Address;
+            user.City = model.City;
+            user.State = model.State;
+            user.ZipCode = model.ZipCode;
+            user.Phone = model.Phone;
+            user.DateOfBirth = model.DateOfBirth;
+            user.Position = model.Position;
+            user.Rating = model.Rating;
+            user.PlayerNotes = model.PlayerNotes;
+            user.LeagueId = model.LeagueId;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            // Handle email change separately
+            if (user.Email != model.Email)
+            {
+                var emailExists = await _userManager.FindByEmailAsync(model.Email);
+                if (emailExists != null && emailExists.Id != userId)
+                {
+                    return BadRequest(new { message = "Email address is already in use" });
+                }
+
+                var emailToken = await _userManager.GenerateChangeEmailTokenAsync(user, model.Email);
+                var emailResult = await _userManager.ChangeEmailAsync(user, model.Email, emailToken);
+                if (!emailResult.Succeeded)
+                {
+                    return BadRequest(new { message = "Failed to update email", errors = emailResult.Errors });
+                }
+
+                // Also update username to match new email
+                user.UserName = model.Email;
+            }
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { message = "Failed to update user", errors = result.Errors });
+            }
+
+            return Ok(new { message = "User profile updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating user profile for user {UserId}", userId);
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
 }
 
 public class PublishDraftModel
@@ -1175,4 +1301,63 @@ public class ManualRegistrationModel
     [Required]
     [Range(0, 10000)]
     public decimal AmountPaid { get; set; }
+}
+
+public class UpdatePlayerRatingModel
+{
+    [Range(1.0, 5.0)]
+    public decimal? Rating { get; set; }
+
+    [StringLength(1000)]
+    public string? PlayerNotes { get; set; }
+}
+
+public class UpdateUserProfileModel
+{
+    [Required]
+    [StringLength(100)]
+    public string FirstName { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(100)]
+    public string LastName { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(200)]
+    public string Address { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(100)]
+    public string City { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(50)]
+    public string State { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(20)]
+    public string ZipCode { get; set; } = string.Empty;
+
+    [Required]
+    [Phone]
+    public string Phone { get; set; } = string.Empty;
+
+    [Required]
+    public DateTime DateOfBirth { get; set; }
+
+    [Required]
+    [StringLength(20)]
+    public string Position { get; set; } = string.Empty;
+
+    [Range(1.0, 5.0)]
+    public decimal? Rating { get; set; }
+
+    [StringLength(1000)]
+    public string? PlayerNotes { get; set; }
+
+    public int? LeagueId { get; set; }
 }

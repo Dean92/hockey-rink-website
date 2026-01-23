@@ -7,7 +7,6 @@ import { environment } from '../environments/environment';
 export interface AdminDashboardData {
   todaysRegistrationsCount: number;
   activeSessionsCount: number;
-  activeRegistrationsCount: number;
   totalRevenue: number;
   monthRevenue: number;
   activeSessions: ActiveSessionSummary[];
@@ -33,6 +32,7 @@ export interface UpcomingSession {
   name: string;
   leagueName: string | null;
   startDate: string;
+  endDate: string;
   registeredCount: number;
   maxPlayers: number;
 }
@@ -55,6 +55,20 @@ export interface AdminUser {
   leagueName?: string;
   emailConfirmed: boolean;
   createdAt: Date;
+  rating?: number;
+  playerNotes?: string;
+  position?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  lastLoginAt?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  hockeyRegistrationNumber?: string;
+  hockeyRegistrationType?: string;
 }
 
 export interface AdminSession {
@@ -117,6 +131,25 @@ export class AdminService {
     });
   }
 
+  updatePlayerRating(
+    userId: string,
+    rating: number | null,
+    playerNotes: string | null
+  ): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put(
+      `${this.apiUrl}/users/${userId}/rating`,
+      {
+        rating,
+        playerNotes,
+      },
+      {
+        headers,
+        withCredentials: true,
+      }
+    );
+  }
+
   getSessions(): Observable<AdminSession[]> {
     const headers = this.authService.getAuthHeaders();
     return this.http.get<AdminSession[]>(`${this.apiUrl}/sessions/all`, {
@@ -152,6 +185,14 @@ export class AdminService {
   getRegistrations(): Observable<AdminRegistration[]> {
     const headers = this.authService.getAuthHeaders();
     return this.http.get<AdminRegistration[]>(`${this.apiUrl}/registrations`, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  updateUserProfile(userId: string, profile: any): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put(`${this.apiUrl}/users/${userId}/profile`, profile, {
       headers,
       withCredentials: true,
     });

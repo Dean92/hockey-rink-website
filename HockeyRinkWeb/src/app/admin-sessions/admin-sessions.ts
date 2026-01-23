@@ -1,10 +1,11 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
   FormBuilder,
   FormGroup,
   Validators,
+  FormsModule,
 } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NgxMaskDirective, provideNgxMask } from 'ngx-mask';
@@ -14,7 +15,13 @@ import { Session, League } from '../models';
 @Component({
   selector: 'app-admin-sessions',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, NgxMaskDirective],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    NgxMaskDirective,
+    FormsModule,
+  ],
   providers: [provideNgxMask()],
   templateUrl: './admin-sessions.html',
   styleUrls: ['./admin-sessions.css'],
@@ -48,9 +55,42 @@ export class AdminSessions implements OnInit {
   currentSession = signal<any>(null);
   registrations = signal<any[]>([]);
   registrationToRemove = signal<any>(null);
+  registrationsSearchTerm = signal<string>('');
+  registrationsCurrentPage = signal<number>(1);
+  registrationsPageSize = 25;
+  Math = Math; // For template access
+
+  filteredRegistrations = computed(() => {
+    const term = this.registrationsSearchTerm().toLowerCase().trim();
+    if (!term) return this.registrations();
+
+    return this.registrations().filter((reg) =>
+      reg.name.toLowerCase().includes(term)
+    );
+  });
+
+  paginatedRegistrations = computed(() => {
+    const filtered = this.filteredRegistrations();
+    const page = this.registrationsCurrentPage();
+    const start = (page - 1) * this.registrationsPageSize;
+    const end = start + this.registrationsPageSize;
+    return filtered.slice(start, end);
+  });
+
+  registrationsTotalPages = computed(() => {
+    return Math.ceil(
+      this.filteredRegistrations().length / this.registrationsPageSize
+    );
+  });
   passwordSetupLink = signal<string | null>(null);
 
   constructor(private dataService: DataService, private fb: FormBuilder) {
+    // Reset to page 1 when search term changes
+    effect(() => {
+      this.registrationsSearchTerm(); // Track search term changes
+      this.registrationsCurrentPage.set(1); // Reset to first page
+    });
+
     this.sessionForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
       startDate: ['', Validators.required],
@@ -360,6 +400,7 @@ export class AdminSessions implements OnInit {
   // View Registrations
   viewRegistrations(session: Session): void {
     this.isLoading.set(true);
+    this.registrationsCurrentPage.set(1); // Reset to first page
     this.dataService.getSessionRegistrations(session.id).subscribe({
       next: (data: any) => {
         // Backend returns an object with a registrations array
@@ -383,6 +424,26 @@ export class AdminSessions implements OnInit {
   closeRegistrationsModal(): void {
     this.showRegistrationsModal.set(false);
     this.currentSession.set(null);
+    this.registrations.set([]);
+    this.registrationsCurrentPage.set(1);
+  }
+
+  goToRegistrationsPage(page: number) {
+    if (page >= 1 && page <= this.registrationsTotalPages()) {
+      this.registrationsCurrentPage.set(page);
+    }
+  }
+
+  nextRegistrationsPage() {
+    if (this.registrationsCurrentPage() < this.registrationsTotalPages()) {
+      this.registrationsCurrentPage.update((p) => p + 1);
+    }
+  }
+
+  previousRegistrationsPage() {
+    if (this.registrationsCurrentPage() > 1) {
+      this.registrationsCurrentPage.update((p) => p - 1);
+    }
     this.registrations.set([]);
   }
 

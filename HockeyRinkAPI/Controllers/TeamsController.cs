@@ -296,15 +296,17 @@ public class TeamsController : ControllerBase
 
             // Get all registered players for this session
             var players = await _dbContext.SessionRegistrations
+                .Include(sr => sr.User)
                 .Where(sr => sr.SessionId == sessionId)
-                .OrderByDescending(sr => sr.Rating ?? 0) // Sort by rating (highest first), nulls at bottom
+                .OrderByDescending(sr => sr.User != null ? sr.User.Rating ?? 0 : 0) // Sort by user rating (highest first), nulls at bottom
                 .ThenBy(sr => sr.Name)
                 .Select(sr => new
                 {
                     sr.Id,
                     sr.Name,
                     sr.Position,
-                    sr.Rating,
+                    Rating = sr.User != null ? sr.User.Rating : null, // Use ApplicationUser rating instead of SessionRegistration
+                    PlayerNotes = sr.User != null ? sr.User.PlayerNotes : null, // Include admin notes
                     sr.Email,
                     // Check if player is already assigned to a team
                     TeamId = _dbContext.Players

@@ -32,6 +32,21 @@
       </button>
       <button
         class="btn btn-sm"
+        [class.btn-info]="showTeamAvgRating()"
+        [class.btn-outline-info]="!showTeamAvgRating()"
+        [class.text-white]="showTeamAvgRating()"
+        (click)="toggleTeamAvgRating()"
+        title="{{
+          showTeamAvgRating()
+            ? 'Hide team average ratings'
+            : 'Show team average ratings'
+        }}"
+      >
+        <i class="bi bi-calculator-fill"></i>
+        {{ showTeamAvgRating() ? "Avg Rating Shown" : "Show Avg Rating" }}
+      </button>
+      <button
+        class="btn btn-sm"
         [class.btn-success]="draftPublished()"
         [class.btn-outline-success]="!draftPublished()"
         [class.text-white]="draftPublished()"
@@ -49,6 +64,29 @@
       </button>
     </div>
   </header>
+
+  <!-- Team Balance Legend -->
+  @if (showTeamAvgRating()) {
+  <div
+    class="alert alert-info mx-3 mt-3 mb-0 py-2 px-3"
+    style="font-size: 0.85rem"
+  >
+    <i class="bi bi-info-circle-fill me-2"></i>
+    <strong>Team Balance Key:</strong>
+    <span class="ms-2">
+      <span class="badge" style="background-color: #22c55e">Green</span>
+      Within ±0.5 of session avg
+    </span>
+    <span class="ms-2">
+      <span class="badge" style="background-color: #eab308">Yellow</span>
+      Within ±1.0 of session avg
+    </span>
+    <span class="ms-2">
+      <span class="badge" style="background-color: #ef4444">Red</span>
+      More than ±1.0 from session avg
+    </span>
+  </div>
+  }
 
   <!-- Loading State -->
   @if (isLoading()) {
@@ -103,15 +141,42 @@
             class="position-badge"
             [ngClass]="'pos-' + (player.position || 'Unknown')"
           >
-            {{ (player.position || "?").charAt(0) }}
+            {{ getPositionLetter(player.position) }}
           </div>
 
           <!-- Player Info -->
           <div class="player-info">
-            <div class="player-name">{{ player.name }}</div>
+            <div class="player-name">
+              {{ player.name }}
+              @if (player.playerNotes) {
+              <button
+                class="btn btn-sm btn-link p-0 ms-1"
+                (click)="toggleNotes(player.id); $event.stopPropagation()"
+                title="{{
+                  isNotesExpanded(player.id) ? 'Hide notes' : 'Show notes'
+                }}"
+                type="button"
+                style="color: #6c757d; vertical-align: middle"
+              >
+                <i
+                  class="bi bi-{{
+                    isNotesExpanded(player.id) ? 'dash' : 'plus'
+                  }}-circle"
+                ></i>
+              </button>
+              }
+            </div>
             <div class="player-details">
               {{ player.position }}
             </div>
+            @if (isNotesExpanded(player.id) && player.playerNotes) {
+            <div
+              class="player-notes mt-1 text-muted"
+              style="font-size: 0.75rem; font-style: italic"
+            >
+              {{ player.playerNotes }}
+            </div>
+            }
           </div>
 
           <!-- Rating -->
@@ -127,7 +192,7 @@
               class="position-badge"
               [ngClass]="'pos-' + (player.position || 'Unknown')"
             >
-              {{ (player.position || "?").charAt(0) }}
+              {{ getPositionLetter(player.position) }}
             </div>
             <div class="player-info">
               <div class="player-name">{{ player.name }}</div>
@@ -167,7 +232,11 @@
 
       <div class="teams-grid">
         @for (team of teams(); track team.id) {
-        <div class="team-card" [style.border-top-color]="team.teamColor">
+        <div
+          class="team-card"
+          [class]="'team-card ' + getTeamBalanceClass(team.id)"
+          [style.border-top-color]="team.teamColor"
+        >
           <div
             class="team-card-header"
             [style.background-color]="team.teamColor || '#64748b'"
@@ -183,6 +252,21 @@
                 }
               </div>
             </div>
+            @if (showTeamAvgRating()) {
+            <div>
+              <span
+                class="badge bg-light text-dark fw-bold"
+                style="font-size: 0.8rem"
+              >
+                Avg:
+                {{
+                  calculateTeamAvgRating(team.id)
+                    ? calculateTeamAvgRating(team.id)
+                    : "N/A"
+                }}
+              </span>
+            </div>
+            }
           </div>
 
           <div
@@ -200,7 +284,7 @@
               <i class="bi bi-person-plus" style="font-size: 1.5rem"></i>
               <small>Drop players here</small>
             </div>
-            } @for (player of team.players; track player.id) {
+            } @for (player of getSortedPlayers(team.players); track player.id) {
             <div class="player-item" cdkDrag>
               <div
                 class="position-badge"
@@ -209,12 +293,41 @@
                 [style.font-size.rem]="0.7"
                 [ngClass]="'pos-' + (player.position || 'Unknown')"
               >
-                {{ (player.position || "?").charAt(0) }}
+                {{ getPositionLetter(player.position) }}
               </div>
               <div class="player-info">
                 <div class="player-name" style="font-size: 0.9rem">
                   {{ player.name }}
+                  @if (player.playerNotes) {
+                  <button
+                    class="btn btn-sm btn-link p-0 ms-1"
+                    (click)="toggleNotes(player.id); $event.stopPropagation()"
+                    title="{{
+                      isNotesExpanded(player.id) ? 'Hide notes' : 'Show notes'
+                    }}"
+                    type="button"
+                    style="
+                      color: #6c757d;
+                      font-size: 0.75rem;
+                      vertical-align: middle;
+                    "
+                  >
+                    <i
+                      class="bi bi-{{
+                        isNotesExpanded(player.id) ? 'dash' : 'plus'
+                      }}-circle"
+                    ></i>
+                  </button>
+                  }
                 </div>
+                @if (isNotesExpanded(player.id) && player.playerNotes) {
+                <div
+                  class="player-notes mt-1 text-muted"
+                  style="font-size: 0.65rem; font-style: italic"
+                >
+                  {{ player.playerNotes }}
+                </div>
+                }
               </div>
               @if (showRatings()) {
               <div class="metric-badge" style="font-size: 0.7rem">
@@ -236,7 +349,7 @@
                   class="position-badge"
                   [ngClass]="'pos-' + (player.position || 'Unknown')"
                 >
-                  {{ (player.position || "?").charAt(0) }}
+                  {{ getPositionLetter(player.position) }}
                 </div>
                 <div class="player-info">
                   <div class="player-name">{{ player.name }}</div>

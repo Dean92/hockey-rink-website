@@ -16,6 +16,7 @@ namespace HockeyRinkAPI.Data
         public DbSet<SessionRegistration> SessionRegistrations { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Game> Games { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -98,6 +99,35 @@ namespace HockeyRinkAPI.Data
             builder.Entity<SessionRegistration>().Property(sr => sr.DateOfBirth).HasColumnType("date");
 
             builder.Entity<SessionRegistration>().HasIndex(sr => sr.RegistrationDate);
+
+            // Configure Game relationships
+            builder
+                .Entity<Game>()
+                .HasOne(g => g.Session)
+                .WithMany()
+                .HasForeignKey(g => g.SessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder
+                .Entity<Game>()
+                .HasOne(g => g.HomeTeam)
+                .WithMany()
+                .HasForeignKey(g => g.HomeTeamId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder
+                .Entity<Game>()
+                .HasOne(g => g.AwayTeam)
+                .WithMany()
+                .HasForeignKey(g => g.AwayTeamId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder
+                .Entity<Game>()
+                .HasIndex(g => new { g.SessionId, g.GameDate });
+
+            // Configure ApplicationUser Rating precision
+            builder.Entity<ApplicationUser>().Property(u => u.Rating).HasPrecision(3, 1);
 
             // Configure ApplicationUser LeagueId as optional
             builder

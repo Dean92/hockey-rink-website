@@ -1109,10 +1109,10 @@
     "estimated_completion": "End of Week 7 (mid-December 2025)"
   },
   "week_8": {
-    "status": "✅ Completed - December 2024",
-    "focus": "Team Draft System & Player Management + Admin UI Redesign + Session Visibility Logic",
+    "status": "✅ Completed - January 15, 2026",
+    "focus": "Team Draft System & Player Management + Admin UI Redesign + Session Visibility Logic + Draft Publish & User Team Views",
     "estimated_hours": "15-18 hours",
-    "actual_completion": "December 2024 - Expanded scope with professional UI/UX, session visibility enhancements",
+    "actual_completion": "January 15, 2026 - All features including draft publish, user team views, and testing infrastructure completed",
     "deliverables": [
       {
         "player_rating_system": {
@@ -1876,8 +1876,8 @@
         }
       },
       {
-        "draft_status_and_visibility": {
-          "status": "❌ Not Implemented",
+        "draft_publish_and_user_team_views": {
+          "status": "✅ Completed - January 15, 2026",
           "description": "Show draft results to users after draft is complete",
           "admin_controls": {
             "publish_draft_toggle": {
@@ -1918,7 +1918,7 @@
             }
           }
         }
-      },
+      },{
           "description": "Show draft results to users after admin publishes the draft",
           "note": "✅ IMPLEMENTED January 2026 - Players can view team assignments after admin publishes draft",
           "admin_controls": {
@@ -2016,14 +2016,21 @@
               "✅ View Registrations modal shows all registrations correctly",
               "✅ Sessions remain visible after registration closes",
               "✅ 'Starting Soon' notification appears when registration closed but session not started",
-              "✅ Sessions disappear 7 days after session start date"
+              "✅ Sessions disappear 7 days after session start date",
+              "✅ Publish draft feature with toggle button on draft page",
+              "✅ User views their team assignment on player dashboard",
+              "✅ User who is captain sees captain badge indicator",
+              "✅ Team roster displayed via expandable inline view (not modal)",
+              "✅ Caret toggle for showing/hiding roster",
+              "✅ Roster data cached for performance",
+              "✅ Dashboard date/time removed from sessions display",
+              "✅ All integration tests passing (12/12)",
+              "✅ Bearer token authentication properly implemented",
+              "✅ Test helper preserves user roles across logins"
             ],
             "not_implemented": [
               "❌ Use auto-draft feature",
-              "❌ Clear all assignments",
-              "❌ Publish draft",
-              "❌ User views their team assignment",
-              "❌ User who is captain sees indicator"
+              "❌ Clear all assignments"
             ],
             "edge_cases_tested": [
               "✅ Try to drag player already on team (prevented by API)",
@@ -2033,10 +2040,12 @@
               "✅ Team with no players shows empty state"
             ]
           }
+          }
         }
-      }
-    ],
-    "priority_order_actual": [
+      ]
+    },
+    "week_9": {
+      "priority_order_actual": [
       "1. ✅ Database migrations: Rating on SessionRegistrations, Player-SessionRegistration link, MaxPlayers on Teams",
       "2. ✅ Backend models: Team with MaxPlayers, Player with SessionRegistrationId",
       "3. ✅ Backend: Draft player endpoints (GetDraftPlayers, SetPlayerRating, AssignPlayerToTeam, RemovePlayerFromTeam, GetTeamPlayers)",
@@ -2054,15 +2063,20 @@
       "15. ✅ Frontend: Session filtering and 'Starting Soon' notifications",
       "16. ✅ Bug fixes: Registration data loading, TypeScript type errors, button spacing",
       "17. ✅ Draft publish feature: DraftEnabled and DraftPublished fields with toggle UI",
-      "18. ✅ User-facing team views: Player dashboard with team card and roster modal",
+      "18. ✅ User-facing team views: Player dashboard with team card and expandable roster",
       "19. ✅ Backend authentication fix: ConfigureApplicationCookie prevents unwanted redirects",
       "20. ✅ Team captain support: CaptainUserId field, UpdateTeamModel enhancement, captain badge display",
       "21. ✅ Navigation enhancements: My Teams link in menu and quick actions",
       "22. ✅ Draft status column: Admin sessions table shows draft progress badges",
-      "23. ❌ Auto-draft algorithm (not implemented)"
+      "23. ✅ Testing infrastructure: All 12 integration tests passing with Bearer token auth",
+      "24. ✅ Test helper refactored: Preserves user roles across multiple login calls",
+      "25. ✅ UI/UX improvements: Removed date/time from dashboard session displays",
+      "26. ✅ Roster view enhancement: Converted from modal to expandable inline view with caret toggle",
+      "27. ✅ Performance optimization: Team roster caching in Map for faster subsequent views",
+      "28. ❌ Auto-draft algorithm (not implemented)"
     ],
-    "estimated_completion": "End of Week 8 (late December 2024)",
-    "actual_completion": "January 9, 2026 - All core features including draft publish and user team views completed",
+    "estimated_completion": "End of Week 8 (late December 2025)",
+    "actual_completion": "January 15, 2026 - All core features including draft publish, user team views, testing infrastructure, and UI enhancements completed",
     "notes": [
       "✅ Rating field stored on SessionRegistrations (not ApplicationUser) for session-specific context",
       "✅ Simplified database design - Players link directly to SessionRegistrations (no junction table)",
@@ -2079,23 +2093,67 @@
       "✅ 'Starting Soon' notification displays when registration closed but session not started",
       "✅ Draft publish feature: Admin can publish/unpublish drafts via toggle button on draft page",
       "✅ Player dashboard: Users see current/past team assignments with team color and captain badge",
-      "✅ Team roster modal: Players can view full roster, captains see teammate emails",
+      "✅ Team roster view: Expandable inline view with caret toggle replaces modal",
+      "✅ Roster caching: Team details stored in Map for improved performance",
       "✅ Draft status badges: Admin sessions table displays Disabled/Not Started/In Progress/Completed",
       "✅ Backend authentication: ConfigureApplicationCookie prevents 404 redirects to /Account/Login",
+      "✅ Bearer token authentication: Properly extracts token from login response and sets in Authorization header",
+      "✅ Test infrastructure: TestAuthHelper refactored to preserve user roles across multiple login calls",
+      "✅ Integration tests: All 12 tests passing with proper authentication flow",
       "✅ Captain functionality: CaptainUserId field in Teams table, displayed in player dashboard",
       "✅ Navigation: My Teams link added to main menu and dashboard quick actions",
-      "✅ Week 8 FULLY COMPLETE - All planned features implemented and tested",
+      "✅ Dashboard UI polish: Removed date/time displays from 'Happening Now' and 'Upcoming Sessions'",
+      "✅ Week 8 FULLY COMPLETE - All planned features implemented, tested, and polished",
       "❌ Auto-draft algorithm not implemented - manual draft via drag-and-drop only",
       "Consider adding draft history/audit log in future for transparency",
       "MaxPlayers field added as enhancement beyond original plan",
       "Delete team confirmation shows player count warning",
-      "Rating not displayed in UI - used for backend sorting only to maintain privacy"
+      "Rating not displayed in UI - used for backend sorting only to maintain privacy",
+      "Expandable roster view provides better UX than modal - keeps context visible",
+      "Single team expansion enforced for cleaner interface"
     ]
   },
   "week_9": {
-    "status": "Planned",
-    "focus": "League Management, User Profile, Home Page Redesign, and Footer Enhancement",
-    "estimated_hours": "12-15 hours",
+    "status": "✅ COMPLETE - January 22, 2026",
+    "focus": "Player Rating & Admin User Management",
+    "estimated_hours": "15-20 hours",
+    "actual_hours": "18 hours",
+    "completed_features": [
+      "✅ Draft Page Enhancement: Position Badge Logic - 'Forward/Defense' displays as 'B' (January 19, 2026)",
+      "✅ Draft Page Enhancement: Team Average Rating Toggle Button added (January 19, 2026)",
+      "✅ Draft Page Enhancement: Team Average Rating Calculation (excludes goalies) (January 19, 2026)",
+      "✅ Draft Page Enhancement: Visual Balance Indicators - Green/Yellow/Red borders based on session average (January 19, 2026)",
+      "✅ Database Migration: Games Table created and applied (January 19, 2026)",
+      "✅ Player Rating System: Admin can rate players 1-5 with decimal increments and add notes (January 20, 2026)",
+      "✅ Database Migration: AddRatingAndNotesToApplicationUser (January 20, 2026)",
+      "✅ Database Migration: AddLastLoginAt (January 20, 2026)",
+      "✅ Admin User Management: Full profile editing including email/name changes with duplicate checking (January 20, 2026)",
+      "✅ Admin User Management: League assignment via dropdown (January 20, 2026)",
+      "✅ User Management: Last Login column displays timestamp of user's last successful login (January 20, 2026)",
+      "✅ Profile Page: Admin-only fields for rating, notes, email, and name editing (January 20, 2026)",
+      "✅ Profile Page: Phone number formatting in view mode (January 20, 2026)",
+      "✅ Profile Page: Clickable email addresses (mailto links) for admins (January 20, 2026)",
+      "✅ UX: Clickable user rows in admin table navigate to profile page (January 20, 2026)",
+      "✅ UX: Back to User Management button on profile when viewing as admin (January 20, 2026)",
+      "✅ User Management: Search by name filter - case-insensitive first/last name search (January 21, 2026)",
+      "✅ User Management: Pagination - 25 users per page with Previous/Next navigation (January 21, 2026)",
+      "✅ User Management: Search pagination integration - auto-resets to page 1 on search (January 21, 2026)",
+      "✅ User Management: Removed redundant 'Back to Admin Dashboard' button (January 21, 2026)",
+      "✅ Draft Page: Player notes display with toggle button (plus/minus icon) inline with name (January 21, 2026)",
+      "✅ Backend API: GetDraftPlayers enhanced to include PlayerNotes field (January 21, 2026)",
+      "✅ Draft Page: Notes toggle works consistently in available pool and team rosters (January 21, 2026)",
+      "✅ UI/UX: Footer height reduction - reduced padding for more compact layout (January 22, 2026)",
+      "✅ Registrations Modal: Pagination - 25 registrations per page with Previous/Next navigation (January 22, 2026)",
+      "✅ Registrations Modal: Search by name filter - case-insensitive first/last name search (January 22, 2026)",
+      "✅ Registrations Modal: Search pagination integration - auto-resets to page 1 on search (January 22, 2026)"
+    ],
+    "deferred_to_week_11": [
+      "📅 Database Migration: GameStats Table (player statistics per game)",
+      "📅 Database Migration: GoalieStats Table (goalie statistics per game)",
+      "📅 Backend API: League standings calculation endpoints",
+      "📅 Frontend: League standings page with team rankings",
+      "📅 Frontend: Admin game management interface (create games, enter scores/stats)"
+    ],
     "features": [
       {
         "name": "Admin League Management (Full CRUD)",
@@ -2416,16 +2474,286 @@
     ]
   },
   "week_10": {
-    "status": "🔄 Planned",
-    "focus": "Security & Framework Upgrades",
+    "status": "� Planned",
+    "focus": "Emergency Contact & Jersey Number Management",
     "estimated_hours": "12-15 hours",
-    "start_date": "TBD (After Week 8 & 9 completion)",
-    "objectives": [
-      "Migrate from custom Base64 tokens to proper JWT authentication",
-      "Upgrade backend to .NET 10",
-      "Upgrade frontend to Angular 21",
-      "Improve authentication security and maintainability"
+    "priority": "Medium",
+    "start_date": "After Week 9 completion",
+    "features": [
+      {
+        "emergency_contact": {
+          "status": "📋 Planned",
+          "priority": "High",
+          "description": "Add emergency contact information to user profiles",
+          "database_changes": {
+            "table": "ApplicationUser",
+            "new_fields": [
+              "EmergencyContactName (NVARCHAR(100), NOT NULL)",
+              "EmergencyContactPhone (NVARCHAR(20), NOT NULL)"
+            ],
+            "migration": "AddEmergencyContactToApplicationUser"
+          },
+          "backend_api": {
+            "register_endpoint": {
+              "route": "POST /api/auth/register",
+              "changes": "Add EmergencyContactName and EmergencyContactPhone as required fields",
+              "validation": "Both fields required, phone format validation"
+            },
+            "profile_endpoint": {
+              "route": "PUT /api/users/profile",
+              "changes": "Allow editing emergency contact fields",
+              "validation": "Required fields cannot be empty"
+            }
+          },
+          "frontend_registration": {
+            "location": "Registration page",
+            "fields": [
+              "Emergency Contact Name (text input, required)",
+              "Emergency Contact Phone (text input, required, phone format)"
+            ],
+            "validation": "Form cannot submit without emergency contact",
+            "help_text": "Who should we contact in case of emergency?"
+          },
+          "frontend_profile": {
+            "location": "User profile page",
+            "view_mode": "Display emergency contact name and phone",
+            "edit_mode": "Editable fields with validation",
+            "save_validation": "Required fields must be filled"
+          }
+        }
+      },
+      {
+        "hockey_registration_number": {
+          "status": "📋 Planned",
+          "priority": "Medium",
+          "description": "Add optional USA Hockey or AAU Hockey registration number to user profiles",
+          "database_changes": {
+            "table": "ApplicationUser",
+            "new_fields": [
+              "HockeyRegistrationNumber (NVARCHAR(50), NULLABLE)",
+              "HockeyRegistrationType (NVARCHAR(20), NULLABLE) - Values: 'USA Hockey', 'AAU Hockey', or NULL"
+            ],
+            "migration": "AddHockeyRegistrationToApplicationUser"
+          },
+          "backend_api": {
+            "profile_endpoint": {
+              "route": "PUT /api/users/profile",
+              "changes": "Allow editing HockeyRegistrationNumber and HockeyRegistrationType",
+              "validation": "Optional fields - no validation required"
+            }
+          },
+          "frontend_profile": {
+            "location": "User profile page - Hockey Registration section",
+            "fields": [
+              "Registration Type dropdown: [None, USA Hockey, AAU Hockey]",
+              "Registration Number (text input, enabled only if type selected)"
+            ],
+            "view_mode": "Display 'USA Hockey #: 123456' or 'AAU Hockey #: 789012' or 'Not Provided'",
+            "edit_mode": "Editable dropdown and text input",
+            "help_text": "Your USA Hockey or AAU Hockey registration number (updated annually)",
+            "notes": "Optional field - can be left blank"
+          },
+          "future_enhancements": [
+            "Admin page to view all users with registration numbers",
+            "Filter by registration type (USA Hockey / AAU Hockey)",
+            "Track expiration dates (annual renewal tracking)",
+            "Bulk export capability for admin reports",
+            "Reminder system for expired registrations"
+          ]
+        }
+      },
+      {
+        "jersey_number_management": {
+          "status": "📋 Planned",
+          "priority": "High",
+          "description": "Admin assigns jersey numbers per session; users view their jersey numbers",
+          "database_changes": {
+            "table": "Players",
+            "new_fields": [
+              "JerseyNumber (INT, NULLABLE)",
+              "CHECK constraint: JerseyNumber BETWEEN 0 AND 99",
+              "UNIQUE constraint: Per team (SessionId + TeamId + JerseyNumber)"
+            ],
+            "notes": [
+              "Jersey numbers are session-specific",
+              "Same player can have different numbers in different sessions",
+              "Unique per team (two teams can both have a #10)"
+            ]
+          },
+          "backend_api": {
+            "endpoints": [
+              {
+                "route": "GET /api/admin/sessions",
+                "description": "Get all sessions with optional active/inactive filter",
+                "query_params": "?isActive=true|false (optional)",
+                "response": "Sessions ordered by StartDate (active first), includes PlayerCount, TeamCount",
+                "fields": "Id, Name, StartDate, EndDate, LeagueId, IsActive, PlayerCount, TeamCount"
+              },
+              {
+                "route": "GET /api/admin/sessions/{sessionId}/players",
+                "description": "Get all players for a session with team and jersey info",
+                "response": "List of players ordered by Team, Position (Goalie first), LastName",
+                "fields": "PlayerId, UserId, FirstName, LastName, TeamId, TeamName, Position, JerseyNumber, Rating"
+              },
+              {
+                "route": "PUT /api/admin/players/{playerId}/jersey",
+                "description": "Assign jersey number to a player",
+                "body": "{ jerseyNumber: number }",
+                "validation": [
+                  "Must be 0-99",
+                  "Must be unique within team",
+                  "Player must be assigned to a team"
+                ],
+                "response": "Updated player object"
+              },
+              {
+                "route": "PUT /api/admin/sessions/{sessionId}/jerseys",
+                "description": "Batch update jersey numbers for multiple players",
+                "body": "[{ playerId: number, jerseyNumber: number }]",
+                "validation": "Same as single update",
+                "response": "Success/error summary with affected player count"
+              }
+            ]
+          },
+          "frontend_admin_dashboard": {
+            "enhancement": "Add 'Manage Jersey Numbers' quick action card",
+            "icon": "bi-123 or bi-card-list",
+            "route": "/admin/jersey-management",
+            "description": "Quick access to jersey number assignment"
+          },
+          "frontend_jersey_management_page": {
+            "component": "admin-jersey-management.component.ts",
+            "route": "/admin/jersey-management",
+            "features": {
+              "header": {
+                "title": "Jersey Number Management",
+                "filter": "Toggle between Active Sessions and All Sessions",
+                "display": "Session count"
+              },
+              "sessions_list": {
+                "layout": "Card view (4 per row on desktop, responsive)",
+                "card_content": [
+                  "Session name",
+                  "Start Date → End Date",
+                  "League name",
+                  "Player count / Team count",
+                  "Status badge: Active (green) or Inactive (gray)"
+                ],
+                "ordering": "Active sessions first, then by StartDate ascending",
+                "interaction": "Click card to navigate to jersey assignment page"
+              }
+            }
+          },
+          "frontend_jersey_assignment_page": {
+            "component": "admin-jersey-assignment.component.ts",
+            "route": "/admin/jersey-management/sessions/{sessionId}",
+            "features": {
+              "breadcrumb": "Admin Dashboard → Jersey Management → [Session Name]",
+              "header": "Session name, dates, league",
+              "filter": "Optional: Filter by team dropdown",
+              "table": {
+                "columns": [
+                  "Player Name (clickable link to profile)",
+                  "Team (with color badge)",
+                  "Position (G/F/D/B badge)",
+                  "Jersey Number (editable input 0-99)",
+                  "Actions (Save button per row)"
+                ],
+                "sorting": "Team ASC, Position (Goalie first), LastName ASC",
+                "validation": [
+                  "Real-time: Must be 0-99",
+                  "Real-time: Unique per team",
+                  "Red border if invalid or duplicate"
+                ],
+                "save_options": [
+                  "Individual 'Save' button per row (disabled if no changes)",
+                  "OR 'Save All' button at bottom (batch update)"
+                ],
+                "feedback": [
+                  "Toast notification on success",
+                  "Error message on failure",
+                  "Confirmation: 'Jersey number updated successfully'"
+                ]
+              }
+            }
+          },
+          "frontend_user_dashboard": {
+            "location": "My Team card",
+            "display": "Add jersey number badge next to player info",
+            "example": "Your Team: Blue Demons | Position: G | Jersey: #29",
+            "fallback": "Jersey: Not Assigned (if no number assigned yet)"
+          },
+          "frontend_my_teams_page": {
+            "location": "Team roster table (when user clicks View Team)",
+            "enhancement": "Add 'Jersey #' column after Position column",
+            "display": "Jersey number or '—' if not assigned",
+            "styling": "Bold or badge format, captain indicator (C) after name",
+            "example_table": [
+              "Player | Position | Jersey # | Rating",
+              "John Smith (C) | G | 29 | 4.5",
+              "Jane Doe | F | 10 | 3.8"
+            ]
+          }
+        }
+      },
+      {
+        "admin_user_detail_page": {
+          "status": "📋 Planned",
+          "priority": "Low",
+          "description": "Detailed user profile view for admins",
+          "features": [
+            "Click user row in User Management to view detailed profile",
+            "User statistics: registrations count, total payments, sessions attended",
+            "Registration history table (sortable, filterable)",
+            "Payment history table",
+            "Admin notes section (separate from player notes)"
+          ]
+        }
+      },
+      {
+        "team_color_management": {
+          "status": "📋 Planned",
+          "priority": "Low",
+          "description": "Admin can customize team colors",
+          "features": [
+            "Color picker for team colors",
+            "Predefined color palette (common hockey team colors)",
+            "Custom hex code input",
+            "Live preview on team cards"
+          ]
+        }
+      },
+      {
+        "footer_home_page": {
+          "status": "📋 Planned",
+          "priority": "Low",
+          "description": "Enhanced footer and home page",
+          "features": [
+            "Footer with contact info and social links",
+            "Home page testimonials section",
+            "Feature highlights section",
+            "Professional landing page polish"
+          ]
+        }
+      }
     ],
+    "notes": [
+      "Phone number field is already implemented and working",
+      "Profile photo upload removed from scope",
+      "Jersey number preference removed - admin assigns per session instead",
+      "Jersey numbers are unique per team, not globally",
+      "Jersey numbers range 0-99",
+      "Jersey numbers stored on Players table (session-specific)",
+      "Emergency contact required during initial registration only",
+      "Emergency contact editable by user on profile page",
+      "Hockey registration number (USA Hockey / AAU Hockey) is optional field",
+      "Hockey registration numbers updated annually - future admin tracking planned"
+    ]
+  },
+  "week_11": {
+    "status": "📋 Planned - Deferred from Week 9",
+    "focus": "League Standings & Statistics",
+    "estimated_hours": "15-20 hours",
     "tasks": [
       {
         "jwt_authentication_migration": {

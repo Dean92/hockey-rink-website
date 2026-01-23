@@ -4,6 +4,7 @@ import {
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
+  FormsModule,
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,6 +16,7 @@ interface Team {
   id: number;
   teamName: string;
   captainName?: string;
+  captainUserId?: string;
   teamColor?: string;
   maxPlayers?: number;
   playerCount?: number;
@@ -24,7 +26,12 @@ interface Team {
 @Component({
   selector: 'app-admin-teams',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ToastContainerComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    ToastContainerComponent,
+  ],
   templateUrl: './admin-teams.html',
   styleUrls: ['./admin-teams.css'],
 })
@@ -40,6 +47,7 @@ export class AdminTeams implements OnInit {
   showDeleteModal = signal<boolean>(false);
   isDeleting = signal<boolean>(false);
   teamToDelete = signal<Team | null>(null);
+  selectedCaptainValue = signal<string>('');
   teamForm: FormGroup;
   editingTeamId = signal<number | null>(null);
 
@@ -64,6 +72,7 @@ export class AdminTeams implements OnInit {
     this.teamForm = this.formBuilder.group({
       teamName: ['', [Validators.required, Validators.maxLength(100)]],
       captainName: ['', Validators.maxLength(100)],
+      captainUserId: [''],
       teamColor: [''],
       maxPlayers: ['', [Validators.min(1), Validators.max(50)]],
     });
@@ -123,7 +132,7 @@ export class AdminTeams implements OnInit {
   loadRegisteredPlayers() {
     this.dataService.getSessionRegistrations(this.sessionId()).subscribe({
       next: (data) => {
-        this.registeredPlayers.set(data);
+        this.registeredPlayers.set(data.registrations || []);
       },
       error: (err) => {
         console.error('Error loading registered players:', err);
@@ -135,6 +144,7 @@ export class AdminTeams implements OnInit {
   openCreateModal() {
     this.isEditing.set(false);
     this.editingTeamId.set(null);
+    this.selectedCaptainValue.set('');
     this.teamForm.reset();
     this.showModal.set(true);
   }
@@ -142,9 +152,20 @@ export class AdminTeams implements OnInit {
   openEditModal(team: Team) {
     this.isEditing.set(true);
     this.editingTeamId.set(team.id);
+
+    // Set the captain dropdown value if captain exists
+    if (team.captainUserId && team.captainName) {
+      this.selectedCaptainValue.set(
+        team.captainUserId + '|' + team.captainName
+      );
+    } else {
+      this.selectedCaptainValue.set('');
+    }
+
     this.teamForm.patchValue({
       teamName: team.teamName,
       captainName: team.captainName || '',
+      captainUserId: team.captainUserId || '',
       teamColor: team.teamColor || '',
       maxPlayers: team.maxPlayers || '',
     });
@@ -153,6 +174,7 @@ export class AdminTeams implements OnInit {
 
   closeModal() {
     this.showModal.set(false);
+    this.selectedCaptainValue.set('');
     this.teamForm.reset();
     this.editingTeamId.set(null);
   }
@@ -243,6 +265,23 @@ export class AdminTeams implements OnInit {
     this.router.navigate(['/admin/sessions']);
   }
 
+  onCaptainChange(value: string) {
+    if (!value) {
+      // No captain selected
+      this.teamForm.patchValue({
+        captainUserId: '',
+        captainName: '',
+      });
+    } else {
+      // Value format: "userId|playerName"
+      const [userId, playerName] = value.split('|');
+      this.teamForm.patchValue({
+        captainUserId: userId,
+        captainName: playerName,
+      });
+    }
+  }
+
   hasError(field: string, errorType: string): boolean {
     const control = this.teamForm.get(field);
     return !!(
@@ -250,5 +289,9 @@ export class AdminTeams implements OnInit {
       control.hasError(errorType) &&
       (control.dirty || control.touched)
     );
+  }
+
+  getEligibleCaptains() {
+    return this.registeredPlayers().filter((p) => p.userId || p.UserId);
   }
 }

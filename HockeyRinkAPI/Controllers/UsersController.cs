@@ -103,7 +103,13 @@ public class UsersController : ControllerBase
                     user.ZipCode,
                     user.Phone,
                     user.DateOfBirth,
-                    user.Position
+                    user.Position,
+                    user.Rating,
+                    user.PlayerNotes,
+                    user.EmergencyContactName,
+                    user.EmergencyContactPhone,
+                    user.HockeyRegistrationNumber,
+                    user.HockeyRegistrationType
                 }
             );
         }
@@ -161,6 +167,10 @@ public class UsersController : ControllerBase
             user.Phone = model.Phone;
             user.DateOfBirth = model.DateOfBirth;
             user.Position = model.Position;
+            user.EmergencyContactName = model.EmergencyContactName;
+            user.EmergencyContactPhone = model.EmergencyContactPhone;
+            user.HockeyRegistrationNumber = model.HockeyRegistrationNumber;
+            user.HockeyRegistrationType = model.HockeyRegistrationType;
 
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
@@ -182,7 +192,11 @@ public class UsersController : ControllerBase
                 user.ZipCode,
                 user.Phone,
                 user.DateOfBirth,
-                user.Position
+                user.Position,
+                user.EmergencyContactName,
+                user.EmergencyContactPhone,
+                user.HockeyRegistrationNumber,
+                user.HockeyRegistrationType
             });
         }
         catch (Exception ex)
