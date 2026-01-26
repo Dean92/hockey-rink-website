@@ -736,6 +736,7 @@ public class UsersController : ControllerBase
                     SessionId = x.Session.Id,
                     SessionName = x.Session.Name,
                     SessionDate = x.Session.StartDate,
+                    SessionEndDate = x.Session.EndDate,
                     LeagueName = x.League.Name,
                     TeamId = x.Player!.TeamId,
                     TeamName = x.Player.Team!.TeamName,

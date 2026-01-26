@@ -8,6 +8,7 @@ interface TeamAssignment {
   sessionId: number;
   sessionName: string;
   sessionDate: string;
+  sessionEndDate: string;
   leagueName: string;
   teamId: number;
   teamName: string;
@@ -75,14 +76,20 @@ export class PlayerDashboard implements OnInit {
       next: (teams) => {
         this.teams.set(teams);
 
-        // Separate into current and past based on session date
+        // Separate into current and past based on session end date
+        // Current: session end date is today or in the future
+        // Past: session end date has passed
         const now = new Date();
+        now.setHours(0, 0, 0, 0); // Compare dates only, not time
         const current: TeamAssignment[] = [];
         const past: TeamAssignment[] = [];
 
         teams.forEach((team) => {
-          const sessionDate = new Date(team.sessionDate);
-          if (sessionDate >= now) {
+          const sessionEndDate = new Date(team.sessionEndDate);
+          sessionEndDate.setHours(0, 0, 0, 0); // Compare dates only, not time
+
+          // If session end date is today or in the future, it's current
+          if (sessionEndDate >= now) {
             current.push(team);
           } else {
             past.push(team);

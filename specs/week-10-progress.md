@@ -1,6 +1,6 @@
-# Week 10 Progress Update - January 23, 2026
+# Week 10 Progress Update - January 23-26, 2026
 
-## Status: 🔄 In Progress
+## Status: ✅ Core Features Complete
 
 ## Completed Features
 
@@ -69,6 +69,10 @@
 - ✅ Team roster table includes "Jersey" column for all teammates
 - ✅ Jersey display: Badge format "#X" or "—" for unassigned
 - ✅ Jersey numbers visible in team assignments list
+- ✅ **Jersey number displayed inline with team name** (e.g., "Red - #14") in team card headers
+- ✅ **Jersey column positioned left of Name column** in roster tables (January 26)
+- ✅ **Jersey number displays in Dashboard "My Team" card** next to team name (January 26)
+- ✅ **Fixed jersey number 0 display issue** - properly handles 0 as valid number (January 26)
 
 ### 3. ✅ Session Management Improvements (BONUS)
 
@@ -104,6 +108,15 @@
 - ✅ Button links to /sessions route
 - ✅ Added calendar-check icon for visual consistency
 - ✅ Mobile-responsive button layout (mb-3 spacing)
+
+#### Team Assignment Display Improvements (January 26)
+
+- ✅ **Fixed Current vs Past Teams logic** - Now uses session end date instead of start date
+- ✅ Sessions with end date in the future show under "Current Teams"
+- ✅ Sessions with end date in the past show under "Past Teams"
+- ✅ Backend API updated to include `SessionEndDate` in response
+- ✅ Frontend TypeScript interface updated with `sessionEndDate` field
+- ✅ Date comparison logic updated to use end date for categorization
 
 ---
 
@@ -211,7 +224,7 @@
 
 ## Summary
 
-### Completed This Session (January 23, 2026):
+### Completed This Session (January 23-26, 2026):
 
 1. ✅ Emergency Contact Management - Full implementation (required in registration, optional in profile, admin view)
 2. ✅ Hockey Registration Number - Optional fields (USA Hockey / AAU Hockey)
@@ -219,6 +232,15 @@
 4. ✅ Session League Field - Made optional (can create sessions without league)
 5. ✅ Public Sessions Page - Enhanced filtering and UI improvements
 6. ✅ Home Page - Added View Sessions button
+7. ✅ **Jersey Number Display Enhancements** (January 26):
+   - Jersey numbers inline with team names in card headers
+   - Jersey column repositioned to left of Name in roster tables
+   - Jersey numbers in Dashboard "My Team" card
+   - Fixed falsy value issue for jersey number 0
+8. ✅ **Team Assignment Logic Fix** (January 26):
+   - Current/Past teams now correctly determined by session end date
+   - Backend API enhanced with session end date
+   - Proper date-based categorization logic
 
 ### Remaining for Week 10:
 
