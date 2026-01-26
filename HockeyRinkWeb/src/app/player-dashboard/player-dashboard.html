@@ -41,7 +41,11 @@
             class="card-header text-white"
             [style.background-color]="team.teamColor || '#0d6efd'"
           >
-            <h5 class="mb-0">{{ team.teamName }}</h5>
+            <h5 class="mb-0">
+              {{ team.teamName }}@if (team.jerseyNumber !== null &&
+              team.jerseyNumber !== undefined) {
+              <span class="ms-2">- #{{ team.jerseyNumber }}</span> }
+            </h5>
             @if (team.isCaptain) {
             <span class="badge bg-warning text-dark mt-2">
               <i class="bi bi-star-fill"></i> Captain
@@ -54,13 +58,7 @@
             <p class="mb-2">
               <strong>Date:</strong> {{ formatDate(team.sessionDate) }}
             </p>
-            @if (team.jerseyNumber !== null && team.jerseyNumber !== undefined)
-            {
-            <p class="mb-2">
-              <strong>Your Jersey:</strong>
-              <span class="badge bg-secondary">#{{ team.jerseyNumber }}</span>
-            </p>
-            } @if (team.sessionRecord) {
+            @if (team.sessionRecord) {
             <p class="mb-2">
               <strong>Record:</strong> {{ team.sessionRecord }}
             </p>
@@ -110,9 +108,9 @@
                 <table class="table table-sm table-striped mb-0">
                   <thead>
                     <tr>
+                      <th>Jersey</th>
                       <th>Name</th>
                       <th>Position</th>
-                      <th>Jersey</th>
                       @if (getTeamDetails(team.sessionId)!.isCaptain) {
                       <th>Email</th>
                       }
@@ -122,8 +120,6 @@
                     @for (player of getTeamDetails(team.sessionId)!.teammates;
                     track player.name) {
                     <tr>
-                      <td>{{ player.name }}</td>
-                      <td>{{ player.position }}</td>
                       <td>
                         @if (player.jerseyNumber !== null && player.jerseyNumber
                         !== undefined) {
@@ -134,6 +130,8 @@
                         <span class="text-muted">—</span>
                         }
                       </td>
+                      <td>{{ player.name }}</td>
+                      <td>{{ player.position }}</td>
                       @if (getTeamDetails(team.sessionId)!.isCaptain) {
                       <td class="small">{{ player.email || "N/A" }}</td>
                       }
@@ -164,7 +162,11 @@
             class="card-header text-white"
             [style.background-color]="team.teamColor || '#6c757d'"
           >
-            <h5 class="mb-0">{{ team.teamName }}</h5>
+            <h5 class="mb-0">
+              {{ team.teamName }}@if (team.jerseyNumber !== null &&
+              team.jerseyNumber !== undefined) {
+              <span class="ms-2">- #{{ team.jerseyNumber }}</span> }
+            </h5>
             @if (team.isCaptain) {
             <span class="badge bg-warning text-dark mt-2">
               <i class="bi bi-star-fill"></i> Captain
@@ -227,6 +229,7 @@
                 <table class="table table-sm table-striped mb-0">
                   <thead>
                     <tr>
+                      <th>Jersey</th>
                       <th>Name</th>
                       <th>Position</th>
                       @if (getTeamDetails(team.sessionId)!.isCaptain) {
@@ -238,6 +241,16 @@
                     @for (player of getTeamDetails(team.sessionId)!.teammates;
                     track player.name) {
                     <tr>
+                      <td>
+                        @if (player.jerseyNumber !== null && player.jerseyNumber
+                        !== undefined) {
+                        <span class="badge bg-secondary"
+                          >#{{ player.jerseyNumber }}</span
+                        >
+                        } @else {
+                        <span class="text-muted">—</span>
+                        }
+                      </td>
                       <td>{{ player.name }}</td>
                       <td>{{ player.position }}</td>
                       @if (getTeamDetails(team.sessionId)!.isCaptain) {
