@@ -260,4 +260,29 @@
 - Session management improvements enhance admin workflow
 - Public sessions page provides better UX for end users
 - Low-priority items are "nice-to-have" polish features
-- Core Week 10 features (emergency contact + jersey numbers) are **complete**
+- Core Week 10 features (emergency contact + jersey numbers) are **complete**- Jersey display enhancements (inline display, proper 0 handling) completed January 26
+- Team assignment logic fixed (current/past based on end date) January 26
+
+### Week 11 Preview:
+
+**Primary Focus:** Collapsible Sidebar Navigation
+
+- Major UX overhaul replacing navbar with modern sidebar
+- Mobile-responsive with hamburger menu
+- Better organization with User and Admin sections
+- Icon-based navigation with tooltips
+- State persistence in localStorage
+- Estimated: 8-10 hours
+
+**See:** [Week 11 Implementation Plan](week-11-plan.md) for detailed specifications.
+
+---
+
+## Additional Improvements (January 26, 2026)
+
+### Login & Registration Enhancements
+
+- ✅ Login box made more compact (col-lg-4, reduced padding)
+- ✅ Password confirmation added to registration form
+- ✅ Custom validator for password matching
+- ✅ RouterLink fixed for "Login here" link on registration page

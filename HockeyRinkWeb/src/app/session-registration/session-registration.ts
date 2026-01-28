@@ -39,6 +39,12 @@ export class SessionRegistration implements OnInit {
   currentStep = signal<number>(1);
   isProcessingPayment = signal<boolean>(false);
 
+  // Check if selected session has a league (for position field display)
+  isLeagueSession = computed(() => {
+    const session = this.selectedSession();
+    return session?.leagueId !== null && session?.leagueId !== undefined;
+  });
+
   constructor(
     private authService: AuthService,
     private dataService: DataService,

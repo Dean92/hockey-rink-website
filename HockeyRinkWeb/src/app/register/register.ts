@@ -1,11 +1,13 @@
 import { Component, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth';
 import {
   ReactiveFormsModule,
   FormBuilder,
   FormGroup,
   Validators,
+  AbstractControl,
+  ValidationErrors,
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ToastService } from '../services/toast.service';
@@ -13,7 +15,7 @@ import { ToastService } from '../services/toast.service';
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './register.html',
   styleUrl: './register.css',
 })
@@ -28,12 +30,34 @@ export class Register {
     private fb: FormBuilder,
     private toastService: ToastService
   ) {
-    this.registerForm = this.fb.group({
-      firstName: ['', [Validators.required]],
-      lastName: ['', [Validators.required]],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
-    });
+    this.registerForm = this.fb.group(
+      {
+        firstName: ['', [Validators.required]],
+        lastName: ['', [Validators.required]],
+        email: ['', [Validators.required, Validators.email]],
+        password: ['', [Validators.required, Validators.minLength(8)]],
+        confirmPassword: ['', [Validators.required]],
+      },
+      { validators: this.passwordMatchValidator }
+    );
+  }
+
+  passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const password = control.get('password')?.value;
+    const confirmPassword = control.get('confirmPassword')?.value;
+
+    if (password !== confirmPassword) {
+      control.get('confirmPassword')?.setErrors({ passwordMismatch: true });
+      return { passwordMismatch: true };
+    }
+
+    // Clear the error if passwords match
+    const confirmControl = control.get('confirmPassword');
+    if (confirmControl?.hasError('passwordMismatch')) {
+      confirmControl.setErrors(null);
+    }
+
+    return null;
   }
 
   hasError(field: string, errorType: string): boolean {
@@ -62,9 +86,9 @@ export class Register {
         this.isLoading.set(false);
         this.toastService.success(
           'Registration Successful',
-          'Welcome! You can now browse leagues.'
+          'Welcome! You can now browse available sessions.'
         );
-        this.router.navigate(['/leagues']);
+        this.router.navigate(['/sessions']);
       },
       error: (err) => {
         console.error('Registration failed:', err);

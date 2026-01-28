@@ -2790,10 +2790,270 @@
     }
   },
   "week_11": {
-    "status": "📋 Planned - Deferred from Week 9",
-    "focus": "League Standings & Statistics",
-    "estimated_hours": "15-20 hours",
+    "status": "📋 Planned",
+    "focus": "Sidebar Navigation & UI/UX Enhancements",
+    "estimated_hours": "20-25 hours",
+    "start_date": "Late January 2026",
     "tasks": [
+      {
+        "collapsible_sidebar_navigation": {
+          "status": "🔄 Planned",
+          "priority": "High - Major UX Improvement",
+          "description": "Implement collapsible left sidebar navigation to replace navbar items and provide better navigation structure",
+          "estimated_hours": "8-10 hours",
+          "benefits": [
+            "More vertical space for navigation items",
+            "Cleaner top bar with just logo, notifications, and user profile",
+            "Better organization with section grouping (User, Admin)",
+            "Professional dashboard appearance",
+            "Mobile-responsive with hamburger menu",
+            "Ability to group features logically"
+          ],
+          "navigation_structure": {
+            "user_section": [
+              "Dashboard (home icon)",
+              "My Sessions (calendar icon)",
+              "My Teams (people icon)",
+              "My Profile (person icon)",
+              "Logout (sign-out icon)"
+            ],
+            "admin_section": [
+              "Divider with 'Admin' label",
+              "User Management (users icon)",
+              "Session Management (calendar-check icon)",
+              "League Management (trophy icon)",
+              "User Registrations (clipboard icon)",
+              "Reports (future - chart icon)"
+            ],
+            "top_navbar_minimal": [
+              "Logo (left side)",
+              "Page title or breadcrumbs (center)",
+              "Notifications bell icon (right)",
+              "User avatar + name dropdown (right)"
+            ]
+          },
+          "technical_implementation": {
+            "frontend": [
+              "Create new sidebar.component.ts and sidebar.html",
+              "Update app.component.html layout structure",
+              "Move navigation items from navbar to sidebar",
+              "Add collapse/expand toggle button",
+              "Store sidebar state in localStorage (collapsed/expanded)",
+              "Add smooth CSS transitions for collapse/expand",
+              "Implement icon-only mode when collapsed",
+              "Add hover tooltips for collapsed state"
+            ],
+            "styling": [
+              "Use Bootstrap grid or flexbox for layout",
+              "Sidebar width: 250px expanded, 60px collapsed",
+              "Fixed position on desktop, overlay on mobile",
+              "z-index management for overlays",
+              "Smooth transitions (0.3s ease)",
+              "Active route highlighting",
+              "Hover effects on menu items"
+            ],
+            "responsive_design": [
+              "Desktop (>992px): Sidebar always visible, can collapse",
+              "Tablet (768-991px): Sidebar collapsed by default, overlay when expanded",
+              "Mobile (<768px): Sidebar hidden, hamburger menu in top navbar, full overlay when open",
+              "Touch gestures: Swipe to open/close on mobile"
+            ],
+            "state_management": [
+              "Create SidebarService with sidebar state signal",
+              "Store collapsed/expanded state in localStorage",
+              "Sync state across components",
+              "Handle route changes (auto-close on mobile after navigation)"
+            ]
+          },
+          "acceptance_criteria": [
+            "Sidebar displays all navigation items with icons",
+            "Collapse/expand toggle works smoothly",
+            "State persists across page refreshes (localStorage)",
+            "Mobile: Hamburger menu opens sidebar as overlay",
+            "Admin section only visible to admin users",
+            "Active route is highlighted",
+            "Tooltips show on collapsed mode hover",
+            "Smooth animations for all state changes",
+            "Works on all screen sizes (responsive)"
+          ]
+        }
+      },
+      {
+        "deferred_week_10_features": {
+          "status": "⏳ Deferred from Week 10",
+          "priority": "Low - Polish Features",
+          "estimated_hours": "4-6 hours",
+          "tasks": [
+            {
+              "admin_user_detail_page": {
+                "priority": "Low",
+                "estimated_hours": "2-3 hours",
+                "features": [
+                  "Click user row to view detailed profile",
+                  "User statistics dashboard (registrations, payments, sessions)",
+                  "Registration history table",
+                  "Payment history table",
+                  "Admin notes section",
+                  "Quick actions (send email, view sessions, delete user)"
+                ],
+                "technical": [
+                  "New route: /admin/users/:userId",
+                  "New component: admin-user-detail.component.ts",
+                  "Backend endpoint: GET /api/admin/users/{userId}/details"
+                ]
+              }
+            },
+            {
+              "team_color_management": {
+                "priority": "Low",
+                "estimated_hours": "1-2 hours",
+                "features": [
+                  "Admin can customize team colors (primary and secondary)",
+                  "Color picker UI in team management",
+                  "Predefined color palette",
+                  "Custom hex code input",
+                  "Live preview on team cards"
+                ],
+                "technical": [
+                  "Database: Add PrimaryColor and SecondaryColor to Teams table",
+                  "Migration: AddTeamColors",
+                  "Backend endpoint: PUT /api/admin/teams/{teamId}/colors",
+                  "Frontend: Color picker component (ngx-color-picker)"
+                ]
+              }
+            },
+            {
+              "footer_enhancement": {
+                "priority": "Low",
+                "estimated_hours": "0.5-1 hour",
+                "features": [
+                  "Professional footer component",
+                  "Contact information section",
+                  "Social media links",
+                  "Quick links",
+                  "Copyright notice",
+                  "Privacy policy and Terms of Service links"
+                ],
+                "technical": [
+                  "New component: footer.component.ts",
+                  "Add to app.component.html",
+                  "Bootstrap grid layout"
+                ]
+              }
+            },
+            {
+              "home_page_polish": {
+                "priority": "Low",
+                "estimated_hours": "1-2 hours",
+                "features": [
+                  "Testimonials section",
+                  "Feature highlights with icons",
+                  "Call-to-action section",
+                  "Statistics section (X players, Y leagues, Z sessions)",
+                  "Newsletter signup form"
+                ],
+                "technical": [
+                  "Update home.html with new sections",
+                  "Add testimonials data structure",
+                  "CSS animations for scroll effects"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "league_standings_statistics": {
+          "status": "🔄 Planned - Original Week 11 Feature",
+          "priority": "Medium",
+          "description": "Add league standings and player statistics tracking",
+          "estimated_hours": "8-10 hours",
+          "deferred_note": "May be pushed to Week 12 if sidebar navigation takes longer",
+          "features": [
+            "League standings table (Win/Loss/Tie records)",
+            "Player statistics (Goals, Assists, Points)",
+            "Team statistics page",
+            "Sortable/filterable tables",
+            "Season leaders boards",
+            "Export to PDF/Excel functionality"
+          ],
+          "technical": [
+            "Database: Add Stats table for player/team statistics",
+            "Backend: Statistics aggregation endpoints",
+            "Frontend: Statistics dashboard components",
+            "Charts and visualizations (Chart.js or similar)"
+          ]
+        }
+      },
+      {
+        "password_confirmation_registration": {
+          "status": "✅ Completed",
+          "priority": "High - Security",
+          "description": "Add password confirmation field to registration form",
+          "completed_date": "January 26, 2026",
+          "features": [
+            "Second password input field",
+            "Custom validator for password matching",
+            "Real-time validation feedback",
+            "Error message: 'Passwords do not match'"
+          ]
+        }
+      },
+      {
+        "login_ui_improvements": {
+          "status": "✅ Completed",
+          "priority": "Medium - UX",
+          "description": "Make login box more compact and screen-friendly",
+          "completed_date": "January 26, 2026",
+          "changes": [
+            "Reduced column width (col-lg-4)",
+            "Reduced padding in header and body",
+            "Smaller icon size (3rem)",
+            "More compact form controls",
+            "Better fits on screen"
+          ]
+        }
+      }
+    ],
+    "priority_order": [
+      "1. Collapsible sidebar navigation (HIGH - Major UX improvement)",
+      "2. Password confirmation on registration (COMPLETED)",
+      "3. Login UI improvements (COMPLETED)",
+      "4. Deferred Week 10 polish features (LOW)",
+      "5. League standings and statistics (MEDIUM - may defer to Week 12)"
+    ],
+    "estimated_completion": "End of Week 11 (early February 2026)",
+    "dependencies": [
+      "Week 10 completion",
+      "Sidebar design decisions finalized",
+      "Icon library selected (Bootstrap Icons or Font Awesome)"
+    ],
+    "notes": [
+      "Sidebar navigation is the primary focus for Week 11",
+      "This is a major UX overhaul that will modernize the application",
+      "Mobile responsiveness is critical - must work on all devices",
+      "Consider user feedback after sidebar implementation",
+      "May need to update all existing routes and navigation logic",
+      "Test thoroughly on different screen sizes",
+      "Ensure keyboard navigation works for accessibility",
+      "Add aria-labels for screen readers",
+      "Consider adding keyboard shortcuts (Ctrl+B to toggle sidebar)",
+      "League standings may be deferred to Week 12 if sidebar takes longer"
+    ],
+    "risks": [
+      "Major layout change may confuse existing users",
+      "Mobile implementation could be complex",
+      "Performance impact of animations on lower-end devices",
+      "May need to refactor existing component layouts"
+    ],
+    "mitigation": [
+      "Test sidebar extensively before deployment",
+      "Provide user guide or tooltip on first login",
+      "Ensure sidebar can be toggled easily",
+      "Optimize animations for performance",
+      "Have rollback plan ready"
+    ]
+  },
       {
         "jwt_authentication_migration": {
           "status": "🔄 Planned",
