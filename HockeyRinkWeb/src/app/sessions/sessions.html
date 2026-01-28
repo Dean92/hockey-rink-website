@@ -86,7 +86,7 @@
             <div class="info-icon"><i class="bi bi-calendar-event"></i></div>
             <div>
               <strong>Start:</strong>
-              {{ session.startDate | date : "mediumDate" }}
+              {{ session.startDate | date : "mediumDate" : "UTC" }}
             </div>
           </div>
           <div class="info-item">

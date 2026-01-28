@@ -204,13 +204,13 @@
                     style="min-width: 80px"
                   >
                     <div class="text-uppercase text-danger fw-bold small">
-                      {{ session.startDate | date : "MMM" }}
+                      {{ session.startDate | date : "MMM" : "UTC" }}
                     </div>
                     <div class="fs-3 fw-bold lh-1">
-                      {{ session.startDate | date : "dd" }}
+                      {{ session.startDate | date : "dd" : "UTC" }}
                     </div>
                     <div class="text-muted small">
-                      {{ session.startDate | date : "EEE" }}
+                      {{ session.startDate | date : "EEE" : "UTC" }}
                     </div>
                   </div>
                 </div>
@@ -278,7 +278,7 @@
                 @for (session of pastSessions(); track session.sessionId) {
                 <tr>
                   <td class="ps-4 text-muted">
-                    {{ session.startDate | date : "MMM d, y" }}
+                    {{ session.startDate | date : "MMM d, y" : "UTC" }}
                   </td>
                   <td class="fw-medium">{{ session.sessionName }}</td>
                   <td>{{ session.leagueName }}</td>
@@ -393,7 +393,10 @@
         <div class="alert alert-warning border-warning">
           <h6 class="fw-bold mb-1">{{ sessionToCancel()!.sessionName }}</h6>
           <small>
-            {{ sessionToCancel()!.startDate | date : "MMMM d, y 'at' h:mm a" }}
+            {{
+              sessionToCancel()!.startDate
+                | date : "MMMM d, y 'at' h:mm a" : "UTC"
+            }}
           </small>
         </div>
         <p class="text-muted small mb-0">

@@ -127,7 +127,7 @@
             @for (session of sessions(); track session.id) {
             <option [value]="session.id" [disabled]="session.isFull">
               {{ session.name }} - {{ session.league?.name }} ({{
-                session.startDate | date : "short"
+                session.startDate | date : "short" : "UTC"
               }}) @if (session.isFull) { - FULL } @else if (session.spotsLeft
               !== undefined && session.spotsLeft <= 5) { - Only
               {{ session.spotsLeft }} spots left! } - ${{
@@ -273,7 +273,8 @@
           </div>
         </div>
 
-        <!-- Hockey Position -->
+        <!-- Hockey Position (Only for League Sessions) -->
+        @if (isLeagueSession()) {
         <div class="mb-4">
           <label for="position" class="form-label">Preferred Position</label>
           <select formControlName="position" class="form-select" id="position">
@@ -287,6 +288,7 @@
             >This helps organizers plan team rosters</small
           >
         </div>
+        }
 
         <!-- Emergency Contact Section -->
         <h5 class="mb-3 text-secondary mt-4">
@@ -371,7 +373,7 @@
           </p>
           <p class="mb-1">
             <strong>Date:</strong>
-            {{ selectedSession()?.startDate | date : "medium" }}
+            {{ selectedSession()?.startDate | date : "medium" : "UTC" }}
           </p>
           @if (selectedSession()?.spotsLeft !== undefined) {
           <p class="mb-1">
@@ -433,7 +435,7 @@
           </p>
           <p class="mb-2">
             <strong>Start Date:</strong>
-            {{ selectedSession()?.startDate | date : "mediumDate" }}
+            {{ selectedSession()?.startDate | date : "mediumDate" : "UTC" }}
           </p>
           <p class="mb-2">
             <strong>End Date:</strong>
