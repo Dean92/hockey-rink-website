@@ -66,7 +66,7 @@ export class AdminSessions implements OnInit {
     if (!term) return this.registrations();
 
     return this.registrations().filter((reg) =>
-      reg.name.toLowerCase().includes(term)
+      reg.name.toLowerCase().includes(term),
     );
   });
 
@@ -80,13 +80,16 @@ export class AdminSessions implements OnInit {
 
   registrationsTotalPages = computed(() => {
     return Math.ceil(
-      this.filteredRegistrations().length / this.registrationsPageSize
+      this.filteredRegistrations().length / this.registrationsPageSize,
     );
   });
   passwordSetupLink = signal<string | null>(null);
   jerseyConflictError = signal<string | null>(null);
 
-  constructor(private dataService: DataService, private fb: FormBuilder) {
+  constructor(
+    private dataService: DataService,
+    private fb: FormBuilder,
+  ) {
     // Reset to page 1 when search term changes
     effect(() => {
       this.registrationsSearchTerm(); // Track search term changes
@@ -95,8 +98,11 @@ export class AdminSessions implements OnInit {
 
     this.sessionForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
+      description: ['', Validators.maxLength(200)],
       startDate: ['', Validators.required],
+      startTime: [''],
       endDate: ['', Validators.required],
+      endTime: [''],
       fee: [0],
       isActive: [false],
       draftEnabled: [false],
@@ -189,6 +195,8 @@ export class AdminSessions implements OnInit {
       earlyBirdPrice: null,
       earlyBirdEndDate: '',
       regularPrice: 0,
+      startTime: '',
+      endTime: '',
     });
     this.showModal.set(true);
     this.errorMessage.set(null);
@@ -200,8 +208,11 @@ export class AdminSessions implements OnInit {
     this.currentSessionId = session.id;
     this.sessionForm.patchValue({
       name: session.name,
+      description: session.description || '',
       startDate: this.formatDateForInput(session.startDate),
+      startTime: session.startTime || '',
       endDate: this.formatDateForInput(session.endDate),
+      endTime: session.endTime || '',
       fee: session.fee,
       isActive: session.isActive,
       draftEnabled: session.draftEnabled || false,
@@ -242,20 +253,25 @@ export class AdminSessions implements OnInit {
 
     const formData = this.sessionForm.value;
 
-    // Helper function to convert local datetime-local input to UTC ISO string
-    const toUTC = (dateTimeLocal: string | null): string | undefined => {
+    // Helper function to format datetime-local input for backend
+    // Keep as local time, don't convert to UTC
+    const formatDateTime = (
+      dateTimeLocal: string | null,
+    ): string | undefined => {
       if (!dateTimeLocal) return undefined;
-      // datetime-local gives us a string like "2025-12-16T16:20"
-      // We need to treat this as local time and convert to UTC
-      const localDate = new Date(dateTimeLocal);
-      return localDate.toISOString();
+      // datetime-local gives us "2026-01-30T19:04"
+      // Return it as-is with seconds appended
+      return dateTimeLocal + ':00';
     };
 
-    // Convert empty strings to null for datetime fields and convert to UTC
+    // Convert empty strings to null for datetime fields
     const cleanedData = {
       name: formData.name,
+      description: formData.description || undefined,
       startDate: formData.startDate,
+      startTime: formData.startTime || undefined,
       endDate: formData.endDate,
+      endTime: formData.endTime || undefined,
       fee: Number(formData.fee) || 0,
       isActive: Boolean(formData.isActive),
       draftEnabled: Boolean(formData.draftEnabled),
@@ -264,12 +280,12 @@ export class AdminSessions implements OnInit {
           ? undefined
           : Number(formData.leagueId),
       maxPlayers: Number(formData.maxPlayers) || 20,
-      registrationOpenDate: toUTC(formData.registrationOpenDate),
-      registrationCloseDate: toUTC(formData.registrationCloseDate),
+      registrationOpenDate: formatDateTime(formData.registrationOpenDate),
+      registrationCloseDate: formatDateTime(formData.registrationCloseDate),
       earlyBirdPrice: formData.earlyBirdPrice
         ? Number(formData.earlyBirdPrice)
         : undefined,
-      earlyBirdEndDate: toUTC(formData.earlyBirdEndDate),
+      earlyBirdEndDate: formatDateTime(formData.earlyBirdEndDate),
       regularPrice: Number(formData.regularPrice) || 0,
     };
 
@@ -280,7 +296,7 @@ export class AdminSessions implements OnInit {
         .subscribe({
           next: (response) => {
             this.successMessage.set(
-              response.message || 'Session updated successfully'
+              response.message || 'Session updated successfully',
             );
             this.isLoading.set(false);
             this.closeModal();
@@ -290,7 +306,7 @@ export class AdminSessions implements OnInit {
             console.error('Error updating session:', err);
             const sessionName = this.sessionForm.get('name')?.value;
             this.errorMessage.set(
-              err.error?.message || `Failed to update session "${sessionName}"`
+              err.error?.message || `Failed to update session "${sessionName}"`,
             );
             this.isLoading.set(false);
           },
@@ -300,7 +316,7 @@ export class AdminSessions implements OnInit {
       this.dataService.createSession(cleanedData).subscribe({
         next: (response) => {
           this.successMessage.set(
-            response.message || 'Session created successfully'
+            response.message || 'Session created successfully',
           );
           this.isLoading.set(false);
           this.closeModal();
@@ -309,7 +325,7 @@ export class AdminSessions implements OnInit {
         error: (err) => {
           console.error('Error creating session:', err);
           this.errorMessage.set(
-            err.error?.message || 'Failed to create session'
+            err.error?.message || 'Failed to create session',
           );
           this.isLoading.set(false);
         },
@@ -366,24 +382,11 @@ export class AdminSessions implements OnInit {
   }
 
   formatDateTimeForInput(dateString: string): string {
-    // Ensure the date string is treated as UTC by appending 'Z' if it doesn't have timezone info
-    let utcString = dateString;
-    if (
-      !dateString.endsWith('Z') &&
-      !dateString.includes('+') &&
-      !dateString.includes('T')
-    ) {
-      // If it's just a date without time, don't modify
-      return dateString;
-    }
-    if (!dateString.endsWith('Z') && !dateString.includes('+')) {
-      // Add 'Z' to indicate UTC if not present
-      utcString = dateString + 'Z';
-    }
+    // The backend now stores dates as local time, not UTC
+    // So we parse them as-is without timezone conversion
+    const date = new Date(dateString);
 
-    const date = new Date(utcString);
-
-    // Return YYYY-MM-DDTHH:mm format for datetime-local inputs in local time
+    // Return YYYY-MM-DDTHH:mm format for datetime-local inputs
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -400,7 +403,7 @@ export class AdminSessions implements OnInit {
     if (cleaned.length === 10) {
       return `(${cleaned.substring(0, 3)}) ${cleaned.substring(
         3,
-        6
+        6,
       )}-${cleaned.substring(6)}`;
     }
     return phone; // Return original if not 10 digits
@@ -500,7 +503,7 @@ export class AdminSessions implements OnInit {
         .updateRegistration(
           current.id,
           this.currentRegistrationId,
-          this.manualRegistrationForm.value
+          this.manualRegistrationForm.value,
         )
         .subscribe({
           next: () => {
@@ -543,7 +546,7 @@ export class AdminSessions implements OnInit {
               const setupLink = `${window.location.origin}/setup-password/${response.passwordSetupToken}`;
               this.passwordSetupLink.set(setupLink);
               this.successMessage.set(
-                `User successfully added! New user needs to set up their password.`
+                `User successfully added! New user needs to set up their password.`,
               );
               // Copy to clipboard
               navigator.clipboard
@@ -573,7 +576,7 @@ export class AdminSessions implements OnInit {
           error: (err) => {
             console.error('Error adding manual registration:', err);
             this.errorMessage.set(
-              err.error?.message || 'Failed to add user to session'
+              err.error?.message || 'Failed to add user to session',
             );
             this.isLoading.set(false);
           },
@@ -608,7 +611,7 @@ export class AdminSessions implements OnInit {
   currentRegistrationHasTeam(): boolean {
     const registrations = this.registrations();
     const currentReg = registrations.find(
-      (r) => r.id === this.currentRegistrationId
+      (r) => r.id === this.currentRegistrationId,
     );
     return currentReg?.assignedTeam != null;
   }
@@ -635,7 +638,7 @@ export class AdminSessions implements OnInit {
     this.dataService.removeRegistration(current.id, regToRemove.id).subscribe({
       next: () => {
         this.successMessage.set(
-          `${regToRemove.name} successfully removed from ${current.name}`
+          `${regToRemove.name} successfully removed from ${current.name}`,
         );
         this.closeRemoveConfirmModal();
         // Reload registrations first to update the modal, then reload sessions
@@ -649,7 +652,7 @@ export class AdminSessions implements OnInit {
       error: (err) => {
         console.error('Error removing registration:', err);
         this.errorMessage.set(
-          err.error?.message || 'Failed to remove user from session'
+          err.error?.message || 'Failed to remove user from session',
         );
         this.isLoading.set(false);
       },
@@ -673,5 +676,55 @@ export class AdminSessions implements OnInit {
           console.error('Failed to copy to clipboard');
         });
     }
+  }
+
+  // Date-based registration status methods
+  isRegistrationOpen(session: Session): boolean {
+    const currentDate = new Date();
+    const registrationOpen = session.registrationOpenDate
+      ? new Date(session.registrationOpenDate)
+      : null;
+    const registrationClose = session.registrationCloseDate
+      ? new Date(session.registrationCloseDate)
+      : null;
+
+    const hasOpened = !registrationOpen || registrationOpen <= currentDate;
+    const hasNotClosed = !registrationClose || registrationClose > currentDate;
+
+    return hasOpened && hasNotClosed;
+  }
+
+  isRegistrationOpeningSoon(session: Session): boolean {
+    const currentDate = new Date();
+    const registrationOpen = session.registrationOpenDate
+      ? new Date(session.registrationOpenDate)
+      : null;
+
+    return !!registrationOpen && registrationOpen > currentDate;
+  }
+
+  isRegistrationClosed(session: Session): boolean {
+    const currentDate = new Date();
+    const registrationClose = session.registrationCloseDate
+      ? new Date(session.registrationCloseDate)
+      : null;
+
+    return !!registrationClose && registrationClose <= currentDate;
+  }
+
+  getRegistrationDateStatus(session: Session): {
+    label: string;
+    class: string;
+  } {
+    if (this.isRegistrationClosed(session)) {
+      return { label: 'Closed', class: 'badge bg-danger' };
+    }
+    if (this.isRegistrationOpeningSoon(session)) {
+      return { label: 'Opening Soon', class: 'badge bg-info' };
+    }
+    if (this.isRegistrationOpen(session)) {
+      return { label: 'Open', class: 'badge bg-success' };
+    }
+    return { label: 'Not Set', class: 'badge bg-secondary' };
   }
 }

@@ -117,8 +117,11 @@ public class SessionsController : ControllerBase
             {
                 s.Id,
                 s.Name,
+                s.Description,
                 s.StartDate,
+                s.StartTime,
                 s.EndDate,
+                s.EndTime,
                 s.Fee,
                 s.IsActive,
                 s.MaxPlayers,

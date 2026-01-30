@@ -257,8 +257,11 @@ public class AdminController : ControllerBase
                 {
                     s.Id,
                     s.Name,
+                    s.Description,
                     s.StartDate,
+                    s.StartTime,
                     s.EndDate,
+                    s.EndTime,
                     s.Fee,
                     s.IsActive,
                     s.DraftEnabled,
@@ -366,8 +369,11 @@ public class AdminController : ControllerBase
             var session = new Session
             {
                 Name = model.Name,
+                Description = model.Description,
                 StartDate = model.StartDate,
+                StartTime = model.StartTime,
                 EndDate = model.EndDate,
+                EndTime = model.EndTime,
                 Fee = model.RegularPrice ?? model.Fee, // Use RegularPrice as Fee if provided
                 IsActive = isActive,
                 DraftEnabled = model.DraftEnabled,
@@ -435,8 +441,11 @@ public class AdminController : ControllerBase
             );
 
             session.Name = model.Name;
+            session.Description = model.Description;
             session.StartDate = model.StartDate;
+            session.StartTime = model.StartTime;
             session.EndDate = model.EndDate;
+            session.EndTime = model.EndTime;
             session.Fee = model.RegularPrice ?? model.Fee; // Use RegularPrice as Fee if provided
 
             // Respect admin's manual status setting
@@ -1273,6 +1282,7 @@ public class PublishDraftModel
 public class CreateSessionModel
 {
     public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public decimal Fee { get; set; }
@@ -1285,11 +1295,14 @@ public class CreateSessionModel
     public decimal? EarlyBirdPrice { get; set; }
     public DateTime? EarlyBirdEndDate { get; set; }
     public decimal? RegularPrice { get; set; }
+    public TimeSpan? StartTime { get; set; }
+    public TimeSpan? EndTime { get; set; }
 }
 
 public class UpdateSessionModel
 {
     public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public decimal Fee { get; set; }
@@ -1302,6 +1315,8 @@ public class UpdateSessionModel
     public decimal? EarlyBirdPrice { get; set; }
     public DateTime? EarlyBirdEndDate { get; set; }
     public decimal? RegularPrice { get; set; }
+    public TimeSpan? StartTime { get; set; }
+    public TimeSpan? EndTime { get; set; }
 }
 
 public class UpdateLeagueModel

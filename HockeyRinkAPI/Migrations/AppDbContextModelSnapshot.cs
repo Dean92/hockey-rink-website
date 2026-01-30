@@ -364,6 +364,9 @@ namespace HockeyRinkAPI.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("DraftEnabled")
                         .HasColumnType("bit");
 
@@ -379,6 +382,9 @@ namespace HockeyRinkAPI.Migrations
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<TimeSpan?>("EndTime")
+                        .HasColumnType("time");
 
                     b.Property<decimal>("Fee")
                         .HasPrecision(10, 2)
@@ -412,6 +418,9 @@ namespace HockeyRinkAPI.Migrations
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<TimeSpan?>("StartTime")
+                        .HasColumnType("time");
 
                     b.HasKey("Id");
 

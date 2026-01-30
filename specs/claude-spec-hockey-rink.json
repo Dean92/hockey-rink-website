@@ -2879,6 +2879,94 @@
         }
       },
       {
+        "league_management_crud": {
+          "status": "🔄 Planned",
+          "priority": "High",
+          "description": "Admin can create, edit, and delete leagues; newly created leagues show as 'Coming Soon' on public leagues page",
+          "estimated_hours": "6-8 hours",
+          "features": [
+            "Admin create league",
+            "Admin edit league",
+            "Admin delete league with confirmation",
+            "Coming Soon status on leagues page for new leagues"
+          ],
+          "implementation_notes": [
+            "Use registrationOpenDate to determine Coming Soon",
+            "If registrationOpenDate is in the future => Coming Soon",
+            "If missing, fall back to future startDate",
+            "Ensure delete checks for dependent sessions/registrations"
+          ],
+          "backend": [
+            "POST /api/admin/leagues",
+            "PUT /api/admin/leagues/{id}",
+            "DELETE /api/admin/leagues/{id}"
+          ],
+          "frontend": [
+            "Admin leagues management UI (table + modal form)",
+            "Public leagues page Coming Soon badge"
+          ],
+          "acceptance_criteria": [
+            "Admin can create, edit, delete leagues",
+            "Public leagues page shows Coming Soon for new leagues",
+            "Validations and error states handled"
+          ]
+        }
+      },
+      {
+        "rink_scheduler": {
+          "status": "🔄 Planned",
+          "priority": "High",
+          "description": "Rink-wide scheduling system with availability view and league schedule generator",
+          "estimated_hours": "10-14 hours",
+          "features": [
+            "Availability calendar (available/unavailable ice time)",
+            "League schedule generator with constraints",
+            "Admin override of schedule",
+            "Multi-rink support"
+          ],
+          "inputs": [
+            "Daily time frame (12:00am–11:59pm)",
+            "Game length (minutes)",
+            "Exclude dates and fixed US holidays (admin-managed exclusions)",
+            "Rink count (number of rinks)",
+            "League-specific scheduling windows"
+          ],
+          "technical": [
+            "New scheduler UI (calendar + generator form)",
+            "Schedule generation logic",
+            "Conflict detection with existing sessions",
+            "Manual override and save"
+          ],
+          "acceptance_criteria": [
+            "Admin can view availability calendar",
+            "Admin can generate schedule with constraints",
+            "Admin can exclude holidays and dates",
+            "Admin can override schedule entries",
+            "Supports multiple rinks"
+          ]
+        }
+      },
+      {
+        "sessions_page_polish": {
+          "status": "🔄 Planned",
+          "priority": "Medium",
+          "description": "UI/UX refinements for public sessions page",
+          "estimated_hours": "2-4 hours",
+          "features": [
+            "Card layout refinements",
+            "Status badges (Open, Opening Soon, Full)",
+            "Improved spacing/typography",
+            "Mobile responsiveness improvements",
+            "CTA visibility improvements"
+          ],
+          "acceptance_criteria": [
+            "Sessions page looks polished on desktop and mobile",
+            "Status badges clearly visible",
+            "Improved readability and hierarchy"
+          ]
+        }
+      },
+      {
         "deferred_week_10_features": {
           "status": "⏳ Deferred from Week 10",
           "priority": "Low - Polish Features",
@@ -3017,10 +3105,13 @@
     ],
     "priority_order": [
       "1. Collapsible sidebar navigation (HIGH - Major UX improvement)",
-      "2. Password confirmation on registration (COMPLETED)",
-      "3. Login UI improvements (COMPLETED)",
-      "4. Deferred Week 10 polish features (LOW)",
-      "5. League standings and statistics (MEDIUM - may defer to Week 12)"
+      "2. League management CRUD + Coming Soon (HIGH)",
+      "3. Rink scheduler (HIGH)",
+      "4. Sessions page polish (MEDIUM)",
+      "5. Password confirmation on registration (COMPLETED)",
+      "6. Login UI improvements (COMPLETED)",
+      "7. Deferred Week 10 polish features (LOW)",
+      "8. League standings and statistics (MEDIUM - may defer to Week 12)"
     ],
     "estimated_completion": "End of Week 11 (early February 2026)",
     "dependencies": [
@@ -3030,6 +3121,9 @@
     ],
     "notes": [
       "Sidebar navigation is the primary focus for Week 11",
+      "League management CRUD and Coming Soon status are required for admin workflows",
+      "Rink scheduler introduces scheduling constraints and availability visibility",
+      "Sessions page polish is a UX refinement for public users",
       "This is a major UX overhaul that will modernize the application",
       "Mobile responsiveness is critical - must work on all devices",
       "Consider user feedback after sidebar implementation",

@@ -18,8 +18,11 @@ export interface League {
 export interface Session {
   id: number;
   name: string;
+  description?: string;
   startDate: string;
+  startTime?: string;
   endDate: string;
+  endTime?: string;
   fee: number;
   isActive: boolean;
   createdAt: string;

@@ -14,236 +14,301 @@
   </div>
 </div>
 
-<div class="container pb-5">
-  <!-- Error Alert -->
-  @if (errorMessage()) {
-  <div
-    class="alert alert-danger shadow-sm rounded-3 border-0 mb-4 d-flex align-items-center"
-  >
-    <i class="bi bi-exclamation-triangle-fill me-2 fs-4"></i>
-    <div>{{ errorMessage() }}</div>
-  </div>
-  }
-
-  <!-- Loading State -->
-  @if (isLoading()) {
-  <div class="text-center py-5">
-    <div
-      class="spinner-border text-primary"
-      role="status"
-      style="width: 3rem; height: 3rem"
-    >
-      <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="mt-3 text-muted">Loading sessions...</p>
-  </div>
-  } @else { @if (sessions().length) {
-  <div class="row g-4 mt-4">
-    @for (session of sessions(); track session.id) {
-    <div class="col-lg-4 col-md-6">
+<div class="sessions-content">
+  <div class="container pb-5">
+    <!-- Error Alert -->
+    @if (errorMessage()) {
       <div
-        class="card session-card h-100 shadow-sm border-0"
-        [class.preferred-league]="isUserPreferredLeague(session)"
+        class="alert alert-danger shadow-sm rounded-3 border-0 mb-4 d-flex align-items-center"
       >
-        <!-- Opening Soon Badge - Top of Card -->
-        @if (isRegistrationOpeningSoon(session)) {
-        <div class="card-header bg-info text-white border-0 py-2">
-          <div class="d-flex align-items-center justify-content-center">
-            <i class="bi bi-clock-fill me-2"></i>
-            <span class="fw-semibold small"
-              >Registration Opens
-              {{ session.registrationOpenDate | date : "MMM d, y" }}</span
-            >
-          </div>
-        </div>
-        }
-
-        <!-- Starting Soon Badge - Top of Card -->
-        @if (isSessionStartingSoon(session)) {
-        <div class="card-header bg-warning text-dark border-0 py-2">
-          <div class="d-flex align-items-center justify-content-center">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <span class="fw-semibold small"
-              >Starting Soon - Registration Closed</span
-            >
-          </div>
-        </div>
-        }
-
-        <div class="session-card-header">
-          <div class="session-league-badge">
-            {{ session.league?.name || "Open Session" }}
-            @if (isUserPreferredLeague(session)) {
-            <i class="bi bi-star-fill ms-1" title="Your League"></i>
-            }
-          </div>
-          <h5 class="session-card-title">{{ session.name }}</h5>
-        </div>
-
-        <div class="session-card-body">
-          <!-- Dates -->
-          <div class="info-item">
-            <div class="info-icon"><i class="bi bi-calendar-event"></i></div>
-            <div>
-              <strong>Start:</strong>
-              {{ session.startDate | date : "mediumDate" : "UTC" }}
-            </div>
-          </div>
-          <div class="info-item">
-            <div class="info-icon"><i class="bi bi-calendar-check"></i></div>
-            <div>
-              <strong>End:</strong> {{ session.endDate | date : "mediumDate" }}
-            </div>
-          </div>
-
-          <!-- Registration Dates -->
-          @if (session.registrationOpenDate) {
-          <div class="info-item">
-            <div class="info-icon"><i class="bi bi-door-open"></i></div>
-            <div>
-              <span class="d-block text-muted small">Registration Opens</span>
-              {{ session.registrationOpenDate | date : "mediumDate" }}
-            </div>
-          </div>
-          } @if (session.registrationCloseDate) {
-          <div class="info-item">
-            <div class="info-icon"><i class="bi bi-door-closed"></i></div>
-            <div>
-              <span class="d-block text-muted small">Registration Closes</span>
-              {{ session.registrationCloseDate | date : "mediumDate" }}
-            </div>
-          </div>
-          }
-
-          <!-- Capacity -->
-          @if (session.maxPlayers) {
-          <div class="info-item mt-3">
-            <div class="info-icon"><i class="bi bi-people"></i></div>
-            <div class="w-100">
-              <div class="d-flex justify-content-between mb-1">
-                <span>Capacity</span>
-                <span class="fw-bold"
-                  >{{ session.registrationCount || 0 }}/{{
-                    session.maxPlayers
-                  }}</span
-                >
-              </div>
-              <div class="progress" style="height: 6px">
-                <div
-                  class="progress-bar"
-                  role="progressbar"
-                  [style.width.%]="
-                    ((session.registrationCount || 0) / session.maxPlayers) *
-                    100
-                  "
-                  [class.bg-success]="
-                    (session.registrationCount || 0) / session.maxPlayers < 0.8
-                  "
-                  [class.bg-warning]="
-                    (session.registrationCount || 0) / session.maxPlayers >=
-                      0.8 &&
-                    (session.registrationCount || 0) / session.maxPlayers < 1
-                  "
-                  [class.bg-danger]="
-                    (session.registrationCount || 0) / session.maxPlayers >= 1
-                  "
-                ></div>
-              </div>
-            </div>
-          </div>
-          }
-
-          <!-- Status Badge (Active/Inactive) -->
-          <div class="info-item mt-3">
-            <div class="info-icon"><i class="bi bi-info-circle"></i></div>
-            <div>
-              <strong>Status: </strong>
-              <span
-                [class]="
-                  session.isActive ? 'badge bg-success' : 'badge bg-secondary'
-                "
-              >
-                {{ session.isActive ? "Active" : "Inactive" }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="session-card-footer d-block">
-          @if (isRegistrationOpen(session)) {
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="price-display">
-              @if (isEarlyBirdActive(session)) {
-              <span class="price-label text-success">Early Bird</span>
-              <span class="price-value text-success"
-                >${{ session.earlyBirdPrice }}</span
-              >
-              <small
-                class="text-muted"
-                style="font-size: 0.7rem; display: block"
-                >Ends
-                {{
-                  session.earlyBirdEndDate | date : "MMM d, y 'at' h:mm a"
-                }}</small
-              >
-              @if (session.regularPrice) {
-              <small
-                class="text-muted fw-bold"
-                style="font-size: 0.85rem; display: block; margin-top: 0.25rem"
-                >Regular Price: ${{ session.regularPrice }}</small
-              >
-              } } @else if (session.regularPrice) {
-              <span class="price-label">Price</span>
-              <span class="price-value">${{ session.regularPrice }}</span>
-              } @else {
-              <span class="price-label">Fee</span>
-              <span class="price-value">${{ session.fee }}</span>
-              }
-            </div>
-
-            @if (session.spotsLeft !== undefined && session.spotsLeft > 0) {
-            <span
-              [class]="
-                session.spotsLeft <= 5
-                  ? 'badge bg-warning text-dark spots-badge'
-                  : 'badge bg-success spots-badge'
-              "
-            >
-              @if (session.spotsLeft <= 5) { {{ session.spotsLeft }} Left! }
-              @else { Open }
-            </span>
-            }
-          </div>
-          }
-
-          <!-- Action Buttons -->
-          <div class="d-grid">
-            @if (session.isActive && !session.isFull) {
-            <a
-              [routerLink]="['/session-registration']"
-              [queryParams]="{ sessionId: session.id }"
-              class="btn btn-primary fw-bold"
-            >
-              Register Now
-            </a>
-            } @else if (session.isFull) {
-            <button class="btn btn-secondary" disabled>Session Full</button>
-            } @else {
-            <button class="btn btn-outline-secondary" disabled>
-              Registration Closed
-            </button>
-            }
-          </div>
-        </div>
+        <i class="bi bi-exclamation-triangle-fill me-2 fs-4"></i>
+        <div>{{ errorMessage() }}</div>
       </div>
-    </div>
+    }
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="text-center py-5">
+        <div
+          class="spinner-border text-primary"
+          role="status"
+          style="width: 3rem; height: 3rem"
+        >
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 text-muted">Loading sessions...</p>
+      </div>
+    } @else {
+      @if (sessions().length) {
+        <div class="row g-4 mt-4">
+          @for (session of sessions(); track session.id) {
+            <div class="col-lg-4 col-md-6">
+              <div
+                class="card session-card h-100 shadow-sm border-0"
+                [class.preferred-league]="isUserPreferredLeague(session)"
+              >
+                <div class="session-card-header">
+                  <!-- Status Badge at Top -->
+                  <div
+                    class="d-flex justify-content-between align-items-start mb-2"
+                  >
+                    <div class="session-league-badge">
+                      {{ session.league?.name || "Open Session" }}
+                      @if (isUserPreferredLeague(session)) {
+                        <i class="bi bi-star-fill ms-1" title="Your League"></i>
+                      }
+                    </div>
+                    <span
+                      class="badge session-status-badge"
+                      [ngClass]="getSessionStatus(session).class"
+                    >
+                      <i
+                        [class]="
+                          'bi ' + getSessionStatus(session).icon + ' me-1'
+                        "
+                      ></i>
+                      {{ getSessionStatus(session).label }}
+                    </span>
+                  </div>
+                  <h5 class="session-card-title mb-1">{{ session.name }}</h5>
+                  @if (session.description) {
+                    <p class="text-muted small mb-1 fst-italic">
+                      <i class="bi bi-info-circle me-1"></i
+                      >{{ session.description }}
+                    </p>
+                  }
+                  <!-- Registration Opens Date if applicable -->
+                  @if (isRegistrationOpeningSoon(session)) {
+                    <p class="text-muted small mb-0">
+                      <i class="bi bi-clock me-1"></i>Opens
+                      {{ session.registrationOpenDate | date: "MMM d, y" }}
+                    </p>
+                  }
+                </div>
+
+                <div class="session-card-body">
+                  <!-- Dates -->
+                  <div class="info-item">
+                    <div class="info-icon">
+                      <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <div>
+                      <strong>Start:</strong>
+                      {{ session.startDate | date: "mediumDate" : "UTC" }}
+                      @if (session.startTime) {
+                        <span class="ms-1">
+                          {{ formatTime(session.startTime) }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-icon">
+                      <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <div>
+                      <strong>End:</strong>
+                      {{ session.endDate | date: "mediumDate" }}
+                      @if (session.endTime) {
+                        <span class="ms-1">
+                          {{ formatTime(session.endTime) }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Registration Dates -->
+                  @if (session.registrationOpenDate) {
+                    <div class="info-item">
+                      <div class="info-icon">
+                        <i class="bi bi-door-open"></i>
+                      </div>
+                      <div>
+                        <span class="d-block text-muted small"
+                          >Registration Opens</span
+                        >
+                        {{ session.registrationOpenDate | date: "mediumDate" }}
+                      </div>
+                    </div>
+                  }
+                  @if (session.registrationCloseDate) {
+                    <div class="info-item">
+                      <div class="info-icon">
+                        <i class="bi bi-door-closed"></i>
+                      </div>
+                      <div>
+                        <span class="d-block text-muted small"
+                          >Registration Closes</span
+                        >
+                        {{ session.registrationCloseDate | date: "mediumDate" }}
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Capacity with Better Visual -->
+                  @if (session.maxPlayers) {
+                    <div class="capacity-container mt-3">
+                      <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-people-fill text-primary me-2"></i>
+                        <div class="flex-grow-1">
+                          <div class="d-flex justify-content-between">
+                            <span class="fw-semibold">Registration</span>
+                            <span class="fw-bold text-primary"
+                              >{{ session.registrationCount || 0 }}/{{
+                                session.maxPlayers
+                              }}</span
+                            >
+                          </div>
+                        </div>
+                      </div>
+                      <div class="progress" style="height: 8px">
+                        <div
+                          class="progress-bar"
+                          role="progressbar"
+                          [style.width.%]="
+                            ((session.registrationCount || 0) /
+                              session.maxPlayers) *
+                            100
+                          "
+                          [class.bg-success]="
+                            (session.registrationCount || 0) /
+                              session.maxPlayers <
+                            0.8
+                          "
+                          [class.bg-warning]="
+                            (session.registrationCount || 0) /
+                              session.maxPlayers >=
+                              0.8 &&
+                            (session.registrationCount || 0) /
+                              session.maxPlayers <
+                              1
+                          "
+                          [class.bg-danger]="
+                            (session.registrationCount || 0) /
+                              session.maxPlayers >=
+                            1
+                          "
+                        ></div>
+                      </div>
+                      @if (
+                        session.spotsLeft !== undefined &&
+                        session.spotsLeft > 0 &&
+                        session.spotsLeft <= 5
+                      ) {
+                        <p class="text-warning small mb-0 mt-1 fw-semibold">
+                          <i class="bi bi-exclamation-circle-fill me-1"></i>Only
+                          {{ session.spotsLeft }} spot{{
+                            session.spotsLeft === 1 ? "" : "s"
+                          }}
+                          left!
+                        </p>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <div class="session-card-footer d-block">
+                  <!-- Pricing Section -->
+                  @if (isRegistrationOpen(session)) {
+                    <div class="price-section mb-3">
+                      @if (isEarlyBirdActive(session)) {
+                        <div
+                          class="d-flex align-items-start justify-content-between mb-2"
+                        >
+                          <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                              <span
+                                class="badge bg-success-subtle text-success border border-success-subtle me-2"
+                              >
+                                <i class="bi bi-tag-fill me-1"></i>Early Bird
+                              </span>
+                              @if (session.earlyBirdEndDate) {
+                                <small class="text-muted">
+                                  Ends
+                                  {{ session.earlyBirdEndDate | date: "MMM d" }}
+                                </small>
+                              }
+                            </div>
+                            <div class="d-flex align-items-baseline gap-2">
+                              <span
+                                class="price-value text-success fw-bold"
+                                style="font-size: 2rem"
+                              >
+                                ${{ session.earlyBirdPrice }}
+                              </span>
+                              @if (session.regularPrice) {
+                                <span
+                                  class="text-muted text-decoration-line-through"
+                                  style="font-size: 1.1rem"
+                                >
+                                  ${{ session.regularPrice }}
+                                </span>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      } @else if (session.regularPrice) {
+                        <div>
+                          <span class="price-label d-block"
+                            >Registration Fee</span
+                          >
+                          <span class="price-value"
+                            >${{ session.regularPrice }}</span
+                          >
+                        </div>
+                      } @else {
+                        <div>
+                          <span class="price-label d-block"
+                            >Registration Fee</span
+                          >
+                          <span class="price-value">${{ session.fee }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <!-- Action Button -->
+                  <div class="d-grid">
+                    @if (
+                      session.isActive &&
+                      !session.isFull &&
+                      isRegistrationOpen(session)
+                    ) {
+                      <a
+                        [routerLink]="['/session-registration']"
+                        [queryParams]="{ sessionId: session.id }"
+                        class="btn btn-primary btn-lg fw-bold register-btn"
+                      >
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Register
+                        Now
+                      </a>
+                    } @else if (session.isFull) {
+                      <button class="btn btn-danger btn-lg" disabled>
+                        <i class="bi bi-x-circle me-2"></i>Session Full
+                      </button>
+                    } @else if (isRegistrationOpeningSoon(session)) {
+                      <button class="btn btn-info btn-lg text-white" disabled>
+                        <i class="bi bi-clock me-2"></i>Opens
+                        {{ session.registrationOpenDate | date: "MMM d" }}
+                      </button>
+                    } @else {
+                      <button class="btn btn-secondary btn-lg" disabled>
+                        <i class="bi bi-lock me-2"></i>Registration Closed
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-calendar-x display-1 mb-3 d-block opacity-25"></i>
+          <h4>No sessions found</h4>
+          <p>Try adjusting your filters to see more results.</p>
+        </div>
+      }
     }
   </div>
-  } @else {
-  <div class="text-center py-5 text-muted">
-    <i class="bi bi-calendar-x display-1 mb-3 d-block opacity-25"></i>
-    <h4>No sessions found</h4>
-    <p>Try adjusting your filters to see more results.</p>
-  </div>
-  } }
 </div>
