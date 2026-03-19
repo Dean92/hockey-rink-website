@@ -185,7 +185,7 @@
     {
       "id": 5,
       "name": "Introduce Repository Pattern",
-      "status": "todo",
+      "status": "✅ complete",
       "goal": "Abstract all direct AppDbContext calls behind repository interfaces so controllers depend on abstractions, enabling true unit testing without InMemoryDatabase.",
       "solid_principles": ["DIP", "SRP"],
       "risk": "Medium — touches all controllers; build after each repository to catch errors early",

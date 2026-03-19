@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using HockeyRinkAPI.Data;
 using HockeyRinkAPI.Models;
 using HockeyRinkAPI.Models.Requests;
+using HockeyRinkAPI.Repositories;
 using HockeyRinkAPI.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,13 +23,21 @@ public class AdminController : ControllerBase
     private readonly ILogger<AdminController> _logger;
     private readonly ITokenService _tokenService;
     private readonly ISessionActivationService _sessionActivationService;
+    private readonly ISessionRepository _sessionRepository;
+    private readonly IRegistrationRepository _registrationRepository;
+    private readonly ILeagueRepository _leagueRepository;
+    private readonly IPaymentRepository _paymentRepository;
 
     public AdminController(
         AppDbContext dbContext,
         UserManager<ApplicationUser> userManager,
         ILogger<AdminController> logger,
         ITokenService tokenService,
-        ISessionActivationService sessionActivationService
+        ISessionActivationService sessionActivationService,
+        ISessionRepository sessionRepository,
+        IRegistrationRepository registrationRepository,
+        ILeagueRepository leagueRepository,
+        IPaymentRepository paymentRepository
     )
     {
         _dbContext = dbContext;
@@ -36,6 +45,10 @@ public class AdminController : ControllerBase
         _logger = logger;
         _tokenService = tokenService;
         _sessionActivationService = sessionActivationService;
+        _sessionRepository = sessionRepository;
+        _registrationRepository = registrationRepository;
+        _leagueRepository = leagueRepository;
+        _paymentRepository = paymentRepository;
     }
 
     // Check if user is admin
@@ -139,15 +152,12 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            var sessions = await _dbContext
-                .Sessions.Include(s => s.League)
-                .Include(s => s.SessionRegistrations)
-                .ToListAsync();
+            var sessions = await _sessionRepository.GetAllWithDetailsAsync();
 
             var hasChanges = await _sessionActivationService.ApplyActivationRulesAsync(sessions);
             if (hasChanges)
             {
-                await _dbContext.SaveChangesAsync();
+                await _sessionRepository.SaveChangesAsync();
             }
 
             var result = sessions
@@ -285,8 +295,8 @@ public class AdminController : ControllerBase
                 CreatedAt = DateTime.UtcNow,
             };
 
-            _dbContext.Sessions.Add(session);
-            await _dbContext.SaveChangesAsync();
+            await _sessionRepository.AddAsync(session);
+            await _sessionRepository.SaveChangesAsync();
 
             _logger.LogInformation(
                 "Session created: {SessionName} (ID: {SessionId}), Final IsActive={IsActive}",
@@ -324,7 +334,7 @@ public class AdminController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var session = await _dbContext.Sessions.FindAsync(id);
+            var session = await _sessionRepository.GetByIdAsync(id);
             if (session == null)
             {
                 return NotFound(new { message = "Session not found" });
@@ -360,7 +370,7 @@ public class AdminController : ControllerBase
             session.RegularPrice = model.RegularPrice;
             session.LastModified = DateTime.UtcNow;
 
-            await _dbContext.SaveChangesAsync();
+            await _sessionRepository.SaveChangesAsync();
 
             _logger.LogInformation(
                 "Session updated: {SessionName} (ID: {SessionId})",
@@ -386,9 +396,7 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            var session = await _dbContext
-                .Sessions.Include(s => s.SessionRegistrations)
-                .FirstOrDefaultAsync(s => s.Id == id);
+            var session = await _sessionRepository.GetByIdWithRegistrationsAsync(id);
 
             if (session == null)
             {
@@ -400,7 +408,7 @@ public class AdminController : ControllerBase
             {
                 // Instead of deleting, deactivate the session
                 session.IsActive = false;
-                await _dbContext.SaveChangesAsync();
+                await _sessionRepository.SaveChangesAsync();
                 _logger.LogInformation(
                     "Session deactivated (has registrations): {SessionName} (ID: {SessionId})",
                     session.Name,
@@ -409,8 +417,8 @@ public class AdminController : ControllerBase
                 return Ok(new { message = "Session deactivated (has existing registrations)" });
             }
 
-            _dbContext.Sessions.Remove(session);
-            await _dbContext.SaveChangesAsync();
+            _sessionRepository.Remove(session);
+            await _sessionRepository.SaveChangesAsync();
 
             _logger.LogInformation(
                 "Session deleted: {SessionName} (ID: {SessionId})",
@@ -437,10 +445,7 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            var session = await _dbContext
-                .Sessions.Include(s => s.SessionRegistrations)
-                .ThenInclude(r => r.User)
-                .FirstOrDefaultAsync(s => s.Id == id);
+            var session = await _sessionRepository.GetByIdWithRegistrationsAsync(id);
 
             if (session == null)
             {
@@ -519,9 +524,7 @@ public class AdminController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var session = await _dbContext
-                .Sessions.Include(s => s.SessionRegistrations)
-                .FirstOrDefaultAsync(s => s.Id == id);
+            var session = await _sessionRepository.GetByIdWithRegistrationsAsync(id);
 
             if (session == null)
             {
@@ -600,8 +603,8 @@ public class AdminController : ControllerBase
                 AmountPaid = model.AmountPaid
             };
 
-            _dbContext.SessionRegistrations.Add(registration);
-            await _dbContext.SaveChangesAsync(); // Save to get registration.Id
+            await _registrationRepository.AddAsync(registration);
+            await _registrationRepository.SaveChangesAsync(); // Save to get registration.Id
 
             // Create payment record
             var payment = new Payment
@@ -612,8 +615,8 @@ public class AdminController : ControllerBase
                 Status = "Completed"
             };
 
-            _dbContext.Payments.Add(payment);
-            await _dbContext.SaveChangesAsync();
+            await _paymentRepository.AddAsync(payment);
+            await _paymentRepository.SaveChangesAsync();
 
             _logger.LogInformation(
                 "Admin manually registered {Name} ({Email}) for session {SessionId}",
@@ -653,10 +656,7 @@ public class AdminController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var registration = await _dbContext
-                .SessionRegistrations
-                .Include(r => r.Session)
-                .FirstOrDefaultAsync(r => r.Id == registrationId && r.SessionId == sessionId);
+            var registration = await _registrationRepository.GetByIdAndSessionAsync(registrationId, sessionId);
 
             if (registration == null)
             {
@@ -676,9 +676,7 @@ public class AdminController : ControllerBase
             registration.AmountPaid = model.AmountPaid;
 
             // Update associated payment amount if exists
-            var payment = await _dbContext
-                .Payments
-                .FirstOrDefaultAsync(p => p.SessionRegistrationId == registrationId);
+            var payment = await _paymentRepository.GetByRegistrationIdAsync(registrationId);
 
             if (payment != null)
             {
@@ -709,7 +707,7 @@ public class AdminController : ControllerBase
                 }
             }
 
-            await _dbContext.SaveChangesAsync();
+            await _registrationRepository.SaveChangesAsync();
 
             _logger.LogInformation(
                 "Admin updated registration {RegistrationId} for session {SessionId}",
@@ -737,10 +735,7 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            var registration = await _dbContext
-                .SessionRegistrations
-                .Include(r => r.Session)
-                .FirstOrDefaultAsync(r => r.Id == registrationId && r.SessionId == sessionId);
+            var registration = await _registrationRepository.GetByIdAndSessionAsync(registrationId, sessionId);
 
             if (registration == null)
             {
@@ -748,19 +743,17 @@ public class AdminController : ControllerBase
             }
 
             // Find and delete associated payment first (due to foreign key constraint)
-            var payment = await _dbContext
-                .Payments
-                .FirstOrDefaultAsync(p => p.SessionRegistrationId == registrationId);
+            var payment = await _paymentRepository.GetByRegistrationIdAsync(registrationId);
 
             if (payment != null)
             {
-                _dbContext.Payments.Remove(payment);
+                _paymentRepository.Remove(payment);
             }
 
             // Then delete the registration
-            _dbContext.SessionRegistrations.Remove(registration);
+            _registrationRepository.Remove(registration);
 
-            await _dbContext.SaveChangesAsync();
+            await _registrationRepository.SaveChangesAsync();
 
             _logger.LogInformation(
                 "Admin removed registration {RegistrationId} ({Name}) from session {SessionId}",
@@ -793,18 +786,13 @@ public class AdminController : ControllerBase
             var tomorrow = today.AddDays(1);
 
             // Get today's registrations
-            var todaysRegistrations = await _dbContext.SessionRegistrations
-                .Where(r => r.RegistrationDate >= today && r.RegistrationDate < tomorrow)
-                .ToListAsync();
+            var todaysRegistrations = await _registrationRepository.GetByDateRangeAsync(today, tomorrow);
 
             // Get all active sessions with registration details (sessions that haven't ended yet)
             var now = DateTime.UtcNow;
 
-            var activeSessions = await _dbContext.Sessions
-                .Include(s => s.League)
-                .Include(s => s.SessionRegistrations)
-                .Where(s => s.EndDate >= now)
-                .OrderBy(s => s.StartDate)
+            var activeSessionEntities = await _sessionRepository.GetActiveSessionsWithDetailsAsync(now);
+            var activeSessions = activeSessionEntities
                 .Select(s => new
                 {
                     s.Id,
@@ -818,23 +806,18 @@ public class AdminController : ControllerBase
                     TotalRevenue = s.SessionRegistrations.Sum(r => r.AmountPaid),
                     s.RegularPrice
                 })
-                .ToListAsync();
+                .ToList();
 
             // Calculate overall revenue
-            var totalRevenue = await _dbContext.SessionRegistrations
-                .SumAsync(r => r.AmountPaid);
+            var totalRevenue = await _registrationRepository.GetTotalRevenueAsync();
 
             var thisMonthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
-            var monthRevenue = await _dbContext.SessionRegistrations
-                .Where(r => r.RegistrationDate >= thisMonthStart)
-                .SumAsync(r => r.AmountPaid);
+            var monthRevenue = await _registrationRepository.GetRevenueFromDateAsync(thisMonthStart);
 
             // Get upcoming sessions (next 7 days)
             var nextWeek = DateTime.UtcNow.AddDays(7);
-            var upcomingSessions = await _dbContext.Sessions
-                .Include(s => s.League)
-                .Where(s => s.StartDate >= DateTime.UtcNow && s.StartDate <= nextWeek)
-                .OrderBy(s => s.StartDate)
+            var upcomingSessionEntities = await _sessionRepository.GetUpcomingAsync(DateTime.UtcNow, nextWeek);
+            var upcomingSessions = upcomingSessionEntities
                 .Select(s => new
                 {
                     s.Id,
@@ -845,7 +828,7 @@ public class AdminController : ControllerBase
                     RegisteredCount = s.SessionRegistrations.Count,
                     s.MaxPlayers
                 })
-                .ToListAsync();
+                .ToList();
 
             return Ok(new
             {
@@ -887,8 +870,8 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            var leagues = await _dbContext
-                .Leagues.OrderBy(l => l.Name)
+            var leagueEntities = await _leagueRepository.GetAllWithTeamsAsync();
+            var leagues = leagueEntities
                 .Select(l => new
                 {
                     l.Id,
@@ -902,7 +885,7 @@ public class AdminController : ControllerBase
                     l.RegistrationCloseDate,
                     TeamCount = l.Teams != null ? l.Teams.Count : 0,
                 })
-                .ToListAsync();
+                .ToList();
 
             return Ok(leagues);
         }
@@ -928,7 +911,7 @@ public class AdminController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var league = await _dbContext.Leagues.FindAsync(id);
+            var league = await _leagueRepository.GetByIdAsync(id);
             if (league == null)
             {
                 return NotFound(new { message = "League not found" });
@@ -951,7 +934,7 @@ public class AdminController : ControllerBase
             league.RegistrationOpenDate = model.RegistrationOpenDate;
             league.RegistrationCloseDate = model.RegistrationCloseDate;
 
-            await _dbContext.SaveChangesAsync();
+            await _leagueRepository.SaveChangesAsync();
 
             _logger.LogInformation(
                 "League updated: {LeagueName} (ID: {LeagueId})",
@@ -977,11 +960,8 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            var registrations = await _dbContext
-                .SessionRegistrations.Include(r => r.User)
-                .Include(r => r.Session)
-                .ThenInclude(s => s!.League)
-                .Include(r => r.Payments)
+            var registrationEntities = await _registrationRepository.GetAllWithDetailsAsync();
+            var registrations = registrationEntities
                 .Select(r => new
                 {
                     r.Id,
@@ -997,7 +977,7 @@ public class AdminController : ControllerBase
                     r.CreatedAt,
                 })
                 .OrderByDescending(r => r.CreatedAt)
-                .ToListAsync();
+                .ToList();
 
             return Ok(registrations);
         }
@@ -1021,7 +1001,7 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            var session = await _dbContext.Sessions.FindAsync(sessionId);
+            var session = await _sessionRepository.GetByIdAsync(sessionId);
 
             if (session == null)
             {
@@ -1034,7 +1014,7 @@ public class AdminController : ControllerBase
             }
 
             session.DraftPublished = model.Published;
-            await _dbContext.SaveChangesAsync();
+            await _sessionRepository.SaveChangesAsync();
 
             var status = model.Published ? "published" : "unpublished";
             _logger.LogInformation("Draft for session {SessionId} {Status}", sessionId, status);

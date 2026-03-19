@@ -3,13 +3,12 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using HockeyRinkAPI.Data;
 using HockeyRinkAPI.Models;
+using HockeyRinkAPI.Repositories;
 using HockeyRinkAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace HockeyRinkAPI.Controllers;
@@ -18,7 +17,9 @@ namespace HockeyRinkAPI.Controllers;
 [Route("api/sessions")]
 public class SessionsController : ControllerBase
 {
-    private readonly AppDbContext _dbContext;
+    private readonly ISessionRepository _sessionRepository;
+    private readonly IRegistrationRepository _registrationRepository;
+    private readonly IPaymentRepository _paymentRepository;
     private readonly IPaymentService _paymentService;
     private readonly ILogger<SessionsController> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
@@ -26,7 +27,9 @@ public class SessionsController : ControllerBase
     private readonly ISessionActivationService _sessionActivationService;
 
     public SessionsController(
-        AppDbContext dbContext,
+        ISessionRepository sessionRepository,
+        IRegistrationRepository registrationRepository,
+        IPaymentRepository paymentRepository,
         IPaymentService paymentService,
         ILogger<SessionsController> logger,
         UserManager<ApplicationUser> userManager,
@@ -34,7 +37,9 @@ public class SessionsController : ControllerBase
         ISessionActivationService sessionActivationService
     )
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _sessionRepository = sessionRepository ?? throw new ArgumentNullException(nameof(sessionRepository));
+        _registrationRepository = registrationRepository ?? throw new ArgumentNullException(nameof(registrationRepository));
+        _paymentRepository = paymentRepository ?? throw new ArgumentNullException(nameof(paymentRepository));
         _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
@@ -56,25 +61,13 @@ public class SessionsController : ControllerBase
                 date
             );
 
-            var sessionsQuery = _dbContext.Sessions.Include(s => s.League).Include(s => s.SessionRegistrations).AsQueryable();
-
-            if (leagueId.HasValue)
-            {
-                sessionsQuery = sessionsQuery.Where(s => s.LeagueId == leagueId.Value);
-            }
-
-            if (date.HasValue)
-            {
-                sessionsQuery = sessionsQuery.Where(s => s.StartDate.Date == date.Value.Date);
-            }
-
-            var sessions = await sessionsQuery.ToListAsync();
+            var sessions = await _sessionRepository.GetFilteredAsync(leagueId, date);
 
             var now = DateTime.UtcNow;
             var hasChanges = await _sessionActivationService.ApplyActivationRulesAsync(sessions);
             if (hasChanges)
             {
-                await _dbContext.SaveChangesAsync();
+                await _sessionRepository.SaveChangesAsync();
             }
 
             // Calculate registration counts and spots left for each session
@@ -190,7 +183,7 @@ public class SessionsController : ControllerBase
                 return Unauthorized(new { message = "User not found" });
             }
 
-            var session = await _dbContext.Sessions.FindAsync(model.SessionId);
+            var session = await _sessionRepository.GetByIdAsync(model.SessionId);
             if (session == null)
             {
                 _logger.LogWarning("Session not found: {SessionId}", model.SessionId);
@@ -219,8 +212,7 @@ public class SessionsController : ControllerBase
             }
 
             // Check capacity
-            var currentRegistrationCount = await _dbContext.SessionRegistrations
-                .CountAsync(sr => sr.SessionId == model.SessionId);
+            var currentRegistrationCount = await _registrationRepository.CountBySessionAsync(model.SessionId);
 
             if (currentRegistrationCount >= session.MaxPlayers)
             {
@@ -230,9 +222,7 @@ public class SessionsController : ControllerBase
             }
 
             // Check if user is already registered for this session
-            var existingRegistration = await _dbContext.SessionRegistrations.FirstOrDefaultAsync(
-                sr => sr.UserId == userId && sr.SessionId == model.SessionId
-            );
+            var existingRegistration = await _registrationRepository.GetByUserAndSessionAsync(userId, model.SessionId);
 
             if (existingRegistration != null)
             {
@@ -289,8 +279,8 @@ public class SessionsController : ControllerBase
                 PaymentStatus = "Pending",
                 CreatedAt = DateTime.UtcNow,
             };
-            _dbContext.SessionRegistrations.Add(registration);
-            await _dbContext.SaveChangesAsync();
+            await _registrationRepository.AddAsync(registration);
+            await _registrationRepository.SaveChangesAsync();
 
             // Process payment using MockPaymentService
             _logger.LogInformation("Processing payment for session {SessionId}, amount: {Amount}",
@@ -314,8 +304,8 @@ public class SessionsController : ControllerBase
                     model.SessionId, paymentResponse.ErrorMessage);
 
                 // Remove the registration since payment failed
-                _dbContext.SessionRegistrations.Remove(registration);
-                await _dbContext.SaveChangesAsync();
+                _registrationRepository.Remove(registration);
+                await _registrationRepository.SaveChangesAsync();
 
                 return BadRequest(new
                 {
@@ -333,10 +323,10 @@ public class SessionsController : ControllerBase
                 Status = "Success",
                 CreatedAt = paymentResponse.ProcessedAt,
             };
-            _dbContext.Payments.Add(payment);
+            await _paymentRepository.AddAsync(payment);
             registration.PaymentStatus = "Paid";
             registration.PaymentDate = paymentResponse.ProcessedAt;
-            await _dbContext.SaveChangesAsync();
+            await _paymentRepository.SaveChangesAsync();
 
             _logger.LogInformation(
                 "User {Email} registered for session {SessionId} with transaction {TransactionId}, amount: ${Amount}",

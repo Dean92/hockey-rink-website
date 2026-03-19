@@ -1,5 +1,6 @@
 using HockeyRinkAPI.Data;
 using HockeyRinkAPI.Models;
+using HockeyRinkAPI.Repositories;
 using HockeyRinkAPI.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -101,6 +102,10 @@ public class Program
         builder.Services.AddScoped<IPaymentService, MockPaymentService>();
         builder.Services.AddScoped<ITokenService, TokenService>();
         builder.Services.AddScoped<ISessionActivationService, SessionActivationService>();
+        builder.Services.AddScoped<ISessionRepository, SessionRepository>();
+        builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
+        builder.Services.AddScoped<ILeagueRepository, LeagueRepository>();
+        builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
         // Configure Swagger
         builder.Services.AddSwaggerGen(c =>

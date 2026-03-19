@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using HockeyRinkAPI.Data;
 using HockeyRinkAPI.Models;
+using HockeyRinkAPI.Repositories;
 using HockeyRinkAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -21,18 +22,21 @@ public class TeamsController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<TeamsController> _logger;
     private readonly ITokenService _tokenService;
+    private readonly ISessionRepository _sessionRepository;
 
     public TeamsController(
         AppDbContext dbContext,
         UserManager<ApplicationUser> userManager,
         ILogger<TeamsController> logger,
-        ITokenService tokenService
+        ITokenService tokenService,
+        ISessionRepository sessionRepository
     )
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+        _sessionRepository = sessionRepository ?? throw new ArgumentNullException(nameof(sessionRepository));
     }
 
     private async Task<bool> IsAdminAsync()
@@ -63,7 +67,7 @@ public class TeamsController : ControllerBase
                 return Unauthorized(new { error = "Unauthorized" });
             }
 
-            var session = await _dbContext.Sessions.FindAsync(sessionId);
+            var session = await _sessionRepository.GetByIdAsync(sessionId);
             if (session == null)
             {
                 return NotFound(new { message = "Session not found" });
@@ -109,7 +113,7 @@ public class TeamsController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var session = await _dbContext.Sessions.FindAsync(sessionId);
+            var session = await _sessionRepository.GetByIdAsync(sessionId);
             if (session == null)
             {
                 return NotFound(new { message = "Session not found" });
@@ -264,7 +268,7 @@ public class TeamsController : ControllerBase
                 return Unauthorized(new { error = "Unauthorized" });
             }
 
-            var session = await _dbContext.Sessions.FindAsync(sessionId);
+            var session = await _sessionRepository.GetByIdAsync(sessionId);
             if (session == null)
             {
                 return NotFound(new { message = "Session not found" });
