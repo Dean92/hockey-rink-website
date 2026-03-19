@@ -151,14 +151,108 @@ export class SidebarService {
 
 ---
 
-## 2. Deferred Week 10 Features (Optional)
+## 2. League Management (Admin CRUD + Coming Soon)
+
+**Priority: HIGH**  
+**Estimated Hours: 6-8 hours**
+
+### Goals
+
+- Admins can **create, edit, and delete** leagues
+- Newly created leagues display as **"Coming Soon"** on the public leagues page
+
+### Functional Requirements
+
+- Admin UI for league CRUD (name, description, start date, prices, registration windows)
+- Delete confirmation with warning if leagues have sessions/registrations
+- League list reflects updates immediately
+- Public leagues page shows **Coming Soon** badge/status for new leagues
+
+### Technical Notes
+
+- Use `registrationOpenDate` to determine "Coming Soon" status
+- If `registrationOpenDate` is in the future → show "Coming Soon"
+- If not present, fall back to `startDate` in future
+- Add admin endpoints for league CRUD:
+  - `POST /api/admin/leagues`
+  - `PUT /api/admin/leagues/{id}`
+  - `DELETE /api/admin/leagues/{id}`
+
+### Acceptance Criteria
+
+- [ ] Admin can create a league from the admin UI
+- [ ] Admin can edit existing leagues
+- [ ] Admin can delete leagues (with confirmation)
+- [ ] Public leagues page displays "Coming Soon" for newly created leagues
+
+---
+
+## 3. Rink Scheduler (Admin)
+
+**Priority: HIGH**  
+**Estimated Hours: 10-14 hours**
+
+### Overview
+
+Add a rink-wide scheduling system for ice time availability and league scheduling.
+
+### Core Features
+
+- **Availability Calendar** showing available/unavailable ice time
+- **League Schedule Generator** with constraints and overrides
+
+### Inputs / Constraints
+
+- **Daily time frame** (start time and end time, 12:00am–11:59pm)
+- **Game length** (minutes)
+- **Exclude days** (specific dates + fixed US holidays)
+- **Rink count** (how many rinks are available)
+- **Admin override** (manual adjustments to generated schedule)
+
+### Scheduler Output
+
+- Time slots across all rinks
+- Conflict detection with existing sessions
+- Ability to reserve blocks for leagues
+
+### Acceptance Criteria
+
+- [ ] Admin can view a rink availability calendar
+- [ ] Admin can generate a league schedule from inputs
+- [ ] Admin can exclude dates/holidays (fixed US holidays + admin-managed exclusions)
+- [ ] Admin can override schedule entries manually
+- [ ] Supports multiple rinks
+
+---
+
+## 4. Sessions Page Polish (UI/UX)
+
+**Priority: MEDIUM**  
+**Estimated Hours: 2-4 hours**
+
+### Goals
+
+- Visual refinement for sessions list cards
+- Improve hierarchy and readability
+- Stronger CTA for registration
+
+### Potential Enhancements
+
+- Session card header layout improvements
+- Badges for status (Open, Opening Soon, Full)
+- Better spacing and alignment for date/location/price
+- Responsive improvements for mobile
+
+---
+
+## 5. Deferred Week 10 Features (Optional)
 
 **Priority: LOW - Polish Features**  
 **Estimated Hours: 4-6 hours**
 
 These features were deferred from Week 10 and can be completed if time permits:
 
-### 2.1 Admin User Detail Page (2-3 hours)
+### 5.1 Admin User Detail Page (2-3 hours)
 
 - Click user row to view detailed profile
 - User statistics dashboard
@@ -166,19 +260,19 @@ These features were deferred from Week 10 and can be completed if time permits:
 - Admin notes section
 - Quick actions
 
-### 2.2 Team Color Management (1-2 hours)
+### 5.2 Team Color Management (1-2 hours)
 
 - Color picker for team colors
 - Predefined palette + custom hex input
 - Live preview on team cards
 
-### 2.3 Footer Enhancement (0.5-1 hour)
+### 5.3 Footer Enhancement (0.5-1 hour)
 
 - Professional footer with contact info
 - Social media links
 - Quick links and copyright
 
-### 2.4 Home Page Polish (1-2 hours)
+### 5.4 Home Page Polish (1-2 hours)
 
 - Testimonials section
 - Feature highlights
@@ -187,7 +281,7 @@ These features were deferred from Week 10 and can be completed if time permits:
 
 ---
 
-## 3. League Standings & Statistics (May Defer to Week 12)
+## 6. League Standings & Statistics (May Defer to Week 12)
 
 **Priority: MEDIUM**  
 **Estimated Hours: 8-10 hours**
@@ -214,7 +308,7 @@ If sidebar implementation is completed quickly, begin work on league standings:
 
 ---
 
-## 4. Completed This Week (January 26, 2026)
+## 7. Completed This Week (January 26, 2026)
 
 ### ✅ Password Confirmation on Registration
 
@@ -235,10 +329,13 @@ If sidebar implementation is completed quickly, begin work on league standings:
 ## Priority Order
 
 1. **HIGH:** Collapsible Sidebar Navigation (8-10 hours)
-2. **COMPLETED:** Password confirmation on registration
-3. **COMPLETED:** Login UI improvements
-4. **LOW:** Deferred Week 10 polish features (4-6 hours)
-5. **MEDIUM:** League standings and statistics (8-10 hours - may defer to Week 12)
+2. **HIGH:** League Management CRUD + Coming Soon (6-8 hours)
+3. **HIGH:** Rink Scheduler (10-14 hours)
+4. **MEDIUM:** Sessions Page Polish (2-4 hours)
+5. **COMPLETED:** Password confirmation on registration
+6. **COMPLETED:** Login UI improvements
+7. **LOW:** Deferred Week 10 polish features (4-6 hours)
+8. **MEDIUM:** League standings and statistics (8-10 hours - may defer to Week 12)
 
 ---
 
@@ -253,19 +350,23 @@ If sidebar implementation is completed quickly, begin work on league standings:
 - Move navigation items
 - Basic styling
 
-**Days 3-4:** Collapse/Expand & Responsive Design (4-5 hours)
+**Days 3-4:** League CRUD + Coming Soon (6-8 hours)
 
-- Implement toggle functionality
-- Add animations and transitions
-- Mobile responsiveness
-- Touch gestures
+- Admin create/edit/delete leagues
+- Coming Soon badge logic on leagues page
+- Backend CRUD endpoints
 
-**Day 5:** Testing & Polish (2-3 hours)
+**Days 5-6:** Rink Scheduler (10-14 hours)
 
-- Test on all devices and screen sizes
-- Fix bugs and edge cases
-- Performance optimization
-- Accessibility testing
+- Availability calendar
+- Schedule generator inputs
+- Overrides + multi-rink support
+
+**Day 7:** Sessions Page Polish + QA (2-4 hours)
+
+- UI refinements
+- Responsive checks
+- Accessibility checks
 
 **Remaining Time:** Optional polish features or start on statistics
 
@@ -302,6 +403,9 @@ If sidebar implementation is completed quickly, begin work on league standings:
 ## Success Metrics
 
 - [ ] Sidebar works seamlessly on desktop, tablet, and mobile
+- [ ] League CRUD is complete and stable
+- [ ] Newly created leagues show Coming Soon on leagues page
+- [ ] Rink scheduler can generate schedules with constraints
 - [ ] User feedback is positive (survey after deployment)
 - [ ] No increase in navigation-related support tickets
 - [ ] Page load time remains under 2 seconds
@@ -313,6 +417,8 @@ If sidebar implementation is completed quickly, begin work on league standings:
 ## Notes
 
 - **Sidebar navigation is the primary focus for Week 11**
+- League CRUD and Coming Soon status are required for admin workflows
+- Rink scheduler is a major scheduling enhancement
 - This is a major UX overhaul that will modernize the application
 - Mobile responsiveness is critical - must work flawlessly on all devices
 - Consider user feedback after implementation
@@ -335,11 +441,14 @@ If sidebar implementation is completed quickly, begin work on league standings:
 
 ---
 
-## Total Estimated Hours: 20-25 hours
+## Total Estimated Hours: 26-36 hours
 
-- **Core Feature (Sidebar):** 8-10 hours
-- **Optional Polish Features:** 4-6 hours
-- **League Statistics (if time permits):** 8-10 hours
+- **Sidebar navigation:** 8-10 hours
+- **League CRUD + Coming Soon:** 6-8 hours
+- **Rink scheduler:** 10-14 hours
+- **Sessions page polish:** 2-4 hours
+- **Optional polish features:** 4-6 hours (if time permits)
+- **League statistics:** 8-10 hours (may defer to Week 12)
 
 **Status:** Ready to begin implementation  
 **Start Date:** Late January 2026  

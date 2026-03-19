@@ -18,6 +18,12 @@ import { SetupPassword } from './setup-password/setup-password';
 import { NotFound } from './not-found/not-found';
 import { AuthGuard } from './auth.guard';
 import { AdminGuard } from './admin-guard';
+import { PublicSkate } from './public-skate/public-skate';
+import { StickAndPuck } from './stick-and-puck/stick-and-puck';
+import { AdultHockey } from './adult-hockey/adult-hockey';
+import { YouthHockey } from './youth-hockey/youth-hockey';
+import { RatHockey } from './rat-hockey/rat-hockey';
+import { Classes } from './classes/classes';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -26,6 +32,12 @@ export const routes: Routes = [
   { path: 'register', component: Register },
   { path: 'leagues', component: Leagues }, // Public - no auth required
   { path: 'sessions', component: Sessions }, // Public - no auth required
+  { path: 'public-skate', component: PublicSkate },
+  { path: 'stick-and-puck', component: StickAndPuck },
+  { path: 'adult-hockey', component: AdultHockey },
+  { path: 'youth-hockey', component: YouthHockey },
+  { path: 'rat-hockey', component: RatHockey },
+  { path: 'classes', component: Classes },
   {
     path: 'session-registration',
     component: SessionRegistration,

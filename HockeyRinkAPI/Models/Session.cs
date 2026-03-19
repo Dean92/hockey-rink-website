@@ -9,9 +9,15 @@ public partial class Session
 
     public string Name { get; set; } = null!;
 
+    public string? Description { get; set; }
+
     public DateTime StartDate { get; set; }
 
+    public TimeSpan? StartTime { get; set; }
+
     public DateTime EndDate { get; set; }
+
+    public TimeSpan? EndTime { get; set; }
 
     public decimal Fee { get; set; }
 

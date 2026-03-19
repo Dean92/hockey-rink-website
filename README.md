@@ -519,7 +519,77 @@ taskkill /PID <PID> /F
 
 ---
 
-### 📋 Week 10: Statistics & League Standings (Planned)
+### ✅ Week 10: Emergency Contact & Jersey Number Management (Completed - January 2026)
+
+See [Week 10 Progress](./specs/week-10-progress.md) for complete details.
+
+#### Emergency Contact Management ✅ COMPLETED
+
+- **Database Schema**: Added EmergencyContactName, EmergencyContactPhone to ApplicationUser
+- **Hockey Registration**: Added HockeyRegistrationNumber and HockeyRegistrationType fields
+- **Session Registration**: Emergency contact required during registration flow
+- **Profile Management**: Optional emergency contact editing in user profile
+- **Admin Views**: Emergency contact visible in admin user management
+
+#### Jersey Number Management ✅ COMPLETED
+
+- **Database Schema**: Added JerseyNumber (0-99) to Players table
+- **Conflict Validation**: Prevents duplicate jersey numbers per team
+- **Admin Interface**: Bulk jersey assignment with conflict indicators
+- **Registration Modal**: Inline jersey assignment during session management
+
+---
+
+### 🚧 Week 11: Sessions Polish & Admin Dashboard (In Progress - January 30, 2026)
+
+See [Week 11 Plan](./specs/week-11-plan.md) for full roadmap.  
+See [Week 11 Progress](./specs/week-11-progress.md) for detailed completion status.
+
+#### Sessions Page Polish ✅ COMPLETED (Extended)
+
+**UI/UX Enhancements:**
+
+- ✅ Status badges (Open, Opening Soon, Closed, Full, X Spots Left)
+- ✅ Enhanced card design with gradient headers and background image
+- ✅ Professional price section with clean styling
+- ✅ Mobile-responsive layout with touch-friendly CTAs
+- ✅ Smart session sorting (by registration date or start date)
+
+**Session Description Field (NEW):**
+
+- ✅ Database migration: AddSessionDescription
+- ✅ Admin input field with helper text "(e.g., Every Tuesday at 2pm)"
+- ✅ Max 200 characters with validation
+- ✅ Displays in session card header (italic with info icon)
+
+**Timezone Handling Fix (CRITICAL):**
+
+- ✅ Fixed UTC conversion causing 6-hour time shifts
+- ✅ All datetime fields now use local time consistently
+- ✅ Registration opens/closes at correct local time
+
+**Real-Time Status Updates:**
+
+- ✅ Removed cached date, all comparisons use `new Date()`
+- ✅ Status badges update in real-time as dates pass
+
+**Admin Dashboard:**
+
+- ✅ Split status column: "Active Status" + "Reg. Dates"
+- ✅ Date-based status methods (Open/Opening Soon/Closed/Not Set)
+- ✅ Better visibility into session publication state
+
+#### Upcoming Tasks (Week 11)
+
+**High Priority:**
+
+- 🔲 Collapsible Sidebar Navigation (8-10h)
+- 🔲 League Management CRUD (6-8h)
+- 🔲 Rink Scheduler (10-14h)
+
+---
+
+### 📋 Week 12+: Statistics & League Standings (Planned)
 
 #### League Standings Page
 
