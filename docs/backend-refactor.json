@@ -250,7 +250,7 @@
     {
       "id": 6,
       "name": "Split AdminController into Domain Controllers",
-      "status": "todo",
+      "status": "✅ complete",
       "goal": "Apply SRP by splitting AdminController's 15+ endpoints across 5 focused controllers under Controllers/Admin/.",
       "solid_principles": ["SRP"],
       "risk": "Medium — URL routes must stay identical to avoid breaking the Angular frontend (confirmed)",
