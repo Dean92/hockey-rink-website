@@ -19,24 +19,27 @@ namespace HockeyRinkAPI.Controllers;
 public class SessionsController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
-    private readonly MockStripeService _stripeService;
     private readonly IPaymentService _paymentService;
     private readonly ILogger<SessionsController> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ITokenService _tokenService;
+    private readonly ISessionActivationService _sessionActivationService;
 
     public SessionsController(
         AppDbContext dbContext,
-        MockStripeService stripeService,
         IPaymentService paymentService,
         ILogger<SessionsController> logger,
-        UserManager<ApplicationUser> userManager
+        UserManager<ApplicationUser> userManager,
+        ITokenService tokenService,
+        ISessionActivationService sessionActivationService
     )
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        _stripeService = stripeService ?? throw new ArgumentNullException(nameof(stripeService));
         _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+        _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+        _sessionActivationService = sessionActivationService ?? throw new ArgumentNullException(nameof(sessionActivationService));
     }
 
     [HttpGet]
@@ -67,46 +70,8 @@ public class SessionsController : ControllerBase
 
             var sessions = await sessionsQuery.ToListAsync();
 
-            // Auto-deactivate sessions where dates have passed, but respect manual overrides
             var now = DateTime.UtcNow;
-            bool hasChanges = false;
-            foreach (var session in sessions)
-            {
-                // Only auto-deactivate if:
-                // 1. Session is currently active
-                // 2. Session started more than 7 days ago
-                // 3. Session hasn't been manually modified after that date passed
-
-                bool shouldAutoDeactivate = false;
-                DateTime? criticalDate = null;
-
-                // Check if session started more than 7 days ago
-                var sevenDaysAfterStart = session.StartDate.AddDays(7);
-                if (sevenDaysAfterStart < now)
-                {
-                    criticalDate = sevenDaysAfterStart;
-                    shouldAutoDeactivate = true;
-                }
-
-                // Only deactivate if session is active and either:
-                // - Never been manually modified, OR
-                // - Last modified before the critical date passed
-                if (shouldAutoDeactivate && session.IsActive && criticalDate.HasValue)
-                {
-                    if (!session.LastModified.HasValue || session.LastModified.Value < criticalDate.Value)
-                    {
-                        session.IsActive = false;
-                        hasChanges = true;
-                        _logger.LogInformation(
-                            "Auto-deactivated session: {SessionName} (ID: {SessionId}) - 7 days after start date: {CriticalDate}",
-                            session.Name,
-                            session.Id,
-                            criticalDate
-                        );
-                    }
-                }
-            }
-
+            var hasChanges = await _sessionActivationService.ApplyActivationRulesAsync(sessions);
             if (hasChanges)
             {
                 await _dbContext.SaveChangesAsync();
@@ -196,10 +161,10 @@ public class SessionsController : ControllerBase
             {
                 var token = authHeader.Substring("Bearer ".Length);
                 _logger.LogInformation("RegisterSession - Token extracted");
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             // Fall back to cookie auth
@@ -397,77 +362,10 @@ public class SessionsController : ControllerBase
         }
     }
 
-    private async Task<bool> ValidateTokenAsync(string token)
-    {
-        try
-        {
-            _logger.LogInformation("ValidateTokenAsync - Decoding token");
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = tokenData.Split('|');
-
-            if (parts.Length != 3)
-            {
-                _logger.LogWarning("ValidateTokenAsync - Invalid token format");
-                return false;
-            }
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            if (expiry < DateTime.UtcNow)
-            {
-                _logger.LogWarning("ValidateTokenAsync - Token expired");
-                return false;
-            }
-
-            var user = await _userManager.FindByIdAsync(userId);
-            var isValid = user != null && user.Email == email;
-            _logger.LogInformation("ValidateTokenAsync - Result: {IsValid}", isValid);
-
-            return isValid;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "ValidateTokenAsync - Exception occurred");
-            return false;
-        }
     }
 
-    private async Task<string?> GetUserIdFromTokenAsync(string token)
+    public class SessionRegistrationModel
     {
-        try
-        {
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = tokenData.Split('|');
-
-            if (parts.Length != 3)
-                return null;
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            if (expiry < DateTime.UtcNow)
-                return null;
-
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user != null && user.Email == email)
-            {
-                return userId;
-            }
-
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-}
-
-public class SessionRegistrationModel
-{
     [Required]
     public int SessionId { get; set; }
 

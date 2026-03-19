@@ -98,8 +98,9 @@ public class Program
             };
         });
 
-        builder.Services.AddTransient<MockStripeService>();
         builder.Services.AddScoped<IPaymentService, MockPaymentService>();
+        builder.Services.AddScoped<ITokenService, TokenService>();
+        builder.Services.AddScoped<ISessionActivationService, SessionActivationService>();
 
         // Configure Swagger
         builder.Services.AddSwaggerGen(c =>

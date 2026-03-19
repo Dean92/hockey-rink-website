@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using HockeyRinkAPI.Models;
+using HockeyRinkAPI.Services;
 
 namespace HockeyRinkAPI.Controllers;
 
@@ -18,15 +19,18 @@ public class AuthController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly ILogger<AuthController> _logger;
+    private readonly ITokenService _tokenService;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger,
+        ITokenService tokenService)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _logger = logger;
+        _tokenService = tokenService;
     }
 
     [HttpPost("register")]
@@ -62,7 +66,7 @@ public class AuthController : ControllerBase
             }
 
             await _signInManager.SignInAsync(user, isPersistent: false);
-            var token = GenerateToken(user);
+            var token = _tokenService.GenerateToken(user);
 
             _logger.LogInformation("User registered and logged in successfully: {Email}", model.Email);
             return Ok(new
@@ -109,7 +113,7 @@ public class AuthController : ControllerBase
             await _userManager.UpdateAsync(user);
 
             await _signInManager.SignInAsync(user, isPersistent: false);
-            var token = GenerateToken(user);
+            var token = _tokenService.GenerateToken(user);
 
             // Check if user is admin
             var roles = await _userManager.GetRolesAsync(user);
@@ -163,7 +167,7 @@ public class AuthController : ControllerBase
             {
                 var token = authHeader.Substring("Bearer ".Length);
                 _logger.LogInformation("Validating token: {Token}", token);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 _logger.LogInformation("Token validation result: {IsValid}", isValid);
                 return Ok(new { isValid });
             }
@@ -183,56 +187,6 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "Error validating token");
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
-        }
-    }
-
-    private string GenerateToken(ApplicationUser user)
-    {
-        var expiry = DateTime.UtcNow.AddHours(24);
-        var tokenData = $"{user.Id}|{user.Email}|{expiry:O}";
-        var tokenBytes = System.Text.Encoding.UTF8.GetBytes(tokenData);
-        return Convert.ToBase64String(tokenBytes);
-    }
-
-    private async Task<bool> ValidateTokenAsync(string token)
-    {
-        try
-        {
-            _logger.LogInformation("ValidateTokenAsync - Decoding token: {Token}", token);
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            _logger.LogInformation("ValidateTokenAsync - Decoded data: {TokenData}", tokenData);
-
-            var parts = tokenData.Split('|');
-            if (parts.Length != 3)
-            {
-                _logger.LogWarning("ValidateTokenAsync - Invalid token format, parts count: {Count}", parts.Length);
-                return false;
-            }
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            _logger.LogInformation("ValidateTokenAsync - UserId: {UserId}, Email: {Email}, Expiry: {Expiry}",
-                userId, email, expiry);
-
-            if (expiry < DateTime.UtcNow)
-            {
-                _logger.LogWarning("ValidateTokenAsync - Token expired");
-                return false;
-            }
-
-            var user = await _userManager.FindByIdAsync(userId);
-            var isValid = user != null && user.Email == email;
-            _logger.LogInformation("ValidateTokenAsync - User found: {UserFound}, Email match: {EmailMatch}, Result: {IsValid}",
-                user != null, user?.Email == email, isValid);
-
-            return isValid;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "ValidateTokenAsync - Exception occurred");
-            return false;
         }
     }
 
@@ -318,7 +272,7 @@ public class AuthController : ControllerBase
 
             // Sign the user in
             await _signInManager.SignInAsync(user, isPersistent: false);
-            var authToken = GenerateToken(user);
+            var authToken = _tokenService.GenerateToken(user);
 
             _logger.LogInformation("User {Email} completed password setup", user.Email);
 

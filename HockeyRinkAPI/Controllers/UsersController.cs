@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using HockeyRinkAPI.Data;
 using HockeyRinkAPI.Models;
+using HockeyRinkAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -20,16 +21,19 @@ public class UsersController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly AppDbContext _dbContext;
     private readonly ILogger<UsersController> _logger;
+    private readonly ITokenService _tokenService;
 
     public UsersController(
         UserManager<ApplicationUser> userManager,
         AppDbContext dbContext,
-        ILogger<UsersController> logger
+        ILogger<UsersController> logger,
+        ITokenService tokenService
     )
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
     }
 
     [HttpGet("profile")]
@@ -48,10 +52,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             // Fall back to cookie auth
@@ -137,10 +141,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             else if (HttpContext.User.Identity?.IsAuthenticated == true)
@@ -223,10 +227,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             else if (HttpContext.User.Identity?.IsAuthenticated == true)
@@ -286,10 +290,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             else if (HttpContext.User.Identity?.IsAuthenticated == true)
@@ -399,10 +403,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             else if (HttpContext.User.Identity?.IsAuthenticated == true)
@@ -493,10 +497,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             // Fall back to cookie auth
@@ -554,63 +558,6 @@ public class UsersController : ControllerBase
         {
             _logger.LogError(ex, "Failed to fetch dashboard for user");
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
-        }
-    }
-
-    private async Task<bool> ValidateTokenAsync(string token)
-    {
-        try
-        {
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = tokenData.Split('|');
-
-            if (parts.Length != 3)
-                return false;
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            if (expiry < DateTime.UtcNow)
-                return false;
-
-            var user = await _userManager.FindByIdAsync(userId);
-            return user != null && user.Email == email;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private async Task<string?> GetUserIdFromTokenAsync(string token)
-    {
-        try
-        {
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = tokenData.Split('|');
-
-            if (parts.Length != 3)
-                return null;
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            if (expiry < DateTime.UtcNow)
-                return null;
-
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user != null && user.Email == email)
-            {
-                return userId;
-            }
-
-            return null;
-        }
-        catch
-        {
-            return null;
         }
     }
 
@@ -765,10 +712,10 @@ public class UsersController : ControllerBase
         if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
         {
             var token = authHeader.Substring("Bearer ".Length);
-            var isValid = await ValidateTokenAsync(token);
+            var isValid = await _tokenService.ValidateTokenAsync(token);
             if (isValid)
             {
-                return await GetUserIdFromTokenAsync(token);
+                return await _tokenService.GetUserIdFromTokenAsync(token);
             }
         }
         else if (HttpContext.User.Identity?.IsAuthenticated == true)

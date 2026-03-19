@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using HockeyRinkAPI.Data;
 using HockeyRinkAPI.Models;
+using HockeyRinkAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -19,44 +20,19 @@ public class TeamsController : ControllerBase
     private readonly AppDbContext _dbContext;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<TeamsController> _logger;
+    private readonly ITokenService _tokenService;
 
     public TeamsController(
         AppDbContext dbContext,
         UserManager<ApplicationUser> userManager,
-        ILogger<TeamsController> logger
+        ILogger<TeamsController> logger,
+        ITokenService tokenService
     )
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
-    private async Task<string?> GetUserIdFromTokenAsync(string token)
-    {
-        try
-        {
-            var decodedData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = decodedData.Split('|');
-            if (parts.Length != 3)
-                return null;
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            if (expiry < DateTime.UtcNow)
-                return null;
-
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null || user.Email != email)
-                return null;
-
-            return userId;
-        }
-        catch
-        {
-            return null;
-        }
+        _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
     }
 
     private async Task<bool> IsAdminAsync()
@@ -66,7 +42,7 @@ public class TeamsController : ControllerBase
             return false;
 
         var token = authHeader.Substring("Bearer ".Length).Trim();
-        var userId = await GetUserIdFromTokenAsync(token);
+        var userId = await _tokenService.GetUserIdFromTokenAsync(token);
         if (userId == null)
             return false;
 

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using HockeyRinkAPI.Data;
 using HockeyRinkAPI.Models;
+using HockeyRinkAPI.Models.Requests;
+using HockeyRinkAPI.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,16 +20,22 @@ public class AdminController : ControllerBase
     private readonly AppDbContext _dbContext;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<AdminController> _logger;
+    private readonly ITokenService _tokenService;
+    private readonly ISessionActivationService _sessionActivationService;
 
     public AdminController(
         AppDbContext dbContext,
         UserManager<ApplicationUser> userManager,
-        ILogger<AdminController> logger
+        ILogger<AdminController> logger,
+        ITokenService tokenService,
+        ISessionActivationService sessionActivationService
     )
     {
         _dbContext = dbContext;
         _userManager = userManager;
         _logger = logger;
+        _tokenService = tokenService;
+        _sessionActivationService = sessionActivationService;
     }
 
     // Check if user is admin
@@ -38,7 +46,7 @@ public class AdminController : ControllerBase
         if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
         {
             var token = authHeader.Substring("Bearer ".Length);
-            var userId = await GetUserIdFromTokenAsync(token);
+            var userId = await _tokenService.GetUserIdFromTokenAsync(token);
             if (!string.IsNullOrEmpty(userId))
             {
                 var user = await _userManager.FindByIdAsync(userId);
@@ -64,37 +72,6 @@ public class AdminController : ControllerBase
         }
 
         return false;
-    }
-
-    private async Task<string?> GetUserIdFromTokenAsync(string token)
-    {
-        try
-        {
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = tokenData.Split('|');
-
-            if (parts.Length != 3)
-                return null;
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            if (expiry < DateTime.UtcNow)
-                return null;
-
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user != null && user.Email == email)
-            {
-                return userId;
-            }
-
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     [HttpGet("users")]
@@ -167,86 +144,7 @@ public class AdminController : ControllerBase
                 .Include(s => s.SessionRegistrations)
                 .ToListAsync();
 
-            // Auto-activate/deactivate sessions based on dates
-            var now = DateTime.UtcNow;
-            bool hasChanges = false;
-            foreach (var session in sessions)
-            {
-                _logger.LogDebug(
-                    "Checking session {SessionId} '{SessionName}': IsActive={IsActive}, RegOpenDate={RegOpenDate}, Now={Now}, LastModified={LastModified}",
-                    session.Id,
-                    session.Name,
-                    session.IsActive,
-                    session.RegistrationOpenDate,
-                    now,
-                    session.LastModified
-                );
-
-                // Auto-activate if registration open date has passed and session is inactive
-                if (session.RegistrationOpenDate.HasValue &&
-                    session.RegistrationOpenDate.Value <= now &&
-                    !session.IsActive)
-                {
-                    // Auto-activate unless the admin manually deactivated it AFTER the registration opened
-                    bool manuallyDeactivatedAfterOpen = session.LastModified.HasValue &&
-                                                       session.LastModified.Value > session.RegistrationOpenDate.Value;
-
-                    _logger.LogInformation(
-                        "Session {SessionId} eligible for auto-activation. ManuallyDeactivatedAfterOpen={ManuallyDeactivated}",
-                        session.Id,
-                        manuallyDeactivatedAfterOpen
-                    );
-
-                    if (!manuallyDeactivatedAfterOpen)
-                    {
-                        session.IsActive = true;
-                        hasChanges = true;
-                        _logger.LogInformation(
-                            "Auto-activated session: {SessionName} (ID: {SessionId}) - Registration opened at: {OpenDate}, Current time: {Now}",
-                            session.Name,
-                            session.Id,
-                            session.RegistrationOpenDate,
-                            now
-                        );
-                    }
-                }
-
-                // Auto-deactivate sessions where dates have passed
-                bool shouldAutoDeactivate = false;
-                DateTime? criticalDate = null;
-
-                // Check registration close date
-                if (session.RegistrationCloseDate.HasValue && session.RegistrationCloseDate.Value < now)
-                {
-                    criticalDate = session.RegistrationCloseDate.Value;
-                    shouldAutoDeactivate = true;
-                }
-                // Check session end date
-                else if (session.EndDate < now)
-                {
-                    criticalDate = session.EndDate;
-                    shouldAutoDeactivate = true;
-                }
-
-                // Only deactivate if session is active and either:
-                // - Never been manually modified, OR
-                // - Last modified before the critical date passed
-                if (shouldAutoDeactivate && session.IsActive && criticalDate.HasValue)
-                {
-                    if (!session.LastModified.HasValue || session.LastModified.Value < criticalDate.Value)
-                    {
-                        session.IsActive = false;
-                        hasChanges = true;
-                        _logger.LogInformation(
-                            "Auto-deactivated session: {SessionName} (ID: {SessionId}) - Critical date: {CriticalDate}",
-                            session.Name,
-                            session.Id,
-                            criticalDate
-                        );
-                    }
-                }
-            }
-
+            var hasChanges = await _sessionActivationService.ApplyActivationRulesAsync(sessions);
             if (hasChanges)
             {
                 await _dbContext.SaveChangesAsync();
@@ -1272,159 +1170,4 @@ public class AdminController : ControllerBase
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
     }
-}
-
-public class PublishDraftModel
-{
-    public bool Published { get; set; }
-}
-
-public class CreateSessionModel
-{
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public decimal Fee { get; set; }
-    public bool IsActive { get; set; } = false;
-    public bool DraftEnabled { get; set; } = false;
-    public int? LeagueId { get; set; }
-    public int MaxPlayers { get; set; } = 20;
-    public DateTime? RegistrationOpenDate { get; set; }
-    public DateTime? RegistrationCloseDate { get; set; }
-    public decimal? EarlyBirdPrice { get; set; }
-    public DateTime? EarlyBirdEndDate { get; set; }
-    public decimal? RegularPrice { get; set; }
-    public TimeSpan? StartTime { get; set; }
-    public TimeSpan? EndTime { get; set; }
-}
-
-public class UpdateSessionModel
-{
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public decimal Fee { get; set; }
-    public bool IsActive { get; set; }
-    public bool DraftEnabled { get; set; }
-    public int? LeagueId { get; set; }
-    public int MaxPlayers { get; set; } = 20;
-    public DateTime? RegistrationOpenDate { get; set; }
-    public DateTime? RegistrationCloseDate { get; set; }
-    public decimal? EarlyBirdPrice { get; set; }
-    public DateTime? EarlyBirdEndDate { get; set; }
-    public decimal? RegularPrice { get; set; }
-    public TimeSpan? StartTime { get; set; }
-    public TimeSpan? EndTime { get; set; }
-}
-
-public class UpdateLeagueModel
-{
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public DateTime? StartDate { get; set; }
-    public decimal? EarlyBirdPrice { get; set; }
-    public DateTime? EarlyBirdEndDate { get; set; }
-    public decimal? RegularPrice { get; set; }
-    public DateTime? RegistrationOpenDate { get; set; }
-    public DateTime? RegistrationCloseDate { get; set; }
-}
-
-public class ManualRegistrationModel
-{
-    [Required]
-    [StringLength(100)]
-    public string Name { get; set; } = string.Empty;
-
-    [Required]
-    [EmailAddress]
-    public string Email { get; set; } = string.Empty;
-
-    [Phone]
-    public string? Phone { get; set; }
-
-    [StringLength(200)]
-    public string? Address { get; set; }
-
-    [StringLength(100)]
-    public string? City { get; set; }
-
-    [StringLength(50)]
-    public string? State { get; set; }
-
-    [StringLength(20)]
-    public string? ZipCode { get; set; }
-
-    [Required]
-    public DateTime DateOfBirth { get; set; }
-
-    [StringLength(20)]
-    public string? Position { get; set; }
-
-    [Required]
-    [Range(0, 10000)]
-    public decimal AmountPaid { get; set; }
-
-    [Range(0, 99)]
-    public int? JerseyNumber { get; set; }
-}
-
-public class UpdatePlayerRatingModel
-{
-    [Range(1.0, 5.0)]
-    public decimal? Rating { get; set; }
-
-    [StringLength(1000)]
-    public string? PlayerNotes { get; set; }
-}
-
-public class UpdateUserProfileModel
-{
-    [Required]
-    [StringLength(100)]
-    public string FirstName { get; set; } = string.Empty;
-
-    [Required]
-    [StringLength(100)]
-    public string LastName { get; set; } = string.Empty;
-
-    [Required]
-    [EmailAddress]
-    public string Email { get; set; } = string.Empty;
-
-    [Required]
-    [StringLength(200)]
-    public string Address { get; set; } = string.Empty;
-
-    [Required]
-    [StringLength(100)]
-    public string City { get; set; } = string.Empty;
-
-    [Required]
-    [StringLength(50)]
-    public string State { get; set; } = string.Empty;
-
-    [Required]
-    [StringLength(20)]
-    public string ZipCode { get; set; } = string.Empty;
-
-    [Required]
-    [Phone]
-    public string Phone { get; set; } = string.Empty;
-
-    [Required]
-    public DateTime DateOfBirth { get; set; }
-
-    [Required]
-    [StringLength(20)]
-    public string Position { get; set; } = string.Empty;
-
-    [Range(1.0, 5.0)]
-    public decimal? Rating { get; set; }
-
-    [StringLength(1000)]
-    public string? PlayerNotes { get; set; }
-
-    public int? LeagueId { get; set; }
 }
