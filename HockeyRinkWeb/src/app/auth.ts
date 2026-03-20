@@ -52,18 +52,17 @@ export class AuthService {
         catchError((err) => {
           console.error('Auth validation failed:', err);
           return of({ isValid: false });
-        })
+        }),
       );
   }
 
   login(email: string, password: string): Observable<any> {
     console.log('Login attempt for:', email);
     return this.http
-      .post<{ token: string; isAdmin: boolean }>(
-        `${this.apiUrl}/login`,
-        { email, password },
-        { withCredentials: true }
-      )
+      .post<{
+        token: string;
+        isAdmin: boolean;
+      }>(`${this.apiUrl}/login`, { email, password }, { withCredentials: true })
       .pipe(
         tap((response) => console.log('Login response:', response)),
         map((response) => {
@@ -76,7 +75,7 @@ export class AuthService {
         catchError((err) => {
           console.error('Login failed:', err);
           throw err;
-        })
+        }),
       );
   }
 
@@ -84,7 +83,10 @@ export class AuthService {
     firstName: string,
     lastName: string,
     email: string,
-    password: string
+    password: string,
+    position: string,
+    emergencyContactName: string,
+    emergencyContactPhone: string,
   ): Observable<any> {
     console.log('Register attempt for:', email);
     return this.http
@@ -95,8 +97,11 @@ export class AuthService {
           lastName,
           email,
           password,
+          position,
+          emergencyContactName,
+          emergencyContactPhone,
         },
-        { withCredentials: true }
+        { withCredentials: true },
       )
       .pipe(
         tap((response) => console.log('Register response:', response)),
@@ -109,7 +114,7 @@ export class AuthService {
         catchError((err) => {
           console.error('Registration failed:', err);
           throw err;
-        })
+        }),
       );
   }
 

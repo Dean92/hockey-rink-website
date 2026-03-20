@@ -254,6 +254,8 @@ public class SessionsController : ControllerBase
             user.Phone = model.Phone;
             user.DateOfBirth = model.DateOfBirth;
             user.Position = model.Position;
+            user.EmergencyContactName = model.EmergencyContactName;
+            user.EmergencyContactPhone = model.EmergencyContactPhone;
 
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
@@ -352,10 +354,10 @@ public class SessionsController : ControllerBase
         }
     }
 
-    }
+}
 
-    public class SessionRegistrationModel
-    {
+public class SessionRegistrationModel
+{
     [Required]
     public int SessionId { get; set; }
 
@@ -389,6 +391,12 @@ public class SessionsController : ControllerBase
 
     [StringLength(20)]
     public string? Position { get; set; } // Forward, Defense, Forward/Defense, Goalie
+
+    [StringLength(100)]
+    public string? EmergencyContactName { get; set; }
+
+    [StringLength(20)]
+    public string? EmergencyContactPhone { get; set; }
 
     // Payment fields
     [Required]

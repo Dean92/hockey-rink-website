@@ -51,6 +51,9 @@ public class AuthController : ControllerBase
                 Email = model.Email,
                 FirstName = model.FirstName,
                 LastName = model.LastName,
+                Position = model.Position,
+                EmergencyContactName = model.EmergencyContactName,
+                EmergencyContactPhone = model.EmergencyContactPhone,
                 EmailConfirmed = true
             };
 
@@ -296,6 +299,9 @@ public class RegisterModel
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+    public string? Position { get; set; }
+    public string? EmergencyContactName { get; set; }
+    public string? EmergencyContactPhone { get; set; }
 }
 
 public class LoginModel

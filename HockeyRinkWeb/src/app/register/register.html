@@ -6,9 +6,9 @@
           <h2 class="card-title text-center text-primary mb-4">Register</h2>
 
           @if (errorMessage()) {
-          <div class="alert alert-danger" role="alert">
-            {{ errorMessage() }}
-          </div>
+            <div class="alert alert-danger" role="alert">
+              {{ errorMessage() }}
+            </div>
           }
 
           <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
@@ -22,8 +22,8 @@
                 placeholder="Enter your first name"
                 [class.is-invalid]="hasError('firstName', 'required')"
               />
-              @if (hasError('firstName', 'required')) {
-              <div class="invalid-feedback">First name is required.</div>
+              @if (hasError("firstName", "required")) {
+                <div class="invalid-feedback">First name is required.</div>
               }
             </div>
 
@@ -37,8 +37,8 @@
                 placeholder="Enter your last name"
                 [class.is-invalid]="hasError('lastName', 'required')"
               />
-              @if (hasError('lastName', 'required')) {
-              <div class="invalid-feedback">Last name is required.</div>
+              @if (hasError("lastName", "required")) {
+                <div class="invalid-feedback">Last name is required.</div>
               }
             </div>
 
@@ -54,10 +54,11 @@
                   hasError('email', 'required') || hasError('email', 'email')
                 "
               />
-              @if (hasError('email', 'required')) {
-              <div class="invalid-feedback">Email is required.</div>
-              } @if (hasError('email', 'email')) {
-              <div class="invalid-feedback">Please enter a valid email.</div>
+              @if (hasError("email", "required")) {
+                <div class="invalid-feedback">Email is required.</div>
+              }
+              @if (hasError("email", "email")) {
+                <div class="invalid-feedback">Please enter a valid email.</div>
               }
             </div>
 
@@ -74,12 +75,13 @@
                   hasError('password', 'minlength')
                 "
               />
-              @if (hasError('password', 'required')) {
-              <div class="invalid-feedback">Password is required.</div>
-              } @if (hasError('password', 'minlength')) {
-              <div class="invalid-feedback">
-                Password must be at least 8 characters.
-              </div>
+              @if (hasError("password", "required")) {
+                <div class="invalid-feedback">Password is required.</div>
+              }
+              @if (hasError("password", "minlength")) {
+                <div class="invalid-feedback">
+                  Password must be at least 8 characters.
+                </div>
               }
             </div>
 
@@ -98,10 +100,85 @@
                   hasError('confirmPassword', 'passwordMismatch')
                 "
               />
-              @if (hasError('confirmPassword', 'required')) {
-              <div class="invalid-feedback">Please confirm your password.</div>
-              } @if (hasError('confirmPassword', 'passwordMismatch')) {
-              <div class="invalid-feedback">Passwords do not match.</div>
+              @if (hasError("confirmPassword", "required")) {
+                <div class="invalid-feedback">
+                  Please confirm your password.
+                </div>
+              }
+              @if (hasError("confirmPassword", "passwordMismatch")) {
+                <div class="invalid-feedback">Passwords do not match.</div>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label for="position" class="form-label"
+                >Preferred Position</label
+              >
+              <select
+                formControlName="position"
+                class="form-select"
+                id="position"
+                [class.is-invalid]="hasError('position', 'required')"
+              >
+                <option value="">Select position...</option>
+                <option value="Forward">Forward</option>
+                <option value="Defense">Defense</option>
+                <option value="Forward/Defense">Forward/Defense</option>
+                <option value="Goalie">Goalie</option>
+              </select>
+              @if (hasError("position", "required")) {
+                <div class="invalid-feedback">Position is required.</div>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label for="emergencyContactName" class="form-label"
+                >Emergency Contact Name</label
+              >
+              <input
+                type="text"
+                formControlName="emergencyContactName"
+                class="form-control"
+                id="emergencyContactName"
+                placeholder="Enter emergency contact name"
+                [class.is-invalid]="
+                  hasError('emergencyContactName', 'required')
+                "
+              />
+              @if (hasError("emergencyContactName", "required")) {
+                <div class="invalid-feedback">
+                  Emergency contact name is required.
+                </div>
+              }
+              <small class="form-text text-muted">
+                Who should we contact in case of emergency?
+              </small>
+            </div>
+
+            <div class="mb-3">
+              <label for="emergencyContactPhone" class="form-label"
+                >Emergency Contact Phone</label
+              >
+              <input
+                type="tel"
+                formControlName="emergencyContactPhone"
+                class="form-control"
+                id="emergencyContactPhone"
+                mask="(000) 000-0000"
+                placeholder="(555) 555-5555"
+                [class.is-invalid]="
+                  hasError('emergencyContactPhone', 'required') ||
+                  hasError('emergencyContactPhone', 'pattern')
+                "
+              />
+              @if (hasError("emergencyContactPhone", "required")) {
+                <div class="invalid-feedback">
+                  Emergency contact phone is required.
+                </div>
+              } @else if (hasError("emergencyContactPhone", "pattern")) {
+                <div class="invalid-feedback">
+                  Please enter a valid phone number.
+                </div>
               }
             </div>
 
@@ -111,12 +188,15 @@
               [disabled]="isLoading()"
             >
               @if (isLoading()) {
-              <span
-                class="spinner-border spinner-border-sm me-2"
-                role="status"
-                aria-hidden="true"
-              ></span>
-              Registering... } @else { Register }
+                <span
+                  class="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                Registering...
+              } @else {
+                Register
+              }
             </button>
           </form>
 

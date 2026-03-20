@@ -272,7 +272,7 @@
     {
       "id": 7,
       "name": "Add Unit Tests with Moq",
-      "status": "todo",
+      "status": "✅ complete",
       "goal": "Add true unit tests for the new services and split controllers using Moq interface mocks — no database required.",
       "solid_principles": ["DIP"],
       "risk": "Low — test project only; no production code changes",
