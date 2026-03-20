@@ -1,26 +1,26 @@
 <div class="container mt-5">
   <!-- Processing Payment Overlay -->
   @if (isProcessingPayment()) {
-  <div
-    class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-    style="
-      background-color: rgba(0, 0, 0, 0.7);
-      z-index: 9999;
-      backdrop-filter: blur(4px);
-    "
-  >
-    <div class="text-center">
-      <div
-        class="spinner-border text-light mb-3"
-        role="status"
-        style="width: 4rem; height: 4rem"
-      >
-        <span class="visually-hidden">Processing...</span>
+    <div
+      class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+      style="
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        backdrop-filter: blur(4px);
+      "
+    >
+      <div class="text-center">
+        <div
+          class="spinner-border text-light mb-3"
+          role="status"
+          style="width: 4rem; height: 4rem"
+        >
+          <span class="visually-hidden">Processing...</span>
+        </div>
+        <h4 class="text-light">Processing Transaction...</h4>
+        <p class="text-light">Please wait while we process your payment</p>
       </div>
-      <h4 class="text-light">Processing Transaction...</h4>
-      <p class="text-light">Please wait while we process your payment</p>
     </div>
-  </div>
   }
 
   <div class="mb-3">
@@ -32,583 +32,625 @@
   <h2 class="text-primary mb-4">Register for Session</h2>
 
   @if (isLoading() && sessions().length === 0) {
-  <div class="text-center">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
-  } @if (successMessage()) {
-  <div class="alert alert-success" role="alert">
-    {{ successMessage() }}
-  </div>
-  } @if (errorMessage()) {
-  <div class="alert alert-danger" role="alert">
-    {{ errorMessage() }}
-  </div>
-  } @if (sessions().length === 0 && !isLoading() && !errorMessage()) {
-  <div class="alert alert-warning">
-    No active sessions are currently available.
-  </div>
-  } @if (sessions().length > 0) {
-  <div class="card shadow">
-    <div class="card-body">
-      <!-- Step Indicator -->
-      <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <div class="d-flex align-items-center flex-fill">
-            <div
-              class="rounded-circle d-flex align-items-center justify-content-center me-2"
-              [class.bg-primary]="currentStep() >= 1"
-              [class.bg-secondary]="currentStep() < 1"
-              [class.text-white]="true"
-              style="width: 40px; height: 40px; font-weight: bold"
-            >
-              1
-            </div>
-            <span
-              [class.fw-bold]="currentStep() === 1"
-              [class.text-primary]="currentStep() === 1"
-            >
-              Registration Details
-            </span>
-          </div>
-
-          <div
-            class="flex-fill mx-3"
-            style="height: 2px; background-color: #dee2e6"
-          ></div>
-
-          <div class="d-flex align-items-center flex-fill">
-            <div
-              class="rounded-circle d-flex align-items-center justify-content-center me-2"
-              [class.bg-primary]="currentStep() >= 2"
-              [class.bg-secondary]="currentStep() < 2"
-              [class.text-white]="true"
-              style="width: 40px; height: 40px; font-weight: bold"
-            >
-              2
-            </div>
-            <span
-              [class.fw-bold]="currentStep() === 2"
-              [class.text-primary]="currentStep() === 2"
-            >
-              Payment & Confirmation
-            </span>
-          </div>
-        </div>
-        <div class="progress" style="height: 8px">
-          <div
-            class="progress-bar bg-primary"
-            role="progressbar"
-            [style.width.%]="currentStep() * 50"
-            [attr.aria-valuenow]="currentStep() * 50"
-            aria-valuemin="0"
-            aria-valuemax="100"
-          ></div>
-        </div>
+    <div class="text-center">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
       </div>
-
-      <form [formGroup]="registrationForm" (ngSubmit)="onRegister()">
-        <!-- Step 1: Registration Details -->
-        @if (currentStep() === 1) {
-        <!-- Session Selection -->
+    </div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert-success" role="alert">
+      {{ successMessage() }}
+    </div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">
+      {{ errorMessage() }}
+    </div>
+  }
+  @if (sessions().length === 0 && !isLoading() && !errorMessage()) {
+    <div class="alert alert-warning">
+      No active sessions are currently available.
+    </div>
+  }
+  @if (sessions().length > 0) {
+    <div class="card shadow">
+      <div class="card-body">
+        <!-- Step Indicator -->
         <div class="mb-4">
-          <label for="sessionId" class="form-label fw-bold"
-            >Select Session <span class="text-danger">*</span></label
-          >
-          <select
-            formControlName="sessionId"
-            class="form-select"
-            id="sessionId"
-            [class.is-invalid]="hasError('sessionId', 'required')"
-            (change)="onSessionChange()"
-          >
-            <option value="">-- Choose a session --</option>
-            @for (session of sessions(); track session.id) {
-            <option [value]="session.id" [disabled]="session.isFull">
-              {{ session.name }} - {{ session.league?.name }} ({{
-                session.startDate | date : "short" : "UTC"
-              }}) @if (session.isFull) { - FULL } @else if (session.spotsLeft
-              !== undefined && session.spotsLeft <= 5) { - Only
-              {{ session.spotsLeft }} spots left! } - ${{
-                getSessionPrice(session)
-              }}
-            </option>
-            }
-          </select>
-          @if (hasError('sessionId', 'required')) {
-          <div class="invalid-feedback">Please select a session.</div>
-          }
-        </div>
-
-        <!-- Personal Information Section -->
-        <h5 class="mb-3 text-secondary">Personal Information</h5>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="name" class="form-label"
-              ><span class="text-danger">*</span> Full Name:
-            </label>
-            <input
-              type="text"
-              formControlName="name"
-              class="form-control"
-              id="name"
-              placeholder="John Doe"
-              [class.is-invalid]="hasError('name', 'required')"
-            />
-            @if (hasError('name', 'required')) {
-            <div class="invalid-feedback">Name is required.</div>
-            }
-          </div>
-
-          <div class="col-md-6">
-            <label for="email" class="form-label"
-              ><span class="text-danger">*</span> Email:</label
-            >
-            <input
-              type="email"
-              formControlName="email"
-              class="form-control"
-              id="email"
-              placeholder="john@example.com"
-              [class.is-invalid]="
-                hasError('email', 'required') || hasError('email', 'email')
-              "
-            />
-            @if (hasError('email', 'required')) {
-            <div class="invalid-feedback">Email address is required.</div>
-            } @else if (hasError('email', 'email')) {
-            <div class="invalid-feedback">
-              Please enter a valid email address.
-            </div>
-            }
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="phone" class="form-label"
-              ><span class="text-danger">*</span> Phone Number:</label
-            >
-            <input
-              type="tel"
-              formControlName="phone"
-              class="form-control"
-              id="phone"
-              mask="(000) 000-0000"
-              [class.is-invalid]="
-                hasError('phone', 'required') || hasError('phone', 'pattern')
-              "
-            />
-            @if (hasError('phone', 'required')) {
-            <div class="invalid-feedback">Phone number is required.</div>
-            } @else if (hasError('phone', 'pattern')) {
-            <div class="invalid-feedback">
-              Please enter a valid phone number.
-            </div>
-            }
-          </div>
-
-          <div class="col-md-6">
-            <label for="dateOfBirth" class="form-label"
-              ><span class="text-danger">*</span> Date of Birth:
-            </label>
-            <input
-              type="date"
-              formControlName="dateOfBirth"
-              class="form-control"
-              id="dateOfBirth"
-              [class.is-invalid]="hasError('dateOfBirth', 'required')"
-            />
-            @if (hasError('dateOfBirth', 'required')) {
-            <div class="invalid-feedback">Date of birth is required.</div>
-            }
-          </div>
-        </div>
-
-        <!-- Address Section -->
-        <h5 class="mb-3 text-secondary mt-4">Address</h5>
-
-        <div class="mb-3">
-          <label for="address" class="form-label">Street Address:</label>
-          <input
-            type="text"
-            formControlName="address"
-            class="form-control"
-            id="address"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-5">
-            <label for="city" class="form-label">City:</label>
-            <input
-              type="text"
-              formControlName="city"
-              class="form-control"
-              id="city"
-            />
-          </div>
-
-          <div class="col-md-4">
-            <label for="state" class="form-label">State:</label>
-            <input
-              type="text"
-              formControlName="state"
-              class="form-control"
-              id="state"
-              maxlength="2"
-            />
-          </div>
-
-          <div class="col-md-3">
-            <label for="zipCode" class="form-label">ZIP Code:</label>
-            <input
-              type="text"
-              formControlName="zipCode"
-              class="form-control"
-              id="zipCode"
-            />
-          </div>
-        </div>
-
-        <!-- Hockey Position (Only for League Sessions) -->
-        @if (isLeagueSession()) {
-        <div class="mb-4">
-          <label for="position" class="form-label">Preferred Position</label>
-          <select formControlName="position" class="form-select" id="position">
-            <option value="">-- Select position (optional) --</option>
-            <option value="Forward">Forward</option>
-            <option value="Defense">Defense</option>
-            <option value="Forward/Defense">Forward/Defense</option>
-            <option value="Goalie">Goalie</option>
-          </select>
-          <small class="form-text text-muted"
-            >This helps organizers plan team rosters</small
-          >
-        </div>
-        }
-
-        <!-- Emergency Contact Section -->
-        <h5 class="mb-3 text-secondary mt-4">
-          <i class="bi bi-telephone-fill me-2"></i>Emergency Contact
-        </h5>
-        <p class="text-muted small mb-3">
-          Who should we contact in case of emergency during the session?
-        </p>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="emergencyContactName" class="form-label">
-              <span class="text-danger">*</span> Emergency Contact Name
-            </label>
-            <input
-              type="text"
-              formControlName="emergencyContactName"
-              class="form-control"
-              id="emergencyContactName"
-              placeholder="John Doe"
-              [class.is-invalid]="hasError('emergencyContactName', 'required')"
-            />
-            @if (hasError('emergencyContactName', 'required')) {
-            <div class="invalid-feedback">
-              Emergency contact name is required.
-            </div>
-            }
-          </div>
-
-          <div class="col-md-6">
-            <label for="emergencyContactPhone" class="form-label">
-              <span class="text-danger">*</span> Emergency Contact Phone
-            </label>
-            <input
-              type="tel"
-              formControlName="emergencyContactPhone"
-              class="form-control"
-              id="emergencyContactPhone"
-              mask="(000) 000-0000"
-              placeholder="(555) 555-5555"
-              [class.is-invalid]="hasError('emergencyContactPhone', 'required')"
-            />
-            @if (hasError('emergencyContactPhone', 'required')) {
-            <div class="invalid-feedback">
-              Emergency contact phone is required.
-            </div>
-            }
-          </div>
-        </div>
-
-        <!-- Terms and Conditions -->
-        <div class="mb-4">
-          <div class="form-check">
-            <input
-              type="checkbox"
-              formControlName="agreeToTerms"
-              class="form-check-input"
-              id="agreeToTerms"
-              [class.is-invalid]="hasError('agreeToTerms', 'required')"
-            />
-            <label class="form-check-label" for="agreeToTerms">
-              I agree to the <span class="text-danger">* </span>
-              <a href="#" class="text-primary">Terms and Conditions</a>
-            </label>
-            @if (hasError('agreeToTerms', 'required')) {
-            <div class="invalid-feedback d-block">
-              You must agree to the terms and conditions.
-            </div>
-            }
-          </div>
-          <small class="form-text text-muted"
-            >Terms and conditions to be finalized.</small
-          >
-        </div>
-
-        <!-- Payment Summary -->
-        @if (selectedSession()) {
-        <div class="alert alert-info mt-4">
-          <h6 class="alert-heading">Registration Summary</h6>
-          <p class="mb-1">
-            <strong>Session:</strong> {{ selectedSession()?.name }}
-          </p>
-          <p class="mb-1">
-            <strong>Date:</strong>
-            {{ selectedSession()?.startDate | date : "medium" : "UTC" }}
-          </p>
-          @if (selectedSession()?.spotsLeft !== undefined) {
-          <p class="mb-1">
-            <strong>Spots Remaining:</strong> {{ selectedSession()?.spotsLeft }}
-          </p>
-          }
-          <hr />
-          <p class="mb-0 fs-5">
-            <strong>Total Amount:</strong> ${{
-              getSessionPrice(selectedSession()!)
-            }}
-          </p>
-        </div>
-        }
-
-        <!-- Step 1 Navigation -->
-        <div class="d-flex justify-content-center mt-4 mb-3">
-          <button
-            type="button"
-            class="btn btn-primary"
-            (click)="nextStep()"
-            [disabled]="!isStep1Valid() || selectedSession()?.isFull"
-          >
-            Continue to Payment and Confirmation →
-          </button>
-        </div>
-        }
-
-        <!-- Step 2: Payment & Confirmation -->
-        @if (currentStep() === 2) {
-        <div class="alert alert-info">
-          <h5 class="alert-heading">Review Your Registration</h5>
-          <hr />
-          <p class="mb-2">
-            <strong>Name:</strong> {{ registrationForm.get("name")?.value }}
-          </p>
-          <p class="mb-2">
-            <strong>Email:</strong> {{ registrationForm.get("email")?.value }}
-          </p>
-          <p class="mb-2">
-            <strong>Phone:</strong> {{ registrationForm.get("phone")?.value }}
-          </p>
-          <p class="mb-2">
-            <strong>Date of Birth:</strong>
-            {{
-              registrationForm.get("dateOfBirth")?.value | date : "mediumDate"
-            }}
-          </p>
-          @if (registrationForm.get('position')?.value) {
-          <p class="mb-2">
-            <strong>Position:</strong>
-            {{ registrationForm.get("position")?.value }}
-          </p>
-          }
-          <hr />
-          @if (selectedSession()) {
-          <p class="mb-2">
-            <strong>Session:</strong> {{ selectedSession()?.name }}
-          </p>
-          <p class="mb-2">
-            <strong>Start Date:</strong>
-            {{ selectedSession()?.startDate | date : "mediumDate" : "UTC" }}
-          </p>
-          <p class="mb-2">
-            <strong>End Date:</strong>
-            {{ selectedSession()?.endDate | date : "mediumDate" }}
-          </p>
-          <p class="mb-0 fs-5">
-            <strong>Total Amount:</strong> ${{
-              getSessionPrice(selectedSession())
-            }}
-          </p>
-          } @else {
-          <p class="mb-2 text-danger">
-            <strong>Error:</strong> Session not found. Please go back and select
-            a session.
-          </p>
-          }
-        </div>
-
-        <!-- Payment Form -->
-        <div class="card border-success mb-4">
-          <div class="card-header bg-success text-white">
-            <i class="bi bi-lock-fill me-2"></i>
-            <strong>Secure Payment</strong>
-          </div>
-          <div class="card-body">
-            <p class="text-muted small mb-3">
-              <i class="bi bi-info-circle me-1"></i>
-              Test Cards: <strong>4242 4242 4242 4242</strong> (Success) |
-              <strong>4000 0000 0000 0002</strong> (Decline)
-            </p>
-
-            <!-- Card Number -->
-            <div class="mb-3">
-              <label for="cardNumber" class="form-label"
-                >Card Number <span class="text-danger">*</span></label
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex align-items-center flex-fill">
+              <div
+                class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                [class.bg-primary]="currentStep() >= 1"
+                [class.bg-secondary]="currentStep() < 1"
+                [class.text-white]="true"
+                style="width: 40px; height: 40px; font-weight: bold"
               >
-              <input
-                type="text"
-                formControlName="cardNumber"
-                class="form-control"
-                id="cardNumber"
-                placeholder="1234 5678 9012 3456"
-                maxlength="19"
-                (input)="formatCardNumber($event)"
-                [class.is-invalid]="
-                  hasError('cardNumber', 'required') ||
-                  hasError('cardNumber', 'pattern')
-                "
-              />
-              @if (hasError('cardNumber', 'required')) {
-              <div class="invalid-feedback">Card number is required</div>
-              } @if (hasError('cardNumber', 'pattern')) {
-              <div class="invalid-feedback">
-                Please enter a valid 16-digit card number
+                1
               </div>
+              <span
+                [class.fw-bold]="currentStep() === 1"
+                [class.text-primary]="currentStep() === 1"
+              >
+                Registration Details
+              </span>
+            </div>
+
+            <div
+              class="flex-fill mx-3"
+              style="height: 2px; background-color: #dee2e6"
+            ></div>
+
+            <div class="d-flex align-items-center flex-fill">
+              <div
+                class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                [class.bg-primary]="currentStep() >= 2"
+                [class.bg-secondary]="currentStep() < 2"
+                [class.text-white]="true"
+                style="width: 40px; height: 40px; font-weight: bold"
+              >
+                2
+              </div>
+              <span
+                [class.fw-bold]="currentStep() === 2"
+                [class.text-primary]="currentStep() === 2"
+              >
+                Payment & Confirmation
+              </span>
+            </div>
+          </div>
+          <div class="progress" style="height: 8px">
+            <div
+              class="progress-bar bg-primary"
+              role="progressbar"
+              [style.width.%]="currentStep() * 50"
+              [attr.aria-valuenow]="currentStep() * 50"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            ></div>
+          </div>
+        </div>
+
+        <form [formGroup]="registrationForm" (ngSubmit)="onRegister()">
+          <!-- Step 1: Registration Details -->
+          @if (currentStep() === 1) {
+            <!-- Session Selection -->
+            <div class="mb-4">
+              <label for="sessionId" class="form-label fw-bold"
+                >Select Session <span class="text-danger">*</span></label
+              >
+              <select
+                formControlName="sessionId"
+                class="form-select"
+                id="sessionId"
+                [class.is-invalid]="hasError('sessionId', 'required')"
+                (change)="onSessionChange()"
+              >
+                <option value="">-- Choose a session --</option>
+                @for (session of sessions(); track session.id) {
+                  <option [value]="session.id" [disabled]="session.isFull">
+                    {{ session.name }} - {{ session.league?.name }} ({{
+                      session.startDate | date: "short" : "UTC"
+                    }})
+                    @if (session.isFull) {
+                      - FULL
+                    } @else if (
+                      session.spotsLeft !== undefined && session.spotsLeft <= 5
+                    ) {
+                      - Only {{ session.spotsLeft }} spots left!
+                    }
+                    - ${{ getSessionPrice(session) }}
+                  </option>
+                }
+              </select>
+              @if (hasError("sessionId", "required")) {
+                <div class="invalid-feedback">Please select a session.</div>
               }
             </div>
 
-            <div class="row">
-              <!-- Expiry Date -->
-              <div class="col-md-6 mb-3">
-                <label for="expiryDate" class="form-label"
-                  >Expiry Date <span class="text-danger">*</span></label
-                >
+            <!-- Personal Information Section -->
+            <h5 class="mb-3 text-secondary">Personal Information</h5>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="name" class="form-label"
+                  ><span class="text-danger">*</span> Full Name:
+                </label>
                 <input
                   type="text"
-                  formControlName="expiryDate"
+                  formControlName="name"
                   class="form-control"
-                  id="expiryDate"
-                  placeholder="MM/YY"
-                  maxlength="5"
-                  (input)="formatExpiryDate($event)"
-                  [class.is-invalid]="
-                    hasError('expiryDate', 'required') ||
-                    hasError('expiryDate', 'pattern')
-                  "
+                  id="name"
+                  placeholder="John Doe"
+                  [class.is-invalid]="hasError('name', 'required')"
                 />
-                @if (hasError('expiryDate', 'required')) {
-                <div class="invalid-feedback">Expiry date is required</div>
-                } @if (hasError('expiryDate', 'pattern')) {
-                <div class="invalid-feedback">Format: MM/YY</div>
+                @if (hasError("name", "required")) {
+                  <div class="invalid-feedback">Name is required.</div>
                 }
               </div>
 
-              <!-- CVV -->
-              <div class="col-md-6 mb-3">
-                <label for="cvv" class="form-label"
-                  >CVV <span class="text-danger">*</span></label
+              <div class="col-md-6">
+                <label for="email" class="form-label"
+                  ><span class="text-danger">*</span> Email:</label
                 >
                 <input
-                  type="password"
-                  formControlName="cvv"
+                  type="email"
+                  formControlName="email"
                   class="form-control"
-                  id="cvv"
-                  placeholder="123"
-                  maxlength="4"
-                  (input)="formatCvv($event)"
+                  id="email"
+                  placeholder="john@example.com"
                   [class.is-invalid]="
-                    hasError('cvv', 'required') || hasError('cvv', 'pattern')
+                    hasError('email', 'required') || hasError('email', 'email')
                   "
                 />
-                @if (hasError('cvv', 'required')) {
-                <div class="invalid-feedback">CVV is required</div>
-                } @if (hasError('cvv', 'pattern')) {
-                <div class="invalid-feedback">CVV must be 3-4 digits</div>
+                @if (hasError("email", "required")) {
+                  <div class="invalid-feedback">Email address is required.</div>
+                } @else if (hasError("email", "email")) {
+                  <div class="invalid-feedback">
+                    Please enter a valid email address.
+                  </div>
                 }
               </div>
             </div>
 
-            <!-- Cardholder Name -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="phone" class="form-label"
+                  ><span class="text-danger">*</span> Phone Number:</label
+                >
+                <input
+                  type="tel"
+                  formControlName="phone"
+                  class="form-control"
+                  id="phone"
+                  placeholder=""
+                  [class.is-invalid]="
+                    hasError('phone', 'required') ||
+                    hasError('phone', 'pattern')
+                  "
+                />
+                @if (hasError("phone", "required")) {
+                  <div class="invalid-feedback">Phone number is required.</div>
+                } @else if (hasError("phone", "pattern")) {
+                  <div class="invalid-feedback">
+                    Please enter a valid phone number.
+                  </div>
+                }
+              </div>
+
+              <div class="col-md-6">
+                <label for="dateOfBirth" class="form-label"
+                  ><span class="text-danger">*</span> Date of Birth:
+                </label>
+                <input
+                  type="date"
+                  formControlName="dateOfBirth"
+                  class="form-control"
+                  id="dateOfBirth"
+                  [class.is-invalid]="hasError('dateOfBirth', 'required')"
+                />
+                @if (hasError("dateOfBirth", "required")) {
+                  <div class="invalid-feedback">Date of birth is required.</div>
+                }
+              </div>
+            </div>
+
+            <!-- Address Section -->
+            <h5 class="mb-3 text-secondary mt-4">Address</h5>
+
             <div class="mb-3">
-              <label for="cardholderName" class="form-label"
-                >Cardholder Name <span class="text-danger">*</span></label
-              >
+              <label for="address" class="form-label">Street Address:</label>
               <input
                 type="text"
-                formControlName="cardholderName"
+                formControlName="address"
                 class="form-control"
-                id="cardholderName"
-                placeholder="Name as it appears on card"
-                [class.is-invalid]="hasError('cardholderName', 'required')"
+                id="address"
               />
-              @if (hasError('cardholderName', 'required')) {
-              <div class="invalid-feedback">Cardholder name is required</div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-5">
+                <label for="city" class="form-label">City:</label>
+                <input
+                  type="text"
+                  formControlName="city"
+                  class="form-control"
+                  id="city"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label for="state" class="form-label">State:</label>
+                <input
+                  type="text"
+                  formControlName="state"
+                  class="form-control"
+                  id="state"
+                  maxlength="2"
+                />
+              </div>
+
+              <div class="col-md-3">
+                <label for="zipCode" class="form-label">ZIP Code:</label>
+                <input
+                  type="text"
+                  formControlName="zipCode"
+                  class="form-control"
+                  id="zipCode"
+                />
+              </div>
+            </div>
+
+            <!-- Hockey Position (Only for League Sessions) -->
+            @if (isLeagueSession()) {
+              <div class="mb-4">
+                <label for="position" class="form-label"
+                  >Preferred Position</label
+                >
+                <select
+                  formControlName="position"
+                  class="form-select"
+                  id="position"
+                >
+                  <option value="">-- Select position (optional) --</option>
+                  <option value="Forward">Forward</option>
+                  <option value="Defense">Defense</option>
+                  <option value="Forward/Defense">Forward/Defense</option>
+                  <option value="Goalie">Goalie</option>
+                </select>
+                <small class="form-text text-muted"
+                  >This helps organizers plan team rosters</small
+                >
+              </div>
+            }
+
+            <!-- Emergency Contact Section -->
+            <h5 class="mb-3 text-secondary mt-4">
+              <i class="bi bi-telephone-fill me-2"></i>Emergency Contact
+            </h5>
+            <p class="text-muted small mb-3">
+              Who should we contact in case of emergency during the session?
+            </p>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="emergencyContactName" class="form-label">
+                  <span class="text-danger">*</span> Emergency Contact Name
+                </label>
+                <input
+                  type="text"
+                  formControlName="emergencyContactName"
+                  class="form-control"
+                  id="emergencyContactName"
+                  placeholder=""
+                  [class.is-invalid]="
+                    hasError('emergencyContactName', 'required')
+                  "
+                />
+                @if (hasError("emergencyContactName", "required")) {
+                  <div class="invalid-feedback">
+                    Emergency contact name is required.
+                  </div>
+                }
+              </div>
+
+              <div class="col-md-6">
+                <label for="emergencyContactPhone" class="form-label">
+                  <span class="text-danger">*</span> Emergency Contact Phone
+                </label>
+                <input
+                  type="tel"
+                  formControlName="emergencyContactPhone"
+                  class="form-control"
+                  id="emergencyContactPhone"
+                  mask="(000) 000-0000"
+                  placeholder="(555) 555-5555"
+                  [class.is-invalid]="
+                    hasError('emergencyContactPhone', 'required') ||
+                    hasError('emergencyContactPhone', 'pattern')
+                  "
+                />
+                @if (hasError("emergencyContactPhone", "required")) {
+                  <div class="invalid-feedback">
+                    Emergency contact phone is required.
+                  </div>
+                }
+                @if (hasError("emergencyContactPhone", "pattern")) {
+                  <div class="invalid-feedback">
+                    Enter a valid phone number.
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="mb-4">
+              <div class="form-check">
+                <input
+                  type="checkbox"
+                  formControlName="agreeToTerms"
+                  class="form-check-input"
+                  id="agreeToTerms"
+                  [class.is-invalid]="hasError('agreeToTerms', 'required')"
+                />
+                <label class="form-check-label" for="agreeToTerms">
+                  I agree to the <span class="text-danger">* </span>
+                  <a href="#" class="text-primary">Terms and Conditions</a>
+                </label>
+                @if (hasError("agreeToTerms", "required")) {
+                  <div class="invalid-feedback d-block">
+                    You must agree to the terms and conditions.
+                  </div>
+                }
+              </div>
+              <small class="form-text text-muted"
+                >Terms and conditions to be finalized.</small
+              >
+            </div>
+
+            <!-- Payment Summary -->
+            @if (selectedSession()) {
+              <div class="alert alert-info mt-4">
+                <h6 class="alert-heading">Registration Summary</h6>
+                <p class="mb-1">
+                  <strong>Session:</strong> {{ selectedSession()?.name }}
+                </p>
+                <p class="mb-1">
+                  <strong>Date:</strong>
+                  {{ selectedSession()?.startDate | date: "medium" : "UTC" }}
+                </p>
+                @if (selectedSession()?.spotsLeft !== undefined) {
+                  <p class="mb-1">
+                    <strong>Spots Remaining:</strong>
+                    {{ selectedSession()?.spotsLeft }}
+                  </p>
+                }
+                <hr />
+                <p class="mb-0 fs-5">
+                  <strong>Total Amount:</strong> ${{
+                    getSessionPrice(selectedSession()!)
+                  }}
+                </p>
+              </div>
+            }
+
+            <!-- Step 1 Navigation -->
+            <div class="d-flex justify-content-center mt-4 mb-3">
+              <button
+                type="button"
+                class="btn btn-primary"
+                (click)="nextStep()"
+                [disabled]="!isStep1Valid() || selectedSession()?.isFull"
+              >
+                Continue to Payment and Confirmation →
+              </button>
+            </div>
+          }
+
+          <!-- Step 2: Payment & Confirmation -->
+          @if (currentStep() === 2) {
+            <div class="alert alert-info">
+              <h5 class="alert-heading">Review Your Registration</h5>
+              <hr />
+              <p class="mb-2">
+                <strong>Name:</strong> {{ registrationForm.get("name")?.value }}
+              </p>
+              <p class="mb-2">
+                <strong>Email:</strong>
+                {{ registrationForm.get("email")?.value }}
+              </p>
+              <p class="mb-2">
+                <strong>Phone:</strong>
+                {{ registrationForm.get("phone")?.value }}
+              </p>
+              <p class="mb-2">
+                <strong>Date of Birth:</strong>
+                {{
+                  registrationForm.get("dateOfBirth")?.value
+                    | date: "mediumDate"
+                }}
+              </p>
+              @if (registrationForm.get("position")?.value) {
+                <p class="mb-2">
+                  <strong>Position:</strong>
+                  {{ registrationForm.get("position")?.value }}
+                </p>
+              }
+              <hr />
+              @if (selectedSession()) {
+                <p class="mb-2">
+                  <strong>Session:</strong> {{ selectedSession()?.name }}
+                </p>
+                <p class="mb-2">
+                  <strong>Start Date:</strong>
+                  {{
+                    selectedSession()?.startDate | date: "mediumDate" : "UTC"
+                  }}
+                </p>
+                <p class="mb-2">
+                  <strong>End Date:</strong>
+                  {{ selectedSession()?.endDate | date: "mediumDate" }}
+                </p>
+                <p class="mb-0 fs-5">
+                  <strong>Total Amount:</strong> ${{
+                    getSessionPrice(selectedSession())
+                  }}
+                </p>
+              } @else {
+                <p class="mb-2 text-danger">
+                  <strong>Error:</strong> Session not found. Please go back and
+                  select a session.
+                </p>
               }
             </div>
 
-            <div class="alert alert-light border">
-              <small class="text-muted">
-                <i class="bi bi-shield-check me-1"></i>
-                Your payment information is encrypted and secure. This is a mock
-                payment system for demonstration purposes.
-              </small>
-            </div>
-          </div>
-        </div>
+            <!-- Payment Form -->
+            <div class="card border-success mb-4">
+              <div class="card-header bg-success text-white">
+                <i class="bi bi-lock-fill me-2"></i>
+                <strong>Secure Payment</strong>
+              </div>
+              <div class="card-body">
+                <p class="text-muted small mb-3">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Test Cards: <strong>4242 4242 4242 4242</strong> (Success) |
+                  <strong>4000 0000 0000 0002</strong> (Decline)
+                </p>
 
-        <!-- Step 2 Navigation -->
-        <div class="d-flex justify-content-between mt-4 mb-3">
-          <button
-            type="button"
-            class="btn btn-outline-secondary"
-            (click)="previousStep()"
-            [disabled]="isProcessingPayment()"
-          >
-            ← Back to Details
-          </button>
-          <button
-            type="submit"
-            class="btn btn-success btn-lg px-5"
-            [disabled]="isLoading() || registrationForm.invalid"
-          >
-            @if (isProcessingPayment()) {
-            <span
-              class="spinner-border spinner-border-sm me-2"
-              role="status"
-              aria-hidden="true"
-            ></span>
-            Processing Payment... } @else if (isLoading()) {
-            <span
-              class="spinner-border spinner-border-sm me-2"
-              role="status"
-              aria-hidden="true"
-            ></span>
-            Completing Registration... } @else {
-            <i class="bi bi-credit-card me-2"></i>
-            Pay ${{ getSessionPrice(selectedSession()!) }} & Complete }
-          </button>
-        </div>
-        }
-      </form>
+                <!-- Card Number -->
+                <div class="mb-3">
+                  <label for="cardNumber" class="form-label"
+                    >Card Number <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="text"
+                    formControlName="cardNumber"
+                    class="form-control"
+                    id="cardNumber"
+                    placeholder="1234 5678 9012 3456"
+                    maxlength="19"
+                    (input)="formatCardNumber($event)"
+                    [class.is-invalid]="
+                      hasError('cardNumber', 'required') ||
+                      hasError('cardNumber', 'pattern')
+                    "
+                  />
+                  @if (hasError("cardNumber", "required")) {
+                    <div class="invalid-feedback">Card number is required</div>
+                  }
+                  @if (hasError("cardNumber", "pattern")) {
+                    <div class="invalid-feedback">
+                      Please enter a valid 16-digit card number
+                    </div>
+                  }
+                </div>
+
+                <div class="row">
+                  <!-- Expiry Date -->
+                  <div class="col-md-6 mb-3">
+                    <label for="expiryDate" class="form-label"
+                      >Expiry Date <span class="text-danger">*</span></label
+                    >
+                    <input
+                      type="text"
+                      formControlName="expiryDate"
+                      class="form-control"
+                      id="expiryDate"
+                      placeholder="MM/YY"
+                      maxlength="5"
+                      (input)="formatExpiryDate($event)"
+                      [class.is-invalid]="
+                        hasError('expiryDate', 'required') ||
+                        hasError('expiryDate', 'pattern')
+                      "
+                    />
+                    @if (hasError("expiryDate", "required")) {
+                      <div class="invalid-feedback">
+                        Expiry date is required
+                      </div>
+                    }
+                    @if (hasError("expiryDate", "pattern")) {
+                      <div class="invalid-feedback">Format: MM/YY</div>
+                    }
+                  </div>
+
+                  <!-- CVV -->
+                  <div class="col-md-6 mb-3">
+                    <label for="cvv" class="form-label"
+                      >CVV <span class="text-danger">*</span></label
+                    >
+                    <input
+                      type="password"
+                      formControlName="cvv"
+                      class="form-control"
+                      id="cvv"
+                      placeholder="123"
+                      maxlength="4"
+                      (input)="formatCvv($event)"
+                      [class.is-invalid]="
+                        hasError('cvv', 'required') ||
+                        hasError('cvv', 'pattern')
+                      "
+                    />
+                    @if (hasError("cvv", "required")) {
+                      <div class="invalid-feedback">CVV is required</div>
+                    }
+                    @if (hasError("cvv", "pattern")) {
+                      <div class="invalid-feedback">CVV must be 3-4 digits</div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Cardholder Name -->
+                <div class="mb-3">
+                  <label for="cardholderName" class="form-label"
+                    >Cardholder Name <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="text"
+                    formControlName="cardholderName"
+                    class="form-control"
+                    id="cardholderName"
+                    placeholder="Name as it appears on card"
+                    [class.is-invalid]="hasError('cardholderName', 'required')"
+                  />
+                  @if (hasError("cardholderName", "required")) {
+                    <div class="invalid-feedback">
+                      Cardholder name is required
+                    </div>
+                  }
+                </div>
+
+                <div class="alert alert-light border">
+                  <small class="text-muted">
+                    <i class="bi bi-shield-check me-1"></i>
+                    Your payment information is encrypted and secure. This is a
+                    mock payment system for demonstration purposes.
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2 Navigation -->
+            <div class="d-flex justify-content-between mt-4 mb-3">
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="previousStep()"
+                [disabled]="isProcessingPayment()"
+              >
+                ← Back to Details
+              </button>
+              <button
+                type="submit"
+                class="btn btn-success btn-lg px-5"
+                [disabled]="isLoading() || registrationForm.invalid"
+              >
+                @if (isProcessingPayment()) {
+                  <span
+                    class="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                  Processing Payment...
+                } @else if (isLoading()) {
+                  <span
+                    class="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                  Completing Registration...
+                } @else {
+                  <i class="bi bi-credit-card me-2"></i>
+                  Pay ${{ getSessionPrice(selectedSession()!) }} & Complete
+                }
+              </button>
+            </div>
+          }
+        </form>
+      </div>
     </div>
-  </div>
   }
 
   <div class="mb-5"></div>

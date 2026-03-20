@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { DataService } from '../data';
 import { CommonModule, DatePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ToastService } from '../services/toast.service';
 import { ToastContainerComponent } from '../toast-container/toast-container.component';
 
@@ -32,8 +32,14 @@ export class Dashboard implements OnInit {
 
   constructor(
     private dataService: DataService,
-    private toastService: ToastService
+    private router: Router,
+    private toastService: ToastService,
   ) {}
+
+  isQuickActionActive(path: string): boolean {
+    const normalizedUrl = this.router.url.split('?')[0].split('#')[0];
+    return normalizedUrl === path;
+  }
 
   ngOnInit() {
     this.loadSessions();
@@ -98,7 +104,7 @@ export class Dashboard implements OnInit {
       error: (err) => {
         console.error('Error fetching sessions:', err);
         this.errorMessage.set(
-          err.error?.message || 'Failed to fetch sessions. Please try again.'
+          err.error?.message || 'Failed to fetch sessions. Please try again.',
         );
         this.isLoading.set(false);
       },
@@ -119,7 +125,7 @@ export class Dashboard implements OnInit {
         next: (response) => {
           this.toastService.success(
             'Cancellation Request Submitted',
-            'Your cancellation request has been sent to the admin. Refunds will be processed within 7-14 business days.'
+            'Your cancellation request has been sent to the admin. Refunds will be processed within 7-14 business days.',
           );
           this.sessionToCancel.set(null);
           this.loadSessions(); // Reload sessions
@@ -128,7 +134,7 @@ export class Dashboard implements OnInit {
           console.error('Error cancelling registration:', err);
           this.toastService.error(
             'Cancellation Failed',
-            err.error?.message || 'Failed to cancel registration'
+            err.error?.message || 'Failed to cancel registration',
           );
           this.sessionToCancel.set(null);
         },
