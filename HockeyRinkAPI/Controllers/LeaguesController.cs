@@ -1,9 +1,6 @@
-﻿using HockeyRinkAPI.Data;
-using HockeyRinkAPI.Models;
+﻿using HockeyRinkAPI.Repositories;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace HockeyRinkAPI.Controllers;
@@ -12,18 +9,15 @@ namespace HockeyRinkAPI.Controllers;
 [Route("api/leagues")]
 public class LeaguesController : ControllerBase
 {
-    private readonly AppDbContext _db;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ILeagueRepository _leagueRepository;
     private readonly ILogger<LeaguesController> _logger;
 
     public LeaguesController(
-        AppDbContext db,
-        UserManager<ApplicationUser> userManager,
+        ILeagueRepository leagueRepository,
         ILogger<LeaguesController> logger
     )
     {
-        _db = db;
-        _userManager = userManager;
+        _leagueRepository = leagueRepository;
         _logger = logger;
     }
 
@@ -35,7 +29,7 @@ public class LeaguesController : ControllerBase
         {
             _logger.LogInformation("GetLeagues - Request received (public endpoint)");
 
-            var leagues = await _db.Leagues.ToListAsync();
+            var leagues = await _leagueRepository.GetAllAsync();
             _logger.LogInformation("GetLeagues - Found {Count} leagues", leagues.Count);
 
             return Ok(leagues);

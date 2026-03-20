@@ -51,7 +51,7 @@ export class SessionRegistration implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private formBuilder: FormBuilder,
-    private toastService: ToastService
+    private toastService: ToastService,
   ) {
     this.registrationForm = this.formBuilder.group({
       // Step 1: Personal Information
@@ -269,7 +269,7 @@ export class SessionRegistration implements OnInit {
     const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
     this.registrationForm.patchValue(
       { cardNumber: value },
-      { emitEvent: false }
+      { emitEvent: false },
     );
     event.target.value = formatted;
   }
@@ -325,6 +325,8 @@ export class SessionRegistration implements OnInit {
       state: formValue.state || undefined,
       zipCode: formValue.zipCode || undefined,
       position: formValue.position || undefined,
+      emergencyContactName: formValue.emergencyContactName || undefined,
+      emergencyContactPhone: formValue.emergencyContactPhone || undefined,
       cardNumber: formValue.cardNumber,
       expiryDate: formValue.expiryDate,
       cvv: formValue.cvv,
@@ -340,7 +342,7 @@ export class SessionRegistration implements OnInit {
         // Show success toast
         this.toastService.success(
           'Transaction Successful!',
-          `You're all set for ${session?.name}. Redirecting to dashboard...`
+          `You're all set for ${session?.name}. Redirecting to dashboard...`,
         );
 
         // Redirect to dashboard after 2 seconds

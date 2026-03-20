@@ -89,6 +89,8 @@ export interface SessionRegistrationRequest {
   email: string;
   dateOfBirth: string;
   position?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
   // Payment information
   cardNumber: string;
   expiryDate: string;

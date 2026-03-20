@@ -3,13 +3,12 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using HockeyRinkAPI.Data;
 using HockeyRinkAPI.Models;
+using HockeyRinkAPI.Repositories;
 using HockeyRinkAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace HockeyRinkAPI.Controllers;
@@ -18,25 +17,34 @@ namespace HockeyRinkAPI.Controllers;
 [Route("api/sessions")]
 public class SessionsController : ControllerBase
 {
-    private readonly AppDbContext _dbContext;
-    private readonly MockStripeService _stripeService;
+    private readonly ISessionRepository _sessionRepository;
+    private readonly IRegistrationRepository _registrationRepository;
+    private readonly IPaymentRepository _paymentRepository;
     private readonly IPaymentService _paymentService;
     private readonly ILogger<SessionsController> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ITokenService _tokenService;
+    private readonly ISessionActivationService _sessionActivationService;
 
     public SessionsController(
-        AppDbContext dbContext,
-        MockStripeService stripeService,
+        ISessionRepository sessionRepository,
+        IRegistrationRepository registrationRepository,
+        IPaymentRepository paymentRepository,
         IPaymentService paymentService,
         ILogger<SessionsController> logger,
-        UserManager<ApplicationUser> userManager
+        UserManager<ApplicationUser> userManager,
+        ITokenService tokenService,
+        ISessionActivationService sessionActivationService
     )
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        _stripeService = stripeService ?? throw new ArgumentNullException(nameof(stripeService));
+        _sessionRepository = sessionRepository ?? throw new ArgumentNullException(nameof(sessionRepository));
+        _registrationRepository = registrationRepository ?? throw new ArgumentNullException(nameof(registrationRepository));
+        _paymentRepository = paymentRepository ?? throw new ArgumentNullException(nameof(paymentRepository));
         _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+        _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+        _sessionActivationService = sessionActivationService ?? throw new ArgumentNullException(nameof(sessionActivationService));
     }
 
     [HttpGet]
@@ -53,63 +61,13 @@ public class SessionsController : ControllerBase
                 date
             );
 
-            var sessionsQuery = _dbContext.Sessions.Include(s => s.League).Include(s => s.SessionRegistrations).AsQueryable();
+            var sessions = await _sessionRepository.GetFilteredAsync(leagueId, date);
 
-            if (leagueId.HasValue)
-            {
-                sessionsQuery = sessionsQuery.Where(s => s.LeagueId == leagueId.Value);
-            }
-
-            if (date.HasValue)
-            {
-                sessionsQuery = sessionsQuery.Where(s => s.StartDate.Date == date.Value.Date);
-            }
-
-            var sessions = await sessionsQuery.ToListAsync();
-
-            // Auto-deactivate sessions where dates have passed, but respect manual overrides
             var now = DateTime.UtcNow;
-            bool hasChanges = false;
-            foreach (var session in sessions)
-            {
-                // Only auto-deactivate if:
-                // 1. Session is currently active
-                // 2. Session started more than 7 days ago
-                // 3. Session hasn't been manually modified after that date passed
-
-                bool shouldAutoDeactivate = false;
-                DateTime? criticalDate = null;
-
-                // Check if session started more than 7 days ago
-                var sevenDaysAfterStart = session.StartDate.AddDays(7);
-                if (sevenDaysAfterStart < now)
-                {
-                    criticalDate = sevenDaysAfterStart;
-                    shouldAutoDeactivate = true;
-                }
-
-                // Only deactivate if session is active and either:
-                // - Never been manually modified, OR
-                // - Last modified before the critical date passed
-                if (shouldAutoDeactivate && session.IsActive && criticalDate.HasValue)
-                {
-                    if (!session.LastModified.HasValue || session.LastModified.Value < criticalDate.Value)
-                    {
-                        session.IsActive = false;
-                        hasChanges = true;
-                        _logger.LogInformation(
-                            "Auto-deactivated session: {SessionName} (ID: {SessionId}) - 7 days after start date: {CriticalDate}",
-                            session.Name,
-                            session.Id,
-                            criticalDate
-                        );
-                    }
-                }
-            }
-
+            var hasChanges = await _sessionActivationService.ApplyActivationRulesAsync(sessions);
             if (hasChanges)
             {
-                await _dbContext.SaveChangesAsync();
+                await _sessionRepository.SaveChangesAsync();
             }
 
             // Calculate registration counts and spots left for each session
@@ -196,10 +154,10 @@ public class SessionsController : ControllerBase
             {
                 var token = authHeader.Substring("Bearer ".Length);
                 _logger.LogInformation("RegisterSession - Token extracted");
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             // Fall back to cookie auth
@@ -225,7 +183,7 @@ public class SessionsController : ControllerBase
                 return Unauthorized(new { message = "User not found" });
             }
 
-            var session = await _dbContext.Sessions.FindAsync(model.SessionId);
+            var session = await _sessionRepository.GetByIdAsync(model.SessionId);
             if (session == null)
             {
                 _logger.LogWarning("Session not found: {SessionId}", model.SessionId);
@@ -254,8 +212,7 @@ public class SessionsController : ControllerBase
             }
 
             // Check capacity
-            var currentRegistrationCount = await _dbContext.SessionRegistrations
-                .CountAsync(sr => sr.SessionId == model.SessionId);
+            var currentRegistrationCount = await _registrationRepository.CountBySessionAsync(model.SessionId);
 
             if (currentRegistrationCount >= session.MaxPlayers)
             {
@@ -265,9 +222,7 @@ public class SessionsController : ControllerBase
             }
 
             // Check if user is already registered for this session
-            var existingRegistration = await _dbContext.SessionRegistrations.FirstOrDefaultAsync(
-                sr => sr.UserId == userId && sr.SessionId == model.SessionId
-            );
+            var existingRegistration = await _registrationRepository.GetByUserAndSessionAsync(userId, model.SessionId);
 
             if (existingRegistration != null)
             {
@@ -299,6 +254,8 @@ public class SessionsController : ControllerBase
             user.Phone = model.Phone;
             user.DateOfBirth = model.DateOfBirth;
             user.Position = model.Position;
+            user.EmergencyContactName = model.EmergencyContactName;
+            user.EmergencyContactPhone = model.EmergencyContactPhone;
 
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
@@ -324,8 +281,8 @@ public class SessionsController : ControllerBase
                 PaymentStatus = "Pending",
                 CreatedAt = DateTime.UtcNow,
             };
-            _dbContext.SessionRegistrations.Add(registration);
-            await _dbContext.SaveChangesAsync();
+            await _registrationRepository.AddAsync(registration);
+            await _registrationRepository.SaveChangesAsync();
 
             // Process payment using MockPaymentService
             _logger.LogInformation("Processing payment for session {SessionId}, amount: {Amount}",
@@ -349,8 +306,8 @@ public class SessionsController : ControllerBase
                     model.SessionId, paymentResponse.ErrorMessage);
 
                 // Remove the registration since payment failed
-                _dbContext.SessionRegistrations.Remove(registration);
-                await _dbContext.SaveChangesAsync();
+                _registrationRepository.Remove(registration);
+                await _registrationRepository.SaveChangesAsync();
 
                 return BadRequest(new
                 {
@@ -368,10 +325,10 @@ public class SessionsController : ControllerBase
                 Status = "Success",
                 CreatedAt = paymentResponse.ProcessedAt,
             };
-            _dbContext.Payments.Add(payment);
+            await _paymentRepository.AddAsync(payment);
             registration.PaymentStatus = "Paid";
             registration.PaymentDate = paymentResponse.ProcessedAt;
-            await _dbContext.SaveChangesAsync();
+            await _paymentRepository.SaveChangesAsync();
 
             _logger.LogInformation(
                 "User {Email} registered for session {SessionId} with transaction {TransactionId}, amount: ${Amount}",
@@ -397,73 +354,6 @@ public class SessionsController : ControllerBase
         }
     }
 
-    private async Task<bool> ValidateTokenAsync(string token)
-    {
-        try
-        {
-            _logger.LogInformation("ValidateTokenAsync - Decoding token");
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = tokenData.Split('|');
-
-            if (parts.Length != 3)
-            {
-                _logger.LogWarning("ValidateTokenAsync - Invalid token format");
-                return false;
-            }
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            if (expiry < DateTime.UtcNow)
-            {
-                _logger.LogWarning("ValidateTokenAsync - Token expired");
-                return false;
-            }
-
-            var user = await _userManager.FindByIdAsync(userId);
-            var isValid = user != null && user.Email == email;
-            _logger.LogInformation("ValidateTokenAsync - Result: {IsValid}", isValid);
-
-            return isValid;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "ValidateTokenAsync - Exception occurred");
-            return false;
-        }
-    }
-
-    private async Task<string?> GetUserIdFromTokenAsync(string token)
-    {
-        try
-        {
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = tokenData.Split('|');
-
-            if (parts.Length != 3)
-                return null;
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            if (expiry < DateTime.UtcNow)
-                return null;
-
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user != null && user.Email == email)
-            {
-                return userId;
-            }
-
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
 }
 
 public class SessionRegistrationModel
@@ -501,6 +391,12 @@ public class SessionRegistrationModel
 
     [StringLength(20)]
     public string? Position { get; set; } // Forward, Defense, Forward/Defense, Goalie
+
+    [StringLength(100)]
+    public string? EmergencyContactName { get; set; }
+
+    [StringLength(20)]
+    public string? EmergencyContactPhone { get; set; }
 
     // Payment fields
     [Required]

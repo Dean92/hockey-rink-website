@@ -5,6 +5,8 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using HockeyRinkAPI.Data;
 using HockeyRinkAPI.Models;
+using HockeyRinkAPI.Repositories;
+using HockeyRinkAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -20,16 +22,28 @@ public class UsersController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly AppDbContext _dbContext;
     private readonly ILogger<UsersController> _logger;
+    private readonly ITokenService _tokenService;
+    private readonly ISessionRepository _sessionRepository;
+    private readonly IRegistrationRepository _registrationRepository;
+    private readonly IPaymentRepository _paymentRepository;
 
     public UsersController(
         UserManager<ApplicationUser> userManager,
         AppDbContext dbContext,
-        ILogger<UsersController> logger
+        ILogger<UsersController> logger,
+        ITokenService tokenService,
+        ISessionRepository sessionRepository,
+        IRegistrationRepository registrationRepository,
+        IPaymentRepository paymentRepository
     )
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+        _sessionRepository = sessionRepository ?? throw new ArgumentNullException(nameof(sessionRepository));
+        _registrationRepository = registrationRepository ?? throw new ArgumentNullException(nameof(registrationRepository));
+        _paymentRepository = paymentRepository ?? throw new ArgumentNullException(nameof(paymentRepository));
     }
 
     [HttpGet("profile")]
@@ -48,10 +62,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             // Fall back to cookie auth
@@ -77,14 +91,7 @@ public class UsersController : ControllerBase
 
             // Determine current league based on active sessions (sessions that have started but not ended)
             var now = DateTime.UtcNow;
-            var currentSession = await _dbContext.SessionRegistrations
-                .Include(sr => sr.Session)
-                    .ThenInclude(s => s.League)
-                .Where(sr => sr.UserId == userId
-                    && sr.Session.StartDate <= now
-                    && sr.Session.EndDate >= now)
-                .OrderBy(sr => sr.Session.StartDate)
-                .FirstOrDefaultAsync();
+            var currentSession = await _registrationRepository.GetCurrentForUserAsync(userId, now);
 
             int? currentLeagueId = currentSession?.Session.LeagueId;
             string? currentLeagueName = currentSession?.Session.League?.Name;
@@ -137,10 +144,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             else if (HttpContext.User.Identity?.IsAuthenticated == true)
@@ -223,10 +230,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             else if (HttpContext.User.Identity?.IsAuthenticated == true)
@@ -286,10 +293,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             else if (HttpContext.User.Identity?.IsAuthenticated == true)
@@ -309,12 +316,7 @@ public class UsersController : ControllerBase
             }
 
             // Get all session registrations for this user
-            var registrations = await _dbContext.SessionRegistrations
-                .Include(sr => sr.Session)
-                .ThenInclude(s => s!.League)
-                .Where(sr => sr.UserId == userId)
-                .OrderByDescending(sr => sr.Session!.StartDate)
-                .ToListAsync();
+            var registrations = await _registrationRepository.GetByUserIdAsync(userId);
 
             var now = DateTime.UtcNow;
 
@@ -399,10 +401,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             else if (HttpContext.User.Identity?.IsAuthenticated == true)
@@ -422,9 +424,7 @@ public class UsersController : ControllerBase
             }
 
             // Find the registration
-            var registration = await _dbContext.SessionRegistrations
-                .Include(sr => sr.Session)
-                .FirstOrDefaultAsync(sr => sr.Id == registrationId && sr.UserId == userId);
+            var registration = await _registrationRepository.GetByIdForUserAsync(registrationId, userId);
 
             if (registration == null)
             {
@@ -448,17 +448,16 @@ public class UsersController : ControllerBase
             }
 
             // Find and remove associated payment record
-            var payment = await _dbContext.Payments
-                .FirstOrDefaultAsync(p => p.SessionRegistrationId == registrationId);
+            var payment = await _paymentRepository.GetByRegistrationIdAsync(registrationId);
 
             if (payment != null)
             {
-                _dbContext.Payments.Remove(payment);
+                _paymentRepository.Remove(payment);
             }
 
             // Remove the registration
-            _dbContext.SessionRegistrations.Remove(registration);
-            await _dbContext.SaveChangesAsync();
+            _registrationRepository.Remove(registration);
+            await _registrationRepository.SaveChangesAsync();
 
             _logger.LogInformation("User {Email} cancelled registration {RegistrationId} for session {SessionName}",
                 user.Email, registrationId, registration.Session?.Name);
@@ -493,10 +492,10 @@ public class UsersController : ControllerBase
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = authHeader.Substring("Bearer ".Length);
-                var isValid = await ValidateTokenAsync(token);
+                var isValid = await _tokenService.ValidateTokenAsync(token);
                 if (isValid)
                 {
-                    userId = await GetUserIdFromTokenAsync(token);
+                    userId = await _tokenService.GetUserIdFromTokenAsync(token);
                 }
             }
             // Fall back to cookie auth
@@ -520,11 +519,7 @@ public class UsersController : ControllerBase
                 return NotFound(new { message = "User not found" });
             }
 
-            var registrations = await _dbContext
-                .SessionRegistrations.Where(r => r.UserId == userId)
-                .Include(r => r.Session)
-                .ThenInclude(s => s!.League)
-                .ToListAsync();
+            var registrations = await _registrationRepository.GetByUserIdAsync(userId);
 
             return Ok(
                 new
@@ -557,63 +552,6 @@ public class UsersController : ControllerBase
         }
     }
 
-    private async Task<bool> ValidateTokenAsync(string token)
-    {
-        try
-        {
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = tokenData.Split('|');
-
-            if (parts.Length != 3)
-                return false;
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            if (expiry < DateTime.UtcNow)
-                return false;
-
-            var user = await _userManager.FindByIdAsync(userId);
-            return user != null && user.Email == email;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private async Task<string?> GetUserIdFromTokenAsync(string token)
-    {
-        try
-        {
-            var tokenData = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = tokenData.Split('|');
-
-            if (parts.Length != 3)
-                return null;
-
-            var userId = parts[0];
-            var email = parts[1];
-            var expiry = DateTime.Parse(parts[2]);
-
-            if (expiry < DateTime.UtcNow)
-                return null;
-
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user != null && user.Email == email)
-            {
-                return userId;
-            }
-
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
     /// <summary>
     /// Get user's team assignment for a specific session (published drafts only)
     /// </summary>
@@ -629,9 +567,7 @@ public class UsersController : ControllerBase
                 return Unauthorized(new { message = "Invalid or missing authentication" });
             }
 
-            var session = await _dbContext.Sessions
-                .Include(s => s.League)
-                .FirstOrDefaultAsync(s => s.Id == sessionId);
+            var session = await _sessionRepository.GetByIdWithLeagueAsync(sessionId);
 
             if (session == null)
             {
@@ -643,8 +579,7 @@ public class UsersController : ControllerBase
                 return NotFound(new { message = "Draft not yet published for this session" });
             }
 
-            var registration = await _dbContext.SessionRegistrations
-                .FirstOrDefaultAsync(sr => sr.SessionId == sessionId && sr.UserId == userId);
+            var registration = await _registrationRepository.GetByUserAndSessionAsync(userId, sessionId);
 
             if (registration == null)
             {
@@ -765,10 +700,10 @@ public class UsersController : ControllerBase
         if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
         {
             var token = authHeader.Substring("Bearer ".Length);
-            var isValid = await ValidateTokenAsync(token);
+            var isValid = await _tokenService.ValidateTokenAsync(token);
             if (isValid)
             {
-                return await GetUserIdFromTokenAsync(token);
+                return await _tokenService.GetUserIdFromTokenAsync(token);
             }
         }
         else if (HttpContext.User.Identity?.IsAuthenticated == true)

@@ -1,0 +1,323 @@
+{
+  "metadata": {
+    "title": "HockeyRinkAPI Backend Refactor — SOLID + Repository Pattern",
+    "project": "HockeyRinkAPI",
+    "target_framework": "net9.0",
+    "branch": "backend_reorg",
+    "created": "2025-01-01",
+    "description": "Phased plan to bring HockeyRinkAPI into full compliance with SOLID principles and introduce the Repository pattern for testable, maintainable data access."
+  },
+  "decisions_confirmed": {
+    "phase3_mock_stripe": "DELETE MockStripeService.cs (Option A) — MockPaymentService already fulfils the same role and correctly implements IPaymentService.",
+    "route_preservation": "All admin controller splits (Phase 6) keep exact [Route('api/admin/...')] routes to avoid breaking the Angular frontend.",
+    "test_strategy": "Keep existing integration tests (CustomWebApplicationFactory + InMemoryDatabase) unchanged. Add new unit tests alongside using Moq — do NOT rewrite existing tests.",
+    "execution_start": "Phase 1 — ITokenService extraction (safest, highest impact, unblocks all other phases)."
+  },
+  "violations_identified": {
+    "SRP": [
+      "AdminController owns 15+ endpoints across 6 unrelated domains (users, sessions, registrations, leagues, dashboard, draft).",
+      "Token validation logic (ValidateTokenAsync + GetUserIdFromTokenAsync) is copy-pasted into AdminController, UsersController, SessionsController, TeamsController, and AuthController — 5 copies.",
+      "IsAdminAsync() is duplicated in AdminController and TeamsController.",
+      "Session auto-activate/deactivate business logic lives inside AdminController.GetAllSessions() AND SessionsController.GetSessions() — 2 copies.",
+      "7 request model classes (CreateSessionModel, UpdateSessionModel, ManualRegistrationModel, UpdateLeagueModel, UpdatePlayerRatingModel, UpdateUserProfileModel, PublishDraftModel) are defined inline at the bottom of AdminController.cs instead of Models/Requests/."
+    ],
+    "OCP": [
+      "Session activation/deactivation rules are hardcoded inside controller action methods — adding a new rule requires modifying a controller."
+    ],
+    "LSP": [
+      "MockStripeService does NOT implement IPaymentService — it defines its own incompatible PaymentResult type vs PaymentResponse in IPaymentService.",
+      "SessionsController takes a concrete MockStripeService constructor parameter alongside IPaymentService, breaking substitutability."
+    ],
+    "ISP": "No violations — IPaymentService is already small and focused.",
+    "DIP": [
+      "All controllers inject AppDbContext directly — no repository abstraction.",
+      "SessionsController has a concrete MockStripeService constructor dependency.",
+      "AdminController and TeamsController implement their own IsAdminAsync() instead of using an injected abstraction."
+    ]
+  },
+  "folder_structure_target": {
+    "Controllers": {
+      "Admin/": [
+        "AdminControllerBase.cs",
+        "AdminDashboardController.cs",
+        "AdminLeaguesController.cs",
+        "AdminRegistrationsController.cs",
+        "AdminSessionsController.cs",
+        "AdminUsersController.cs"
+      ],
+      "root": [
+        "AuthController.cs (updated)",
+        "LeaguesController.cs (updated)",
+        "SessionsController.cs (updated)",
+        "TeamsController.cs (updated)",
+        "UsersController.cs (updated)",
+        "AdminController.cs (DELETED in Phase 6)"
+      ]
+    },
+    "Models": {
+      "Requests/": [
+        "CreateSessionRequest.cs",
+        "UpdateSessionRequest.cs",
+        "ManualRegistrationRequest.cs",
+        "UpdateLeagueRequest.cs",
+        "UpdatePlayerRatingRequest.cs",
+        "UpdateUserProfileRequest.cs",
+        "PublishDraftRequest.cs"
+      ]
+    },
+    "Repositories/": [
+      "ISessionRepository.cs",
+      "SessionRepository.cs",
+      "IRegistrationRepository.cs",
+      "RegistrationRepository.cs",
+      "ILeagueRepository.cs",
+      "LeagueRepository.cs",
+      "IPaymentRepository.cs",
+      "PaymentRepository.cs"
+    ],
+    "Services": {
+      "new": [
+        "ITokenService.cs",
+        "TokenService.cs",
+        "ISessionActivationService.cs",
+        "SessionActivationService.cs"
+      ],
+      "unchanged": [
+        "IPaymentService.cs",
+        "MockPaymentService.cs"
+      ],
+      "deleted": [
+        "MockStripeService.cs (Phase 3)"
+      ]
+    }
+  },
+  "phases": [
+    {
+      "id": 1,
+      "name": "Extract ITokenService",
+      "status": "✅ complete",
+      "goal": "Eliminate token validation and generation code duplicated across 5 controllers by centralising it behind a single injectable interface.",
+      "solid_principles": ["SRP", "DIP"],
+      "risk": "Low — pure extraction, no logic change",
+      "estimated_effort": "1–2 hours",
+      "depends_on": [],
+      "files_created": [
+        "HockeyRinkAPI/Services/ITokenService.cs",
+        "HockeyRinkAPI/Services/TokenService.cs"
+      ],
+      "files_modified": [
+        "HockeyRinkAPI/Program.cs — register AddScoped<ITokenService, TokenService>",
+        "HockeyRinkAPI/Controllers/AuthController.cs — inject ITokenService; replace GenerateToken() + ValidateTokenAsync(); remove private methods",
+        "HockeyRinkAPI/Controllers/UsersController.cs — inject ITokenService; replace all ValidateTokenAsync + GetUserIdFromTokenAsync calls; remove private methods",
+        "HockeyRinkAPI/Controllers/SessionsController.cs — inject ITokenService; replace ValidateTokenAsync + GetUserIdFromTokenAsync; remove private methods",
+        "HockeyRinkAPI/Controllers/AdminController.cs — inject ITokenService; update IsAdminAsync() to use _tokenService; remove private GetUserIdFromTokenAsync",
+        "HockeyRinkAPI/Controllers/TeamsController.cs — inject ITokenService; update IsAdminAsync() to use _tokenService; remove private GetUserIdFromTokenAsync"
+      ],
+      "checkpoint": "Run full test suite — all existing tests must pass after this phase."
+    },
+    {
+      "id": 2,
+      "name": "Extract ISessionActivationService",
+      "status": "✅ complete",
+      "goal": "Remove the ~60-line session auto-activate/deactivate foreach loop duplicated in AdminController.GetAllSessions() and SessionsController.GetSessions().",
+      "solid_principles": ["SRP", "OCP"],
+      "risk": "Low — logic is identical between both controllers, just extracted",
+      "estimated_effort": "1 hour",
+      "depends_on": [],
+      "files_created": [
+        "HockeyRinkAPI/Services/ISessionActivationService.cs",
+        "HockeyRinkAPI/Services/SessionActivationService.cs"
+      ],
+      "files_modified": [
+        "HockeyRinkAPI/Program.cs — register AddScoped<ISessionActivationService, SessionActivationService>",
+        "HockeyRinkAPI/Controllers/AdminController.cs — inject ISessionActivationService; replace foreach block in GetAllSessions() with: var changed = await _sessionActivationService.ApplyActivationRulesAsync(sessions); if (changed) await _dbContext.SaveChangesAsync();",
+        "HockeyRinkAPI/Controllers/SessionsController.cs — same two-line replacement in GetSessions()"
+      ],
+      "interface_outline": {
+        "ISessionActivationService": [
+          "Task<bool> ApplyActivationRulesAsync(IEnumerable<Session> sessions) — returns true if any sessions were modified"
+        ]
+      },
+      "checkpoint": "Manually verify via Swagger that session activation/deactivation still works correctly."
+    },
+    {
+      "id": 3,
+      "name": "Fix MockStripeService LSP/DIP Violation",
+      "status": "✅ complete",
+      "goal": "Remove MockStripeService so SessionsController can drop its concrete dependency. MockPaymentService already correctly implements IPaymentService.",
+      "solid_principles": ["LSP", "DIP"],
+      "risk": "Low — SessionsController already has IPaymentService injected; this just removes the unused concrete one",
+      "estimated_effort": "30 minutes",
+      "depends_on": [],
+      "decision": "Option A — DELETE MockStripeService.cs entirely (confirmed).",
+      "files_deleted": [
+        "HockeyRinkAPI/Services/MockStripeService.cs"
+      ],
+      "files_modified": [
+        "HockeyRinkAPI/Controllers/SessionsController.cs — remove private readonly MockStripeService _stripeService field and constructor parameter",
+        "HockeyRinkAPI/Program.cs — remove builder.Services.AddTransient<MockStripeService>()"
+      ],
+      "checkpoint": "Run session registration end-to-end via Swagger to verify payment flow still works."
+    },
+    {
+      "id": 4,
+      "name": "Move Request Models to Models/Requests",
+      "status": "✅ complete",
+      "goal": "Remove the 7 model classes defined at the bottom of AdminController.cs and place each in its own file under Models/Requests/.",
+      "solid_principles": ["SRP"],
+      "risk": "Low — rename namespace + move files only; class names stay the same",
+      "estimated_effort": "30 minutes",
+      "depends_on": [],
+      "files_created": [
+        "HockeyRinkAPI/Models/Requests/CreateSessionRequest.cs — move CreateSessionModel",
+        "HockeyRinkAPI/Models/Requests/UpdateSessionRequest.cs — move UpdateSessionModel",
+        "HockeyRinkAPI/Models/Requests/UpdateLeagueRequest.cs — move UpdateLeagueModel",
+        "HockeyRinkAPI/Models/Requests/ManualRegistrationRequest.cs — move ManualRegistrationModel",
+        "HockeyRinkAPI/Models/Requests/UpdatePlayerRatingRequest.cs — move UpdatePlayerRatingModel",
+        "HockeyRinkAPI/Models/Requests/UpdateUserProfileRequest.cs — move UpdateUserProfileModel",
+        "HockeyRinkAPI/Models/Requests/PublishDraftRequest.cs — move PublishDraftModel"
+      ],
+      "files_modified": [
+        "HockeyRinkAPI/Controllers/AdminController.cs — delete the 7 inline class definitions at the bottom; add using HockeyRinkAPI.Models.Requests;"
+      ],
+      "checkpoint": "dotnet build must have zero errors."
+    },
+    {
+      "id": 5,
+      "name": "Introduce Repository Pattern",
+      "status": "✅ complete",
+      "goal": "Abstract all direct AppDbContext calls behind repository interfaces so controllers depend on abstractions, enabling true unit testing without InMemoryDatabase.",
+      "solid_principles": ["DIP", "SRP"],
+      "risk": "Medium — touches all controllers; build after each repository to catch errors early",
+      "estimated_effort": "3–5 hours",
+      "depends_on": [4],
+      "notes": [
+        "UserManager<ApplicationUser> already serves as an adequate user repository — do NOT wrap it.",
+        "Keep AppDbContext registered in DI — repositories take it as a constructor dependency.",
+        "Use AddScoped lifetime for all repositories to match DbContext lifetime."
+      ],
+      "files_created": [
+        "HockeyRinkAPI/Repositories/ISessionRepository.cs",
+        "HockeyRinkAPI/Repositories/SessionRepository.cs",
+        "HockeyRinkAPI/Repositories/IRegistrationRepository.cs",
+        "HockeyRinkAPI/Repositories/RegistrationRepository.cs",
+        "HockeyRinkAPI/Repositories/ILeagueRepository.cs",
+        "HockeyRinkAPI/Repositories/LeagueRepository.cs",
+        "HockeyRinkAPI/Repositories/IPaymentRepository.cs",
+        "HockeyRinkAPI/Repositories/PaymentRepository.cs"
+      ],
+      "files_modified": [
+        "HockeyRinkAPI/Program.cs — register all 4 repositories with AddScoped",
+        "HockeyRinkAPI/Controllers/AdminController.cs — replace _dbContext calls with injected repositories",
+        "HockeyRinkAPI/Controllers/SessionsController.cs — replace _dbContext calls with ISessionRepository, IRegistrationRepository, IPaymentRepository",
+        "HockeyRinkAPI/Controllers/UsersController.cs — replace _dbContext calls with IRegistrationRepository",
+        "HockeyRinkAPI/Controllers/TeamsController.cs — replace _dbContext calls with ISessionRepository",
+        "HockeyRinkAPI/Controllers/LeaguesController.cs — replace _db calls with ILeagueRepository"
+      ],
+      "interface_outlines": {
+        "ISessionRepository": [
+          "Task<List<Session>> GetAllWithDetailsAsync()",
+          "Task<List<Session>> GetFilteredAsync(int? leagueId, DateTime? date)",
+          "Task<Session?> GetByIdAsync(int id)",
+          "Task<Session?> GetByIdWithRegistrationsAsync(int id)",
+          "Task AddAsync(Session session)",
+          "Task SaveChangesAsync()"
+        ],
+        "IRegistrationRepository": [
+          "Task<List<SessionRegistration>> GetByUserIdAsync(string userId)",
+          "Task<SessionRegistration?> GetByIdAsync(int id)",
+          "Task<SessionRegistration?> GetByIdAndSessionAsync(int id, int sessionId)",
+          "Task<bool> ExistsAsync(string userId, int sessionId)",
+          "Task<int> CountBySessionAsync(int sessionId)",
+          "Task AddAsync(SessionRegistration registration)",
+          "void Remove(SessionRegistration registration)",
+          "Task SaveChangesAsync()"
+        ],
+        "ILeagueRepository": [
+          "Task<List<League>> GetAllOrderedByNameAsync()",
+          "Task<League?> GetByIdAsync(int id)",
+          "Task SaveChangesAsync()"
+        ],
+        "IPaymentRepository": [
+          "Task<Payment?> GetByRegistrationIdAsync(int registrationId)",
+          "Task AddAsync(Payment payment)",
+          "void Remove(Payment payment)",
+          "Task SaveChangesAsync()"
+        ]
+      },
+      "checkpoint": "Run full test suite — integration tests still use InMemoryDatabase so they should still pass."
+    },
+    {
+      "id": 6,
+      "name": "Split AdminController into Domain Controllers",
+      "status": "✅ complete",
+      "goal": "Apply SRP by splitting AdminController's 15+ endpoints across 5 focused controllers under Controllers/Admin/.",
+      "solid_principles": ["SRP"],
+      "risk": "Medium — URL routes must stay identical to avoid breaking the Angular frontend (confirmed)",
+      "estimated_effort": "2–3 hours",
+      "depends_on": [1, 2, 4, 5],
+      "files_created": [
+        "HockeyRinkAPI/Controllers/Admin/AdminControllerBase.cs — abstract base: injects ITokenService + UserManager; exposes protected IsAdminAsync()",
+        "HockeyRinkAPI/Controllers/Admin/AdminUsersController.cs — GET api/admin/users, PUT api/admin/users/{userId}/rating, PUT api/admin/users/{userId}/profile",
+        "HockeyRinkAPI/Controllers/Admin/AdminSessionsController.cs — GET api/admin/sessions/all, GET/POST/PUT/DELETE api/admin/sessions/{id}, PUT api/admin/sessions/{sessionId}/publish-draft",
+        "HockeyRinkAPI/Controllers/Admin/AdminRegistrationsController.cs — GET/POST/PUT/DELETE api/admin/sessions/{id}/registrations[/manual/{id}], GET api/admin/registrations",
+        "HockeyRinkAPI/Controllers/Admin/AdminLeaguesController.cs — GET api/admin/leagues, PUT api/admin/leagues/{id}",
+        "HockeyRinkAPI/Controllers/Admin/AdminDashboardController.cs — GET api/admin/dashboard"
+      ],
+      "files_deleted": [
+        "HockeyRinkAPI/Controllers/AdminController.cs — delete once all endpoints verified and all tests pass"
+      ],
+      "checkpoint": "Run full test suite AND manually hit every api/admin/* endpoint via Swagger to confirm routes are unchanged."
+    },
+    {
+      "id": 7,
+      "name": "Add Unit Tests with Moq",
+      "status": "✅ complete",
+      "goal": "Add true unit tests for the new services and split controllers using Moq interface mocks — no database required.",
+      "solid_principles": ["DIP"],
+      "risk": "Low — test project only; no production code changes",
+      "estimated_effort": "3–4 hours",
+      "depends_on": [5, 6],
+      "decision": "Keep existing integration tests (CustomWebApplicationFactory + InMemoryDatabase) as-is. Only ADD new unit tests (confirmed).",
+      "files_modified": [
+        "HockeyRinkApi.Tests/HockeyRinkApi.Tests.csproj — add Moq package reference"
+      ],
+      "files_created": [
+        "HockeyRinkApi.Tests/Unit/TokenServiceTests.cs — test GenerateToken, ValidateTokenAsync (expired, invalid base64, wrong email, valid round-trip), GetUserIdFromTokenAsync",
+        "HockeyRinkApi.Tests/Unit/SessionActivationServiceTests.cs — test auto-activate, auto-deactivate, manual override detection",
+        "HockeyRinkApi.Tests/Unit/AdminSessionsControllerTests.cs — mock ISessionRepository + ISessionActivationService + ITokenService; no HTTP server",
+        "HockeyRinkApi.Tests/Unit/AdminRegistrationsControllerTests.cs — mock IRegistrationRepository + IPaymentRepository"
+      ],
+      "example_unit_test_pattern": [
+        "var mockRepo = new Mock<ISessionRepository>();",
+        "mockRepo.Setup(r => r.GetAllWithDetailsAsync()).ReturnsAsync(fakeSessions);",
+        "var controller = new AdminSessionsController(mockRepo.Object, mockActivation.Object, mockToken.Object, mockUserManager, mockLogger);",
+        "var result = await controller.GetAllSessions();",
+        "Assert.IsType<OkObjectResult>(result);"
+      ],
+      "checkpoint": "All unit tests must pass without any database."
+    }
+  ],
+  "di_registrations_summary": {
+    "add_to_program_cs": [
+      "builder.Services.AddScoped<ITokenService, TokenService>();                    // Phase 1",
+      "builder.Services.AddScoped<ISessionActivationService, SessionActivationService>(); // Phase 2",
+      "builder.Services.AddScoped<ISessionRepository, SessionRepository>();           // Phase 5",
+      "builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>(); // Phase 5",
+      "builder.Services.AddScoped<ILeagueRepository, LeagueRepository>();             // Phase 5",
+      "builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();           // Phase 5"
+    ],
+    "remove_from_program_cs": [
+      "builder.Services.AddTransient<MockStripeService>();  // Phase 3"
+    ]
+  },
+  "testing_checkpoints": [
+    "Phase 1 complete: run dotnet test — all existing tests must still pass",
+    "Phase 2 complete: verify session activation/deactivation via Swagger manually",
+    "Phase 3 complete: verify session registration + payment flow end-to-end via Swagger",
+    "Phase 4 complete: dotnet build must have zero errors",
+    "Phase 5 complete: run dotnet test — all integration tests still pass",
+    "Phase 6 complete: run dotnet test AND manually hit every api/admin/* route via Swagger",
+    "Phase 7 complete: unit tests pass without any database"
+  ]
+}
