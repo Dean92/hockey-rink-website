@@ -27,6 +27,8 @@ public partial class Session
 
     public int? LeagueId { get; set; }
 
+    public int? RinkId { get; set; }
+
     public DateTime? EarlyBirdEndDate { get; set; }
 
     public decimal? EarlyBirdPrice { get; set; }
@@ -47,7 +49,9 @@ public partial class Session
 
     public virtual League? League { get; set; }
 
-    public virtual ICollection<SessionRegistration> SessionRegistrations { get; set; } = new List<SessionRegistration>();
+    public virtual Rink? Rink { get; set; }
+
+    public virtual ICollection<SessionRegistration> SessionRegistrations{ get; set; } = new List<SessionRegistration>();
 
     public virtual ICollection<Team> Teams { get; set; } = new List<Team>();
 }

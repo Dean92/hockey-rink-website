@@ -1,0 +1,55 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace HockeyRinkAPI.Models.Requests;
+
+public class GenerateScheduleRequest
+{
+    [Required]
+    public int LeagueId { get; set; }
+
+    [Required]
+    public int SessionId { get; set; }
+
+    [Required]
+    public int RinkId { get; set; }
+
+    [Required]
+    public DateTime StartDate { get; set; }
+
+    [Required]
+    public DateTime EndDate { get; set; }
+
+    /// <summary>Days of week to schedule games on. 0=Sun, 1=Mon … 6=Sat.</summary>
+    [Required]
+    public List<int> DaysOfWeek { get; set; } = new();
+
+    /// <summary>Earliest game start time on any given day (e.g. "18:00").</summary>
+    [Required]
+    public TimeSpan DailyStartTime { get; set; }
+
+    /// <summary>Latest time a game may START on any given day.</summary>
+    [Required]
+    public TimeSpan DailyEndTime { get; set; }
+
+    /// <summary>Duration of each game in minutes. Default 90.</summary>
+    [Range(30, 240)]
+    public int GameLengthMinutes { get; set; } = 90;
+
+    /// <summary>Buffer between consecutive games on the same rink in minutes. Default 10.</summary>
+    [Range(0, 60)]
+    public int BufferMinutes { get; set; } = 10;
+
+    /// <summary>Maximum games per night on this rink.</summary>
+    [Range(1, 20)]
+    public int GamesPerNight { get; set; } = 2;
+
+    /// <summary>How many times each pair of teams plays each other.</summary>
+    [Range(1, 10)]
+    public int GamesPerMatchup { get; set; } = 1;
+
+    /// <summary>Exclude standard US holidays when true.</summary>
+    public bool ExcludeUsHolidays { get; set; } = true;
+
+    /// <summary>Additional specific dates to exclude (ISO date strings, e.g. "2026-05-25").</summary>
+    public List<string> ExcludeDates { get; set; } = new();
+}

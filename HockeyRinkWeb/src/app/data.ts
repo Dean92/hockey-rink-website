@@ -24,7 +24,7 @@ export class DataService {
         catchError((err) => {
           console.error('Error fetching leagues:', err);
           return of([]);
-        })
+        }),
       );
   }
 
@@ -43,7 +43,7 @@ export class DataService {
         catchError((err) => {
           console.error('Error fetching sessions:', err);
           return of([]);
-        })
+        }),
       );
   }
 
@@ -144,7 +144,7 @@ export class DataService {
       {
         headers,
         withCredentials: true,
-      }
+      },
     );
   }
 
@@ -156,14 +156,14 @@ export class DataService {
       {
         headers,
         withCredentials: true,
-      }
+      },
     );
   }
 
   updateRegistration(
     sessionId: number,
     registrationId: number,
-    data: any
+    data: any,
   ): Observable<any> {
     const headers = this.authService.getAuthHeaders();
     return this.http.put(
@@ -172,13 +172,13 @@ export class DataService {
       {
         headers,
         withCredentials: true,
-      }
+      },
     );
   }
 
   removeRegistration(
     sessionId: number,
-    registrationId: number
+    registrationId: number,
   ): Observable<any> {
     const headers = this.authService.getAuthHeaders();
     return this.http.delete(
@@ -186,7 +186,7 @@ export class DataService {
       {
         headers,
         withCredentials: true,
-      }
+      },
     );
   }
 
@@ -249,7 +249,7 @@ export class DataService {
       {
         headers,
         withCredentials: true,
-      }
+      },
     );
   }
 
@@ -261,7 +261,7 @@ export class DataService {
       {
         ...(headers && { headers }),
         withCredentials: true,
-      }
+      },
     );
   }
 
@@ -273,7 +273,7 @@ export class DataService {
       {
         ...(headers && { headers }),
         withCredentials: true,
-      }
+      },
     );
   }
 
@@ -285,7 +285,7 @@ export class DataService {
       {
         ...(headers && { headers }),
         withCredentials: true,
-      }
+      },
     );
   }
 
@@ -319,6 +319,27 @@ export class DataService {
     return this.http.get<any>(`${this.apiUrl}/users/my-team/${sessionId}`, {
       headers,
       withCredentials: true,
+    });
+  }
+
+  getPublicLeagueGames(
+    leagueId: number,
+    filters?: {
+      teamId?: number;
+      startDate?: string;
+      endDate?: string;
+      rinkId?: number;
+    },
+  ): Observable<any[]> {
+    let params = new HttpParams();
+    if (filters?.teamId)
+      params = params.set('teamId', filters.teamId.toString());
+    if (filters?.startDate) params = params.set('startDate', filters.startDate);
+    if (filters?.endDate) params = params.set('endDate', filters.endDate);
+    if (filters?.rinkId)
+      params = params.set('rinkId', filters.rinkId.toString());
+    return this.http.get<any[]>(`${this.apiUrl}/leagues/${leagueId}/games`, {
+      params,
     });
   }
 }

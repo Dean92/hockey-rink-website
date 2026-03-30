@@ -24,6 +24,9 @@ import { AdultHockey } from './adult-hockey/adult-hockey';
 import { YouthHockey } from './youth-hockey/youth-hockey';
 import { RatHockey } from './rat-hockey/rat-hockey';
 import { Classes } from './classes/classes';
+import { AdminRinkCalendar } from './admin-rink-calendar/admin-rink-calendar';
+import { AdminLeagueSchedule } from './admin-league-schedule/admin-league-schedule';
+import { LeagueSchedule } from './league-schedule/league-schedule';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -76,6 +79,17 @@ export const routes: Routes = [
     component: AdminDraft,
     canActivate: [AuthGuard, AdminGuard],
   },
+  {
+    path: 'admin/rink-calendar',
+    component: AdminRinkCalendar,
+    canActivate: [AuthGuard, AdminGuard],
+  },
+  {
+    path: 'admin/leagues/:id/schedule',
+    component: AdminLeagueSchedule,
+    canActivate: [AuthGuard, AdminGuard],
+  },
+  { path: 'leagues/:id/schedule', component: LeagueSchedule },
   { path: 'setup-password/:token', component: SetupPassword },
   { path: '**', component: NotFound }, // 404 - Wildcard route must be last
 ];

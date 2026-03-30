@@ -1,0 +1,132 @@
+<div class="container py-4">
+  <!-- Header -->
+  <div class="mb-3">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item"><a routerLink="/leagues">Leagues</a></li>
+        <li class="breadcrumb-item active">Schedule</li>
+      </ol>
+    </nav>
+    <h2 class="mb-0 fw-bold">
+      <i class="bi bi-calendar-week me-2 text-primary"></i>
+      {{ league()?.name ?? "League" }} — Schedule
+    </h2>
+    @if (league()?.description) {
+      <p class="text-muted mb-0 mt-1">{{ league()!.description }}</p>
+    }
+  </div>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger">{{ errorMessage() }}</div>
+  }
+
+  <!-- Filters -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body py-2">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label mb-1 small">Filter by Team</label>
+          <select
+            class="form-select form-select-sm"
+            [value]="filterTeamId() ?? ''"
+            (change)="filterTeamId.set(+$any($event.target).value || null)"
+          >
+            <option value="">All Teams</option>
+            @for (t of teams(); track t.id) {
+              <option [value]="t.id">{{ t.teamName }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label mb-1 small">From Date</label>
+          <input
+            type="date"
+            class="form-control form-control-sm"
+            [value]="filterStartDate()"
+            (change)="filterStartDate.set($any($event.target).value)"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label mb-1 small">To Date</label>
+          <input
+            type="date"
+            class="form-control form-control-sm"
+            [value]="filterEndDate()"
+            (change)="filterEndDate.set($any($event.target).value)"
+          />
+        </div>
+        <div class="col-md-3">
+          <button
+            class="btn btn-sm btn-outline-secondary w-100"
+            (click)="clearFilters()"
+          >
+            <i class="bi bi-x-circle me-1"></i>Clear
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+    </div>
+  } @else {
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th class="text-muted small">#</th>
+              <th>Date / Time</th>
+              <th>Rink</th>
+              <th>Home Team</th>
+              <th>Away Team</th>
+              <th>Status</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (filteredGames().length === 0) {
+              <tr>
+                <td colspan="7" class="text-center py-5 text-muted">
+                  <i class="bi bi-calendar-x fs-3 d-block mb-2"></i>
+                  No games scheduled yet
+                </td>
+              </tr>
+            }
+            @for (game of filteredGames(); track game.id; let i = $index) {
+              <tr>
+                <td class="text-muted small">{{ i + 1 }}</td>
+                <td>{{ formatDateTime(game.gameDate) }}</td>
+                <td>{{ game.rinkName ?? "—" }}</td>
+                <td class="fw-medium">{{ game.homeTeamName }}</td>
+                <td class="fw-medium">{{ game.awayTeamName }}</td>
+                <td>
+                  <span
+                    class="badge"
+                    [ngClass]="statusBadgeClass(game.status)"
+                    >{{ game.status }}</span
+                  >
+                </td>
+                <td>
+                  @if (game.status === "Completed" && game.homeScore != null) {
+                    <span class="fw-semibold"
+                      >{{ game.homeScore }}–{{ game.awayScore }}</span
+                    >
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer text-muted small">
+        {{ filteredGames().length }} game(s)
+      </div>
+    </div>
+  }
+</div>

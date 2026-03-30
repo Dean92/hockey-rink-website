@@ -1,0 +1,28 @@
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sortable:hover {
+  background: #f0f0f0;
+}
+
+.schedule-table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .breadcrumb {
+    display: none !important;
+  }
+}

@@ -105,6 +105,11 @@ public class Program
         builder.Services.AddScoped<ISessionRepository, SessionRepository>();
         builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
         builder.Services.AddScoped<ILeagueRepository, LeagueRepository>();
+        builder.Services.AddScoped<IRinkRepository, RinkRepository>();
+        builder.Services.AddScoped<IRinkCalendarRepository, RinkCalendarRepository>();
+        builder.Services.AddScoped<IConflictDetectionService, ConflictDetectionService>();
+        builder.Services.AddScoped<IGameRepository, GameRepository>();
+        builder.Services.AddScoped<IScheduleGeneratorService, ScheduleGeneratorService>();
         builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
         // Configure Swagger
@@ -270,6 +275,17 @@ public class Program
                             logger.LogError("Failed to create admin user: {Errors}",
                                 string.Join(", ", result.Errors.Select(e => e.Description)));
                         }
+                    }
+
+                    // Seed default rinks if none exist
+                    if (!db.Rinks.Any())
+                    {
+                        db.Rinks.AddRange(
+                            new HockeyRinkAPI.Models.Rink { Name = "Rink 1", Description = "Main rink", IsActive = true, CreatedAt = DateTime.UtcNow },
+                            new HockeyRinkAPI.Models.Rink { Name = "Rink 2", Description = "Secondary rink", IsActive = true, CreatedAt = DateTime.UtcNow }
+                        );
+                        await db.SaveChangesAsync();
+                        logger.LogInformation("Seeded default rinks: Rink 1 and Rink 2");
                     }
                 }
                 catch (Exception ex)

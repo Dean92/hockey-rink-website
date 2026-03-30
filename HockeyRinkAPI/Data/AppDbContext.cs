@@ -17,6 +17,8 @@ namespace HockeyRinkAPI.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Game> Games { get; set; }
+        public DbSet<Rink> Rinks { get; set; }
+        public DbSet<RinkBlockout> RinkBlockouts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -137,6 +139,43 @@ namespace HockeyRinkAPI.Data
                 .HasForeignKey(u => u.LeagueId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure Rink relationships
+            builder
+                .Entity<RinkBlockout>()
+                .HasOne(rb => rb.Rink)
+                .WithMany(r => r.Blockouts)
+                .HasForeignKey(rb => rb.RinkId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder
+                .Entity<Session>()
+                .HasOne(s => s.Rink)
+                .WithMany(r => r.Sessions)
+                .HasForeignKey(s => s.RinkId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder
+                .Entity<Game>()
+                .HasOne(g => g.Rink)
+                .WithMany(r => r.Games)
+                .HasForeignKey(g => g.RinkId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure Team LeagueId as optional
+            builder
+                .Entity<Team>()
+                .HasOne(t => t.League)
+                .WithMany(l => l.Teams)
+                .HasForeignKey(t => t.LeagueId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Index for rink calendar queries
+            builder.Entity<Game>().HasIndex(g => new { g.RinkId, g.GameDate });
+            builder.Entity<RinkBlockout>().HasIndex(rb => new { rb.RinkId, rb.StartDateTime });
         }
     }
 }

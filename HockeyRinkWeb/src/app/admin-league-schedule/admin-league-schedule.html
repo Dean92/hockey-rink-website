@@ -1,0 +1,476 @@
+<div class="container-fluid py-3 px-4">
+  <!-- Header -->
+  <div
+    class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2"
+  >
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+          <li class="breadcrumb-item">
+            <a routerLink="/admin/leagues">Leagues</a>
+          </li>
+          <li class="breadcrumb-item active">Schedule</li>
+        </ol>
+      </nav>
+      <h2 class="mb-0 fw-bold">
+        <i class="bi bi-calendar-week me-2 text-primary"></i>
+        {{ league()?.name ?? "League" }} — Schedule
+      </h2>
+    </div>
+    <div class="d-flex gap-2">
+      <a
+        [routerLink]="['/admin/rink-calendar']"
+        class="btn btn-outline-warning btn-sm"
+      >
+        <i class="bi bi-calendar3 me-1"></i>Schedule Games →
+      </a>
+      <button
+        class="btn btn-outline-secondary btn-sm no-print"
+        (click)="print()"
+      >
+        <i class="bi bi-printer me-1"></i>Print / PDF
+      </button>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger alert-dismissible py-2" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ errorMessage() }}
+      <button
+        type="button"
+        class="btn-close"
+        (click)="errorMessage.set(null)"
+      ></button>
+    </div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert-success py-2">
+      <i class="bi bi-check-circle-fill me-1"></i>{{ successMessage() }}
+    </div>
+  }
+
+  <!-- Filters -->
+  <div class="card shadow-sm mb-3 no-print">
+    <div class="card-body py-2">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label mb-1 small">Team</label>
+          <select
+            class="form-select form-select-sm"
+            [value]="filterTeamId() ?? ''"
+            (change)="filterTeamId.set(+$any($event.target).value || null)"
+          >
+            <option value="">All Teams</option>
+            @for (t of teams(); track t.id) {
+              <option [value]="t.id">{{ t.teamName }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label mb-1 small">Status</label>
+          <select
+            class="form-select form-select-sm"
+            [value]="filterStatus()"
+            (change)="filterStatus.set($any($event.target).value)"
+          >
+            <option value="">All Statuses</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="InProgress">In Progress</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label mb-1 small">Rink</label>
+          <select
+            class="form-select form-select-sm"
+            [value]="filterRinkId() ?? ''"
+            (change)="filterRinkId.set(+$any($event.target).value || null)"
+          >
+            <option value="">All Rinks</option>
+            @for (r of rinks(); track r.id) {
+              <option [value]="r.id">{{ r.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label mb-1 small">From</label>
+          <input
+            type="date"
+            class="form-control form-control-sm"
+            [value]="filterStartDate()"
+            (change)="filterStartDate.set($any($event.target).value)"
+          />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label mb-1 small">To</label>
+          <input
+            type="date"
+            class="form-control form-control-sm"
+            [value]="filterEndDate()"
+            (change)="filterEndDate.set($any($event.target).value)"
+          />
+        </div>
+        <div class="col-md-2">
+          <button
+            class="btn btn-sm btn-outline-secondary w-100"
+            (click)="clearFilters()"
+          >
+            <i class="bi bi-x-circle me-1"></i>Clear Filters
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk actions toolbar -->
+  @if (selectedGameIds().size > 0) {
+    <div class="d-flex align-items-center gap-2 mb-2 no-print">
+      <span class="text-muted small"
+        >{{ selectedGameIds().size }} selected</span
+      >
+      <button class="btn btn-sm btn-outline-danger" (click)="openBulkCancel()">
+        <i class="bi bi-x-circle me-1"></i>Cancel Selected
+      </button>
+    </div>
+  }
+
+  <!-- Table -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <div class="mt-2 text-muted">Loading schedule…</div>
+    </div>
+  } @else {
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle schedule-table">
+          <thead class="table-light">
+            <tr>
+              <th class="no-print" style="width: 36px">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  [checked]="allSelected()"
+                  (change)="toggleSelectAll()"
+                />
+              </th>
+              <th class="text-muted small">#</th>
+              <th class="sortable" (click)="sort('gameDate')">
+                Date / Time
+                <i class="bi ms-1" [ngClass]="sortIcon('gameDate')"></i>
+              </th>
+              <th class="sortable" (click)="sort('rinkName')">
+                Rink <i class="bi ms-1" [ngClass]="sortIcon('rinkName')"></i>
+              </th>
+              <th>Home Team</th>
+              <th>Away Team</th>
+              <th class="sortable" (click)="sort('status')">
+                Status <i class="bi ms-1" [ngClass]="sortIcon('status')"></i>
+              </th>
+              <th>Score</th>
+              <th class="no-print">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (filteredGames().length === 0) {
+              <tr>
+                <td colspan="9" class="text-center py-5 text-muted">
+                  <i class="bi bi-calendar-x fs-3 d-block mb-2"></i>
+                  No games match the current filters
+                </td>
+              </tr>
+            }
+            @for (game of filteredGames(); track game.id; let i = $index) {
+              <tr [class.table-secondary]="game.status === 'Cancelled'">
+                <td class="no-print">
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    [checked]="isSelected(game.id)"
+                    (change)="toggleSelect(game.id)"
+                  />
+                </td>
+                <td class="text-muted small">{{ i + 1 }}</td>
+                <td>{{ formatDateTime(game.gameDate) }}</td>
+                <td>{{ game.rinkName ?? "—" }}</td>
+                <td class="fw-medium">{{ game.homeTeamName }}</td>
+                <td class="fw-medium">{{ game.awayTeamName }}</td>
+                <td>
+                  <span
+                    class="badge"
+                    [ngClass]="statusBadgeClass(game.status)"
+                    >{{ game.status }}</span
+                  >
+                </td>
+                <td>
+                  @if (game.status === "Completed" && game.homeScore != null) {
+                    <span class="fw-semibold"
+                      >{{ game.homeScore }}–{{ game.awayScore }}</span
+                    >
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td class="no-print">
+                  <div class="d-flex gap-1">
+                    @if (game.status !== "Cancelled") {
+                      <button
+                        class="btn btn-sm btn-outline-primary"
+                        (click)="openEdit(game)"
+                        title="Edit"
+                      >
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="confirmCancel(game)"
+                        title="Cancel"
+                      >
+                        <i class="bi bi-x-circle"></i>
+                      </button>
+                    } @else {
+                      <span class="text-muted small">Cancelled</span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer text-muted small d-flex justify-content-between">
+        <span>{{ filteredGames().length }} game(s) shown</span>
+        <span>{{ allGames().length }} total</span>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- ── Edit Game Modal ──────────────────────────────────────────────────────── -->
+@if (showEditModal() && editingGame()) {
+  <div class="modal d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-pencil me-2"></i>Edit Game
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            (click)="closeEdit()"
+          ></button>
+        </div>
+        <form [formGroup]="editForm" (ngSubmit)="saveEdit()">
+          <div class="modal-body">
+            @if (editConflict()) {
+              <div class="alert alert-warning py-2">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i
+                >{{ editConflict() }}
+              </div>
+            }
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label"
+                  >Date & Time <span class="text-danger">*</span></label
+                >
+                <input
+                  type="datetime-local"
+                  class="form-control"
+                  formControlName="gameDate"
+                  [class.is-invalid]="
+                    editForm.get('gameDate')?.invalid &&
+                    editForm.get('gameDate')?.touched
+                  "
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Rink</label>
+                <select class="form-select" formControlName="rinkId">
+                  <option [value]="null">No Rink Assigned</option>
+                  @for (r of rinks(); track r.id) {
+                    <option [value]="r.id">{{ r.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Status</label>
+                <select class="form-select" formControlName="status">
+                  <option value="Scheduled">Scheduled</option>
+                  <option value="InProgress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label"
+                  >Home Team <span class="text-danger">*</span></label
+                >
+                <select class="form-select" formControlName="homeTeamId">
+                  @for (t of teams(); track t.id) {
+                    <option [value]="t.id">{{ t.teamName }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label"
+                  >Away Team <span class="text-danger">*</span></label
+                >
+                <select class="form-select" formControlName="awayTeamId">
+                  @for (t of teams(); track t.id) {
+                    <option [value]="t.id">{{ t.teamName }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Home Score</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  formControlName="homeScore"
+                  min="0"
+                />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Away Score</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  formControlName="awayScore"
+                  min="0"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Location Notes</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="location"
+                  maxlength="200"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="closeEdit()"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSavingEdit()"
+            >
+              @if (isSavingEdit()) {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+              }
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}
+
+<!-- ── Cancel Confirm Modal ────────────────────────────────────────────────── -->
+@if (showCancelConfirm() && gameToCancel()) {
+  <div class="modal d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-x-circle-fill text-danger me-2"></i>Cancel Game
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            (click)="cancelCancelDialog()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p>
+            Cancel
+            <strong
+              >{{ gameToCancel()!.homeTeamName }} vs
+              {{ gameToCancel()!.awayTeamName }}</strong
+            >
+            on {{ formatDateTime(gameToCancel()!.gameDate) }}?
+          </p>
+          <p class="text-muted small mb-0">
+            This does not delete the game — it will be marked as Cancelled.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            (click)="cancelCancelDialog()"
+          >
+            Keep Game
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger btn-sm"
+            (click)="executeCancel()"
+            [disabled]="isCancelling()"
+          >
+            @if (isCancelling()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            Yes, Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}
+
+<!-- ── Bulk Cancel Confirm ─────────────────────────────────────────────────── -->
+@if (showBulkCancelConfirm()) {
+  <div class="modal d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-x-circle-fill text-danger me-2"></i>Bulk Cancel
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            (click)="closeBulkCancel()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          Cancel <strong>{{ selectedGameIds().size }}</strong> selected game(s)?
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            (click)="closeBulkCancel()"
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger btn-sm"
+            (click)="executeBulkCancel()"
+            [disabled]="isBulkCancelling()"
+          >
+            @if (isBulkCancelling()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            Cancel All
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}

@@ -22,11 +22,15 @@ public partial class Game
 
     public string? Location { get; set; }
 
+    public int? RinkId { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
 
     public virtual Session Session { get; set; } = null!;
+
+    public virtual Rink? Rink { get; set; }
 
     public virtual Team HomeTeam { get; set; } = null!;
 

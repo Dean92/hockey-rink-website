@@ -2,7 +2,21 @@
 
 ## Status: 📋 Planned
 
-## Overview
+## Clarified Decisions
+
+| Topic | Decision |
+|-------|----------|
+| **Number of rinks** | 2 — seeded as "Rink 1" and "Rink 2"; admin can rename via UI |
+| **Operating hours** | 5:00 AM – 12:00 AM (midnight) every day; configurable per rink in the future |
+| **Games per matchup** | Admin configurable (1, 2, or 3×); scheduler calculates total games from teams × matchups |
+| **Default game length** | 90 minutes; admin can override per schedule generation |
+| **Buffer between games** | 10 minutes automatically added after each game on the same rink |
+| **Timeline increments** | 1-hour increments (5am, 6am, 7am … 11pm, midnight) |
+| **Click-to-create** | Quick form (title, type, end time, notes) — generic enough for any booking type |
+| **Blockouts** | Manually added one at a time, no recurring/repeating rules |
+| **Month view indicators** | Count badge showing number of bookings on each day |
+
+---
 
 A dedicated **Rink Calendar** page in the admin panel that shows ice time availability per rink, per day. Admins can view existing bookings, schedule league games with automatic conflict detection, and block out rink time for maintenance or holidays.
 
@@ -374,7 +388,156 @@ Accessible via a **"Schedule League Games"** button. Opens a slide-in panel:
 
 ---
 
-## Estimated Effort
+## Feature 2: League Schedule Page
+
+### Overview
+
+A dedicated page showing all scheduled games for a league, filterable and sortable. Available in both an **admin view** (with edit/cancel actions) and a **public view** (read-only for players).
+
+---
+
+### Routes
+
+| Route | Access | Description |
+|-------|--------|-------------|
+| `/admin/leagues/{id}/schedule` | Admin only | Full schedule with edit/cancel actions |
+| `/leagues/{id}/schedule` | Public (read-only) | Players can view their team's games |
+
+---
+
+### Admin View — Columns & Features
+
+**Table Columns:**
+
+| # | Date | Time | Rink | Home Team | Away Team | Status | Score | Actions |
+|---|------|------|------|-----------|-----------|--------|-------|---------|
+| 1 | Apr 7, 2026 | 7:00 PM | Rink 1 | Red Team | Blue Team | Scheduled | — | Edit / Cancel |
+| 2 | Apr 7, 2026 | 9:10 PM | Rink 2 | Gold Team | Green Team | Completed | 4–2 | View |
+
+**Filters (above table):**
+- **Team** — dropdown, filter to show only games involving a specific team
+- **Date Range** — start date / end date pickers
+- **Status** — All / Scheduled / Completed / Cancelled
+- **Rink** — All / Rink 1 / Rink 2
+
+**Sorting:**
+- Default: ascending by date/time
+- Clickable column headers: Date, Rink, Status
+
+**Actions:**
+- **Edit** — opens a modal to change date, time, rink, or teams (conflict detection runs on save)
+- **Cancel** — marks game as Cancelled (with confirmation), does NOT delete the record
+- **"Schedule Games →"** button at top — deep-links to Rink Calendar with this league pre-selected
+
+**Bulk Actions:**
+- Select multiple games → Cancel selected
+
+**Export:**
+- **Print / PDF** button — printable schedule view (no action buttons, clean layout)
+
+---
+
+### Public View — League Schedule Page
+
+Accessible without login at `/leagues/{id}/schedule`.
+
+**Features:**
+- Same table layout but read-only (no Edit/Cancel)
+- **Filter by Team** — player can filter to just their team's games
+- **Filter by Date Range**
+- **Status badges** — Scheduled (blue), Completed (green), Cancelled (red)
+- **Score displayed** for completed games
+- Clean, mobile-friendly layout
+
+---
+
+### Navigation / Linking
+
+- **Admin League Session page** → **"Schedule Games →"** button → opens Rink Calendar with league + session pre-selected
+- **Admin League list page** → each league row has **"View Schedule"** link → `/admin/leagues/{id}/schedule`
+- **Public Leagues page** → each league card has **"View Schedule"** link → `/leagues/{id}/schedule`
+- **Rink Calendar** → each game block has a link to the league schedule page
+
+---
+
+### Backend Endpoints
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/api/admin/leagues/{id}/games` | Get all games for a league (admin, with filter params) |
+| GET | `/api/leagues/{id}/games` | Get all games for a league (public, scheduled/completed only) |
+| PUT | `/api/admin/games/{id}` | Update a game (date, time, rink, teams) with conflict check |
+| PUT | `/api/admin/games/{id}/cancel` | Cancel a game |
+
+**Query Parameters for GET `/api/admin/leagues/{id}/games`:**
+```
+?teamId=1
+&status=Scheduled
+&startDate=2026-04-01
+&endDate=2026-06-30
+&rinkId=1
+```
+
+**Response shape per game:**
+```json
+{
+  "id": 12,
+  "gameDate": "2026-04-07T19:00:00",
+  "rinkId": 1,
+  "rinkName": "Rink 1",
+  "homeTeamId": 1,
+  "homeTeamName": "Red Team",
+  "awayTeamId": 2,
+  "awayTeamName": "Blue Team",
+  "status": "Scheduled",
+  "homeScore": null,
+  "awayScore": null,
+  "sessionId": 5,
+  "sessionName": "Winter League 2026"
+}
+```
+
+---
+
+### Phase Assignment
+
+- **Phase 3** (parallel with frontend calendar): Build League Schedule Page backend endpoints
+- **Phase 4**: Build League Schedule Page frontend (admin + public views)
+
+---
+
+## Updated Implementation Phases
+
+### Phase 1 — Schema & Backend Foundation
+- Add Rink, RinkBlockout models and migrations
+- Add RinkId to Session and Game
+- Add LeagueId to Team
+- Rink CRUD endpoints
+- Blockout CRUD endpoints
+- Seed database with Rink 1 and Rink 2
+
+### Phase 2 — Calendar API & Conflict Detection
+- Rink calendar endpoint (day view + month count badges)
+- Conflict detection service (checks sessions, games, blockouts + 10-min buffer)
+- Unit tests for conflict detection logic
+
+### Phase 3 — Frontend Calendar + League Schedule Backend
+- Rink Calendar page (monthly calendar + hourly 1-hour timeline, 5am–midnight)
+- Rink selector dropdown
+- Color-coded time slot display
+- Click interactions (view detail, quick-create form)
+- Blockout creation form
+- League games API endpoints (admin + public)
+
+### Phase 4 — League Game Scheduler + League Schedule Page
+- Round robin schedule generator service
+- Generate preview endpoint + confirm endpoint
+- Frontend scheduler panel (inputs → preview table → confirm)
+- League Schedule Page — admin view (filterable, edit/cancel, export)
+- League Schedule Page — public view (read-only, filter by team)
+- Navigation links between calendar ↔ schedule pages
+
+
 
 | Phase                                       | Estimate        |
 | ------------------------------------------- | --------------- |

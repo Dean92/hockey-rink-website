@@ -63,6 +63,13 @@
               <td>{{ formatDateTime(league.registrationCloseDate) }}</td>
               <td>{{ league.teamCount || 0 }}</td>
               <td>
+                <a
+                  class="btn btn-sm btn-outline-success me-1"
+                  [routerLink]="['/admin/leagues', league.id, 'schedule']"
+                  title="View Schedule"
+                >
+                  <i class="bi bi-calendar-week"></i> Schedule
+                </a>
                 <button
                   class="btn btn-sm btn-outline-primary me-1"
                   (click)="openEditModal(league)"
