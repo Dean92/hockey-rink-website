@@ -1,5 +1,6 @@
-import { Component, OnInit, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { RouterLink } from "@angular/router";
+import { Component, OnInit, signal } from "@angular/core";
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -12,7 +13,7 @@ import { League } from "../models";
 @Component({
   selector: "app-admin-leagues",
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: "./admin-leagues.html",
   styleUrls: ["./admin-leagues.css"],
 })
@@ -23,6 +24,8 @@ export class AdminLeagues implements OnInit {
   isLoading = signal<boolean>(false);
   showModal = signal<boolean>(false);
   isEditMode = signal<boolean>(false);
+  showDeleteConfirm = signal<boolean>(false);
+  leagueToDelete = signal<League | null>(null);
   leagueForm: FormGroup;
   currentLeagueId: number | null = null;
 
@@ -56,6 +59,15 @@ export class AdminLeagues implements OnInit {
         this.isLoading.set(false);
       },
     });
+  }
+
+  openCreateModal(): void {
+    this.isEditMode.set(false);
+    this.currentLeagueId = null;
+    this.leagueForm.reset();
+    this.showModal.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
   }
 
   openEditModal(league: League): void {
@@ -135,7 +147,57 @@ export class AdminLeagues implements OnInit {
             this.isLoading.set(false);
           },
         });
+    } else {
+      // Create new league
+      this.dataService.createLeague(cleanedData).subscribe({
+        next: (response) => {
+          this.successMessage.set(
+            response.message || "League created successfully"
+          );
+          this.isLoading.set(false);
+          this.closeModal();
+          this.loadLeagues();
+        },
+        error: (err) => {
+          console.error("Error creating league:", err);
+          this.errorMessage.set(
+            err.error?.message || "Failed to create league"
+          );
+          this.isLoading.set(false);
+        },
+      });
     }
+  }
+
+  confirmDelete(league: League): void {
+    this.leagueToDelete.set(league);
+    this.showDeleteConfirm.set(true);
+  }
+
+  cancelDelete(): void {
+    this.leagueToDelete.set(null);
+    this.showDeleteConfirm.set(false);
+  }
+
+  executeDelete(): void {
+    const league = this.leagueToDelete();
+    if (!league) return;
+
+    this.isLoading.set(true);
+    this.dataService.deleteLeague(league.id).subscribe({
+      next: (response) => {
+        this.successMessage.set(response.message || "League deleted successfully");
+        this.isLoading.set(false);
+        this.cancelDelete();
+        this.loadLeagues();
+      },
+      error: (err) => {
+        console.error("Error deleting league:", err);
+        this.errorMessage.set(err.error?.message || "Failed to delete league");
+        this.isLoading.set(false);
+        this.cancelDelete();
+      },
+    });
   }
 
   formatDateForInput(dateString: string): string {

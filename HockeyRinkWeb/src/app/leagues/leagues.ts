@@ -104,10 +104,28 @@ export class Leagues implements OnInit {
   }
 
   isRegistrationOpen(league: League): boolean {
-    // Check if there are any active sessions for this league
+    const now = new Date();
+    if (league.registrationOpenDate && new Date(league.registrationOpenDate) > now) {
+      return false; // Not open yet
+    }
+    if (league.registrationCloseDate && new Date(league.registrationCloseDate) <= now) {
+      return false; // Already closed
+    }
+    // Check there's an active session for this league
     return this.sessions().some(
       (session) => session.leagueId === league.id && session.isActive
     );
+  }
+
+  isComingSoon(league: League): boolean {
+    const now = new Date();
+    if (league.registrationOpenDate) {
+      return new Date(league.registrationOpenDate) > now;
+    }
+    if (league.startDate) {
+      return new Date(league.startDate) > now;
+    }
+    return true;
   }
 
   getFirstActiveSession(league: League): Session | undefined {

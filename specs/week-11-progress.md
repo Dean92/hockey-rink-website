@@ -1,10 +1,10 @@
 # Week 11 Progress Update - January 30, 2026
 
-## Status: 🚧 In Progress
+## Status: ✅ Complete
 
 ## Overview
 
-Week 11 began with completing the **Sessions Page Polish** task from the Week 11 plan. This was a 2-4 hour quick-win task that has been successfully completed and extended with additional features based on user feedback.
+Week 11 began with completing the **Sessions Page Polish** task from the Week 11 plan. This was a 2-4 hour quick-win task that has been successfully completed and extended with additional features based on user feedback. **League Management CRUD** has also been completed and verified.
 
 ---
 
@@ -233,18 +233,8 @@ console.log(`[${session.name}] Opening Soon Check:`, {
 
 ### High Priority
 
-1. **Collapsible Sidebar Navigation** (8-10 hours)
-   - Create sidebar component with collapse/expand
-   - State persistence in localStorage
-   - Mobile responsive hamburger menu
-   - Icon-only mode when collapsed
-
-2. **League Management CRUD** (6-8 hours)
-   - Admin create/edit/delete leagues
-   - Coming Soon badge logic (based on registrationOpenDate)
-   - Update public leagues page with new data
-
-3. **Rink Scheduler** (10-14 hours)
+1. ~~**League Management CRUD** (6-8 hours)~~ ✅ COMPLETE
+2. **Rink Scheduler** (10-14 hours)
    - Availability calendar component
    - Schedule generator with constraints
    - Time frame selection
@@ -260,9 +250,64 @@ console.log(`[${session.name}] Opening Soon Check:`, {
 - Footer enhancement (0.5-1h)
 - Home page polish (1-2h)
 
+### Planned (Pending Implementation)
+
+#### Admin Dashboard — Year-to-Date Revenue
+
+- Change "Total Revenue" stat card to show revenue for the current calendar year only
+- Label should dynamically display the actual year: e.g., **"2026 to Date Revenue"**
+- Backend: filter payments by `year = current year` when calculating revenue total
+- Frontend: update the stat card label to use the current year dynamically (not hardcoded)
+
 ---
 
-## Lessons Learned
+### 3. ✅ League Management CRUD (COMPLETE)
+
+**Priority: High**
+
+#### Backend API
+
+- ✅ `POST /api/admin/leagues` — Create league
+- ✅ `PUT /api/admin/leagues/{id}` — Update league
+- ✅ `DELETE /api/admin/leagues/{id}` — Delete league
+- ✅ `GET /api/admin/leagues` — Get all leagues with team counts
+- ✅ League delete nullifies `LeagueId` on related Sessions (FK constraint fix) before removing the record
+- ✅ Delete blocked if league has associated Teams (returns 409 Conflict with message)
+- ✅ Repository pattern: `ILeagueRepository` / `LeagueRepository` with `NullifySessionLeagueIdAsync`
+
+#### Frontend (Angular)
+
+- ✅ Admin leagues page with create, edit, and delete actions
+- ✅ Delete confirmation modal with light header and red trash icon
+- ✅ League list updates immediately after CRUD operations
+
+#### Bug Fixes
+
+- ✅ **League Delete FK Violation** — Deleting a league with linked Sessions threw `SqlException` due to FK constraint on `Sessions.LeagueId`. Fixed by nullifying `LeagueId` on all related sessions before deletion. Player history, stats, and game data are preserved.
+
+#### UI/UX
+
+- ✅ Admin navbar **Admin link restored** — was missing when logged in as Admin; re-added with gold styling (`#e4b457`), white text, and no underline
+- ✅ All delete confirmation modals updated to light header with `bi-trash-fill text-danger` icon (leagues, sessions, teams)
+
+#### Testing
+
+- ✅ Create league — verified league appears in admin list
+- ✅ Edit league — verified changes persist
+- ✅ Delete league with no teams — verified successful deletion, linked sessions preserved with `LeagueId = null`
+- ✅ Delete league with teams — verified 409 Conflict response and helpful error message
+
+---
+
+## Summary
+
+All planned Week 11 features are complete:
+
+- ✅ Sessions Page Polish & Enhancements
+- ✅ Admin Dashboard Enhancements
+- ✅ League Management CRUD
+
+**Status:** ✅ Complete
 
 ### Timezone Handling Best Practices
 
