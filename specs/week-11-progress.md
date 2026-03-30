@@ -252,12 +252,12 @@ console.log(`[${session.name}] Opening Soon Check:`, {
 
 ### Planned (Pending Implementation)
 
-#### Admin Dashboard — Year-to-Date Revenue
+#### ~~Admin Dashboard — Year-to-Date Revenue~~ ✅ COMPLETE
 
-- Change "Total Revenue" stat card to show revenue for the current calendar year only
-- Label should dynamically display the actual year: e.g., **"2026 to Date Revenue"**
-- Backend: filter payments by `year = current year` when calculating revenue total
-- Frontend: update the stat card label to use the current year dynamically (not hardcoded)
+- ~~Change "Total Revenue" stat card to show revenue for the current calendar year only~~
+- ~~Label should dynamically display the actual year: e.g., **"2026 to Date Revenue"**~~
+- ~~Backend: filter payments by `year = current year` when calculating revenue total~~
+- ~~Frontend: update the stat card label to use the current year dynamically (not hardcoded)~~
 
 ---
 
