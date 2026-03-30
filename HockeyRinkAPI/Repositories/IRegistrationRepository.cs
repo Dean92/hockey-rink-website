@@ -15,6 +15,7 @@ public interface IRegistrationRepository
     Task<int> CountBySessionAsync(int sessionId);
     Task<decimal> GetTotalRevenueAsync();
     Task<decimal> GetRevenueFromDateAsync(DateTime from);
+    Task<decimal> GetYearRevenueAsync(int year);
     Task AddAsync(SessionRegistration registration);
     void Remove(SessionRegistration registration);
     Task SaveChangesAsync();

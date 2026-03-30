@@ -74,6 +74,11 @@ public class RegistrationRepository : IRegistrationRepository
             .Where(r => r.RegistrationDate >= from)
             .SumAsync(r => r.AmountPaid);
 
+    public Task<decimal> GetYearRevenueAsync(int year) =>
+        _dbContext.SessionRegistrations
+            .Where(r => r.RegistrationDate.Year == year)
+            .SumAsync(r => r.AmountPaid);
+
     public async Task AddAsync(SessionRegistration registration) =>
         await _dbContext.SessionRegistrations.AddAsync(registration);
 
