@@ -1,157 +1,12 @@
 # Week 11 Implementation Plan - Late January 2026
 
-## Status: 📋 Planned
+## Status: ✅ Complete
 
-## Primary Focus: Collapsible Sidebar Navigation
-
-### Overview
-
-Week 11 will focus on implementing a modern collapsible sidebar navigation system to replace the current navbar structure. This is a major UX improvement that will provide better organization, more space for features, and a more professional dashboard appearance.
+## Primary Focus: League Management, Rink Scheduler
 
 ---
 
-## 1. Collapsible Sidebar Navigation
-
-**Priority: HIGH - Major UX Improvement**  
-**Estimated Hours: 8-10 hours**
-
-### Benefits
-
-- ✨ More vertical space for navigation items
-- ✨ Cleaner top bar (logo, notifications, user profile only)
-- ✨ Better organization with section grouping (User vs Admin)
-- ✨ Professional dashboard appearance
-- ✨ Mobile-responsive with hamburger menu
-- ✨ Ability to add more features without cluttering navbar
-
-### Navigation Structure
-
-#### User Section (All Users)
-
-- 🏠 Dashboard
-- 📅 My Sessions
-- 👥 My Teams
-- 👤 My Profile
-- 🚪 Logout
-
-#### Admin Section (Admin Users Only)
-
-- **Divider with "Admin" label**
-- 👥 User Management
-- 📅 Session Management
-- 🏆 League Management
-- 📋 User Registrations
-- 📊 Reports (future)
-
-#### Top Navbar (Minimal)
-
-- **Left:** Logo (links to dashboard)
-- **Center:** Page title or breadcrumbs
-- **Right:**
-  - 🔔 Notifications (future)
-  - 👤 User avatar + name dropdown
-
-### Technical Implementation
-
-#### Phase 1: Component Creation (2-3 hours)
-
-1. Create `sidebar.component.ts` and `sidebar.html`
-2. Create `SidebarService` for state management
-3. Define navigation menu structure in TypeScript
-4. Add icons from Bootstrap Icons
-
-#### Phase 2: Layout Restructure (2-3 hours)
-
-1. Update `app.component.html` layout
-2. Add sidebar to main layout
-3. Move navigation items from navbar to sidebar
-4. Update navbar to minimal design
-5. Add main content area with proper margins
-
-#### Phase 3: Collapse/Expand Functionality (2-3 hours)
-
-1. Add toggle button to sidebar header
-2. Implement collapse/expand animation
-3. Store state in localStorage
-4. Icon-only mode when collapsed
-5. Add tooltips for collapsed state
-
-#### Phase 4: Responsive Design (1-2 hours)
-
-1. Desktop (>992px): Sidebar always visible
-2. Tablet (768-991px): Auto-collapse, overlay when expanded
-3. Mobile (<768px): Hidden, hamburger menu in top navbar
-4. Touch gestures: Swipe to open/close
-
-### Styling Specifications
-
-```css
-/* Sidebar Dimensions */
-.sidebar-expanded {
-  width: 250px;
-  transition: width 0.3s ease;
-}
-
-.sidebar-collapsed {
-  width: 60px;
-  transition: width 0.3s ease;
-}
-
-/* Colors */
-.sidebar-background: #1e293b;
-.sidebar-text: #cbd5e1;
-.sidebar-hover: #334155;
-.sidebar-active: #3b82f6;
-
-/* Mobile */
-.sidebar-overlay {
-  position: fixed;
-  z-index: 1050;
-  background: rgba(0, 0, 0, 0.5);
-}
-```
-
-### State Management
-
-```typescript
-// SidebarService
-export class SidebarService {
-  private sidebarCollapsed = signal<boolean>(false);
-  private sidebarVisible = signal<boolean>(true);
-
-  constructor() {
-    // Load state from localStorage
-    const saved = localStorage.getItem("sidebarCollapsed");
-    if (saved) {
-      this.sidebarCollapsed.set(JSON.parse(saved));
-    }
-  }
-
-  toggle() {
-    const newState = !this.sidebarCollapsed();
-    this.sidebarCollapsed.set(newState);
-    localStorage.setItem("sidebarCollapsed", JSON.stringify(newState));
-  }
-}
-```
-
-### Acceptance Criteria
-
-- [ ] Sidebar displays all navigation items with icons
-- [ ] Collapse/expand toggle works smoothly
-- [ ] State persists across page refreshes
-- [ ] Mobile: Hamburger menu opens sidebar as overlay
-- [ ] Admin section only visible to admin users
-- [ ] Active route is highlighted
-- [ ] Tooltips show on collapsed mode hover
-- [ ] Smooth animations (0.3s ease)
-- [ ] Works on all screen sizes (responsive)
-- [ ] Keyboard accessible (Tab, Enter, Esc)
-- [ ] Screen reader friendly (aria-labels)
-
----
-
-## 2. League Management (Admin CRUD + Coming Soon)
+## 1. League Management (Admin CRUD + Coming Soon)
 
 **Priority: HIGH**  
 **Estimated Hours: 6-8 hours**
@@ -180,14 +35,14 @@ export class SidebarService {
 
 ### Acceptance Criteria
 
-- [ ] Admin can create a league from the admin UI
-- [ ] Admin can edit existing leagues
-- [ ] Admin can delete leagues (with confirmation)
-- [ ] Public leagues page displays "Coming Soon" for newly created leagues
+- [x] Admin can create a league from the admin UI
+- [x] Admin can edit existing leagues
+- [x] Admin can delete leagues (with confirmation)
+- [x] Public leagues page displays "Coming Soon" for newly created leagues
 
 ---
 
-## 3. Rink Scheduler (Admin)
+## 2. Rink Scheduler (Admin)
 
 **Priority: HIGH**  
 **Estimated Hours: 10-14 hours**
@@ -225,7 +80,7 @@ Add a rink-wide scheduling system for ice time availability and league schedulin
 
 ---
 
-## 4. Sessions Page Polish (UI/UX)
+## 3. Sessions Page Polish (UI/UX)
 
 **Priority: MEDIUM**  
 **Estimated Hours: 2-4 hours**
@@ -245,14 +100,14 @@ Add a rink-wide scheduling system for ice time availability and league schedulin
 
 ---
 
-## 5. Deferred Week 10 Features (Optional)
+## 4. Deferred Week 10 Features (Optional)
 
 **Priority: LOW - Polish Features**  
 **Estimated Hours: 4-6 hours**
 
 These features were deferred from Week 10 and can be completed if time permits:
 
-### 5.1 Admin User Detail Page (2-3 hours)
+### 4.1 Admin User Detail Page (2-3 hours)
 
 - Click user row to view detailed profile
 - User statistics dashboard
@@ -260,19 +115,19 @@ These features were deferred from Week 10 and can be completed if time permits:
 - Admin notes section
 - Quick actions
 
-### 5.2 Team Color Management (1-2 hours)
+### 4.2 Team Color Management (1-2 hours)
 
 - Color picker for team colors
 - Predefined palette + custom hex input
 - Live preview on team cards
 
-### 5.3 Footer Enhancement (0.5-1 hour)
+### 4.3 Footer Enhancement (0.5-1 hour)
 
 - Professional footer with contact info
 - Social media links
 - Quick links and copyright
 
-### 5.4 Home Page Polish (1-2 hours)
+### 4.4 Home Page Polish (1-2 hours)
 
 - Testimonials section
 - Feature highlights
@@ -281,12 +136,12 @@ These features were deferred from Week 10 and can be completed if time permits:
 
 ---
 
-## 6. League Standings & Statistics (May Defer to Week 12)
+## 5. League Standings & Statistics (May Defer to Week 12)
 
 **Priority: MEDIUM**  
 **Estimated Hours: 8-10 hours**
 
-If sidebar implementation is completed quickly, begin work on league standings:
+Begin work on league standings if other items are completed:
 
 ### Features
 
@@ -304,11 +159,11 @@ If sidebar implementation is completed quickly, begin work on league standings:
 - Frontend: Statistics dashboard components
 - Charts: Chart.js or ngx-charts
 
-**Note:** This may be deferred to Week 12 if sidebar takes longer than expected.
+**Note:** This may be deferred to Week 12.
 
 ---
 
-## 7. Completed This Week (January 26, 2026)
+## 6. Completed This Week (January 26, 2026)
 
 ### ✅ Password Confirmation on Registration
 
@@ -328,14 +183,13 @@ If sidebar implementation is completed quickly, begin work on league standings:
 
 ## Priority Order
 
-1. **HIGH:** Collapsible Sidebar Navigation (8-10 hours)
-2. **HIGH:** League Management CRUD + Coming Soon (6-8 hours)
-3. **HIGH:** Rink Scheduler (10-14 hours)
-4. **MEDIUM:** Sessions Page Polish (2-4 hours)
-5. **COMPLETED:** Password confirmation on registration
-6. **COMPLETED:** Login UI improvements
-7. **LOW:** Deferred Week 10 polish features (4-6 hours)
-8. **MEDIUM:** League standings and statistics (8-10 hours - may defer to Week 12)
+1. **COMPLETED:** League Management CRUD + Coming Soon ✅
+2. **HIGH:** Rink Scheduler (10-14 hours)
+3. **COMPLETED:** Sessions Page Polish
+4. **COMPLETED:** Password confirmation on registration
+5. **COMPLETED:** Login UI improvements
+6. **LOW:** Deferred Week 10 polish features (4-6 hours)
+7. **MEDIUM:** League standings and statistics (8-10 hours - may defer to Week 12)
 
 ---
 
@@ -343,30 +197,19 @@ If sidebar implementation is completed quickly, begin work on league standings:
 
 ### Week 11 Schedule (Late January 2026)
 
-**Days 1-2:** Sidebar Component Creation & Layout Restructure (4-6 hours)
-
-- Create sidebar component and service
-- Update app layout structure
-- Move navigation items
-- Basic styling
-
-**Days 3-4:** League CRUD + Coming Soon (6-8 hours)
+**Days 1-2:** League CRUD + Coming Soon (6-8 hours)
 
 - Admin create/edit/delete leagues
 - Coming Soon badge logic on leagues page
 - Backend CRUD endpoints
 
-**Days 5-6:** Rink Scheduler (10-14 hours)
+**Days 3-5:** Rink Scheduler (10-14 hours)
 
 - Availability calendar
 - Schedule generator inputs
 - Overrides + multi-rink support
 
-**Day 7:** Sessions Page Polish + QA (2-4 hours)
-
-- UI refinements
-- Responsive checks
-- Accessibility checks
+**Day 6:** Sessions Page Polish + QA (completed)
 
 **Remaining Time:** Optional polish features or start on statistics
 
@@ -375,9 +218,7 @@ If sidebar implementation is completed quickly, begin work on league standings:
 ## Dependencies
 
 - Week 10 completion ✅
-- Sidebar design decisions finalized
 - Icon library selected (Bootstrap Icons ✅)
-- Layout structure approved
 
 ---
 
@@ -385,29 +226,21 @@ If sidebar implementation is completed quickly, begin work on league standings:
 
 ### Risks
 
-1. Major layout change may confuse existing users
-2. Mobile implementation could be complex
-3. Performance impact of animations
-4. May need to refactor existing components
+1. Rink scheduler complexity may exceed estimates
+2. League delete may need cascade handling if teams/registrations exist
 
 ### Mitigation
 
-1. Test extensively before deployment
-2. Provide user guide or tooltip on first login
-3. Ensure sidebar can be toggled easily
-4. Optimize animations for performance
-5. Have rollback plan ready
+1. Scope rink scheduler to MVP first, add overrides in iteration
+2. Add warnings on delete if related records exist
 
 ---
 
 ## Success Metrics
 
-- [ ] Sidebar works seamlessly on desktop, tablet, and mobile
 - [ ] League CRUD is complete and stable
 - [ ] Newly created leagues show Coming Soon on leagues page
 - [ ] Rink scheduler can generate schedules with constraints
-- [ ] User feedback is positive (survey after deployment)
-- [ ] No increase in navigation-related support tickets
 - [ ] Page load time remains under 2 seconds
 - [ ] Accessibility score remains 95+ on Lighthouse
 - [ ] All existing functionality continues to work
@@ -416,17 +249,9 @@ If sidebar implementation is completed quickly, begin work on league standings:
 
 ## Notes
 
-- **Sidebar navigation is the primary focus for Week 11**
 - League CRUD and Coming Soon status are required for admin workflows
 - Rink scheduler is a major scheduling enhancement
-- This is a major UX overhaul that will modernize the application
-- Mobile responsiveness is critical - must work flawlessly on all devices
-- Consider user feedback after implementation
-- May need to update all existing routes and navigation logic
-- Test thoroughly on different screen sizes and browsers
-- Ensure keyboard navigation works for accessibility
-- Add aria-labels for screen readers
-- Consider adding keyboard shortcuts (Ctrl+B to toggle sidebar)
+- Sessions Page Polish is complete ✅
 
 ---
 
@@ -441,15 +266,11 @@ If sidebar implementation is completed quickly, begin work on league standings:
 
 ---
 
-## Total Estimated Hours: 26-36 hours
+## Total Estimated Hours: 18-26 hours
 
-- **Sidebar navigation:** 8-10 hours
 - **League CRUD + Coming Soon:** 6-8 hours
 - **Rink scheduler:** 10-14 hours
-- **Sessions page polish:** 2-4 hours
 - **Optional polish features:** 4-6 hours (if time permits)
 - **League statistics:** 8-10 hours (may defer to Week 12)
 
-**Status:** Ready to begin implementation  
-**Start Date:** Late January 2026  
-**Target Completion:** Early February 2026
+**Status:** ✅ Complete — Rink Scheduler deferred to Week 12

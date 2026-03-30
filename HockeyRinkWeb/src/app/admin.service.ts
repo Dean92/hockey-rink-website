@@ -8,6 +8,8 @@ export interface AdminDashboardData {
   todaysRegistrationsCount: number;
   activeSessionsCount: number;
   totalRevenue: number;
+  yearRevenue: number;
+  revenueYear: number;
   monthRevenue: number;
   activeSessions: ActiveSessionSummary[];
   upcomingSessions: UpcomingSession[];
@@ -134,7 +136,7 @@ export class AdminService {
   updatePlayerRating(
     userId: string,
     rating: number | null,
-    playerNotes: string | null
+    playerNotes: string | null,
   ): Observable<any> {
     const headers = this.authService.getAuthHeaders();
     return this.http.put(
@@ -146,7 +148,7 @@ export class AdminService {
       {
         headers,
         withCredentials: true,
-      }
+      },
     );
   }
 

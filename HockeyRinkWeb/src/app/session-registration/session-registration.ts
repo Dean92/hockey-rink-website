@@ -3,9 +3,11 @@ import { AuthService } from '../auth';
 import { DataService } from '../data';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import {
+  AbstractControl,
   ReactiveFormsModule,
   FormBuilder,
   FormGroup,
+  ValidationErrors,
   Validators,
 } from '@angular/forms';
 import { CommonModule, DatePipe } from '@angular/common';
@@ -45,6 +47,23 @@ export class SessionRegistration implements OnInit {
     return session?.leagueId !== null && session?.leagueId !== undefined;
   });
 
+  private readonly emergencyPhoneValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const rawValue = String(control.value ?? '');
+    const digitsOnly = rawValue.replace(/\D/g, '');
+
+    if (digitsOnly.length === 0) {
+      return { required: true };
+    }
+
+    if (digitsOnly.length !== 10) {
+      return { pattern: true };
+    }
+
+    return null;
+  };
+
   constructor(
     private authService: AuthService,
     private dataService: DataService,
@@ -66,7 +85,7 @@ export class SessionRegistration implements OnInit {
       zipCode: [''],
       position: [''],
       emergencyContactName: ['', Validators.required],
-      emergencyContactPhone: ['', Validators.required],
+      emergencyContactPhone: ['', [this.emergencyPhoneValidator]],
       agreeToTerms: [false, Validators.requiredTrue],
       // Step 2: Payment Information
       cardNumber: ['', [Validators.required, Validators.pattern(/^\d{16}$/)]],
@@ -202,6 +221,8 @@ export class SessionRegistration implements OnInit {
         'email',
         'dateOfBirth',
         'phone',
+        'emergencyContactName',
+        'emergencyContactPhone',
         'agreeToTerms',
       ];
       let isValid = true;
@@ -251,6 +272,8 @@ export class SessionRegistration implements OnInit {
       'email',
       'dateOfBirth',
       'phone',
+      'emergencyContactName',
+      'emergencyContactPhone',
       'agreeToTerms',
     ];
 

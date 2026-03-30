@@ -120,6 +120,22 @@ export class DataService {
     });
   }
 
+  createLeague(league: Partial<League>): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.post(`${this.apiUrl}/admin/leagues`, league, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
+  deleteLeague(id: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.delete(`${this.apiUrl}/admin/leagues/${id}`, {
+      headers,
+      withCredentials: true,
+    });
+  }
+
   // Registration management methods
   getSessionRegistrations(sessionId: number): Observable<any> {
     const headers = this.authService.getAuthHeaders();

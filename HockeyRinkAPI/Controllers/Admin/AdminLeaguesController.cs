@@ -98,4 +98,70 @@ public class AdminLeaguesController : AdminControllerBase
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
     }
+
+    [HttpPost("leagues")]
+    public async Task<IActionResult> CreateLeague([FromBody] UpdateLeagueModel model)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+                return Forbid();
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var league = new League
+            {
+                Name = model.Name,
+                Description = model.Description,
+                StartDate = model.StartDate,
+                EarlyBirdPrice = model.EarlyBirdPrice,
+                EarlyBirdEndDate = model.EarlyBirdEndDate,
+                RegularPrice = model.RegularPrice,
+                RegistrationOpenDate = model.RegistrationOpenDate,
+                RegistrationCloseDate = model.RegistrationCloseDate,
+                CreatedAt = DateTime.Now,
+            };
+
+            await _leagueRepository.AddAsync(league);
+            await _leagueRepository.SaveChangesAsync();
+
+            _logger.LogInformation("League created: {LeagueName} (ID: {LeagueId})", league.Name, league.Id);
+            return Ok(new { message = $"League \"{league.Name}\" created successfully", id = league.Id });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating league");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    [HttpDelete("leagues/{id}")]
+    public async Task<IActionResult> DeleteLeague(int id)
+    {
+        try
+        {
+            if (!await IsAdminAsync())
+                return Forbid();
+
+            var league = await _leagueRepository.GetByIdWithTeamsAsync(id);
+            if (league == null)
+                return NotFound(new { message = "League not found" });
+
+            if (league.Teams != null && league.Teams.Count > 0)
+                return Conflict(new { message = $"Cannot delete league \"{league.Name}\" because it has {league.Teams.Count} team(s). Remove all teams first." });
+
+            await _leagueRepository.NullifySessionLeagueIdAsync(id);
+            await _leagueRepository.DeleteAsync(league);
+            await _leagueRepository.SaveChangesAsync();
+
+            _logger.LogInformation("League deleted: {LeagueName} (ID: {LeagueId})", league.Name, id);
+            return Ok(new { message = $"League \"{league.Name}\" deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting league");
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
 }

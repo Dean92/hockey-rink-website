@@ -60,6 +60,9 @@ public class AdminDashboardController : AdminControllerBase
 
             var totalRevenue = await _registrationRepository.GetTotalRevenueAsync();
 
+            var currentYear = DateTime.UtcNow.Year;
+            var yearRevenue = await _registrationRepository.GetYearRevenueAsync(currentYear);
+
             var thisMonthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
             var monthRevenue = await _registrationRepository.GetRevenueFromDateAsync(thisMonthStart);
 
@@ -83,6 +86,8 @@ public class AdminDashboardController : AdminControllerBase
                 todaysRegistrationsCount = todaysRegistrations.Count,
                 activeSessionsCount = activeSessions.Count,
                 totalRevenue,
+                yearRevenue,
+                revenueYear = currentYear,
                 monthRevenue,
                 activeSessions,
                 upcomingSessions,

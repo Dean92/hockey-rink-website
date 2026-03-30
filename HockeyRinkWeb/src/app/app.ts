@@ -1,20 +1,34 @@
-import { Component, signal } from "@angular/core";
-import { RouterOutlet, Router, RouterLink } from "@angular/router";
-import { AuthService } from "./auth";
-import { CommonModule } from "@angular/common";
-import { ToastContainerComponent } from "./toast-container/toast-container.component";
+import { Component, signal } from '@angular/core';
+import {
+  RouterOutlet,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+} from '@angular/router';
+import { AuthService } from './auth';
+import { CommonModule } from '@angular/common';
+import { ToastContainerComponent } from './toast-container/toast-container.component';
 
 @Component({
-  selector: "app-root",
-  imports: [RouterOutlet, RouterLink, CommonModule, ToastContainerComponent],
-  templateUrl: "./app.html",
-  styleUrl: "./app.css",
+  selector: 'app-root',
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    CommonModule,
+    ToastContainerComponent,
+  ],
+  templateUrl: './app.html',
+  styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal("HockeyRinkWeb");
+  protected readonly title = signal('HockeyRinkWeb');
   protected readonly currentYear = new Date().getFullYear();
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+  ) {}
 
   isAuthenticated(): boolean {
     return this.authService.getToken() !== null;
@@ -26,6 +40,6 @@ export class App {
 
   onLogout() {
     this.authService.logout();
-    this.router.navigate(["/login"]);
+    this.router.navigate(['/login']);
   }
 }
