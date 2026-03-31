@@ -581,6 +581,32 @@
                 <div class="text-danger small mt-1">Must be between 1 and 200.</div>
               }
             </div>
+
+            <div class="mb-3">
+              <label for="goaliePrice" class="form-label">
+                Goalie Price
+                <span class="text-muted small ms-1">(optional — overrides regular price for Goalies)</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="goaliePrice"
+                  formControlName="goaliePrice"
+                  min="0"
+                  max="1000"
+                  step="0.01"
+                  placeholder="e.g. 75.00"
+                />
+              </div>
+              <div class="form-text">
+                When set, players who select "Goalie" as their position will be charged this flat rate instead.
+              </div>
+              @if (sessionForm.get("goaliePrice")?.invalid && sessionForm.get("goaliePrice")?.touched) {
+                <div class="text-danger small mt-1">Must be between $0 and $1000.</div>
+              }
+            </div>
           </div>
           <div class="modal-footer">
             <button

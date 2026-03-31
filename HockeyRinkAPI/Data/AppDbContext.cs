@@ -88,6 +88,8 @@ namespace HockeyRinkAPI.Data
 
             builder.Entity<Session>().Property(s => s.RegularPrice).HasPrecision(10, 2);
 
+            builder.Entity<Session>().Property(s => s.GoaliePrice).HasPrecision(10, 2);
+
             builder.Entity<League>().Property(l => l.EarlyBirdPrice).HasPrecision(10, 2);
 
             builder.Entity<League>().Property(l => l.RegularPrice).HasPrecision(10, 2);

@@ -36,6 +36,7 @@ export interface Session {
   earlyBirdPrice?: number;
   earlyBirdEndDate?: string;
   regularPrice?: number;
+  goaliePrice?: number;
   registrationCount?: number;
   spotsLeft?: number;
   isFull?: boolean;

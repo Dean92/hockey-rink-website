@@ -27,6 +27,7 @@ import { Classes } from './classes/classes';
 import { AdminRinkCalendar } from './admin-rink-calendar/admin-rink-calendar';
 import { AdminLeagueSchedule } from './admin-league-schedule/admin-league-schedule';
 import { LeagueSchedule } from './league-schedule/league-schedule';
+import { AdminUserManagement } from './admin-user-management/admin-user-management';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -87,6 +88,11 @@ export const routes: Routes = [
   {
     path: 'admin/leagues/:id/schedule',
     component: AdminLeagueSchedule,
+    canActivate: [AuthGuard, AdminGuard],
+  },
+  {
+    path: 'admin/user-management',
+    component: AdminUserManagement,
     canActivate: [AuthGuard, AdminGuard],
   },
   { path: 'leagues/:id/schedule', component: LeagueSchedule },

@@ -1,0 +1,313 @@
+<div class="container py-4">
+  <!-- Header -->
+  <div class="d-flex align-items-center mb-4 gap-3">
+    <a routerLink="/admin" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+    <h2 class="mb-0">
+      <i class="bi bi-shield-lock me-2 text-secondary"></i>Admin User Management
+    </h2>
+  </div>
+
+  <!-- Alerts -->
+  @if (successMessage()) {
+    <div class="alert alert-success alert-dismissible">
+      <i class="bi bi-check-circle me-2"></i>{{ successMessage() }}
+      <button
+        type="button"
+        class="btn-close"
+        (click)="successMessage.set(null)"
+      ></button>
+    </div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert-danger alert-dismissible">
+      <i class="bi bi-exclamation-triangle me-2"></i>{{ errorMessage() }}
+      <button
+        type="button"
+        class="btn-close"
+        (click)="errorMessage.set(null)"
+      ></button>
+    </div>
+  }
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <button
+        class="nav-link"
+        [class.active]="activeTab() === 'admins'"
+        (click)="activeTab.set('admins')"
+      >
+        <i class="bi bi-people me-1"></i>Current Admins
+      </button>
+    </li>
+    <li class="nav-item">
+      <button
+        class="nav-link"
+        [class.active]="activeTab() === 'add'"
+        (click)="activeTab.set('add')"
+      >
+        <i class="bi bi-person-plus me-1"></i>Grant / Invite Admin
+      </button>
+    </li>
+  </ul>
+
+  <!-- ══ Current Admins Tab ══════════════════════════════════════════════════ -->
+  @if (activeTab() === "admins") {
+    @if (isLoadingAdmins()) {
+      <div class="text-center py-5">
+        <div class="spinner-border text-secondary"></div>
+        <p class="mt-2 text-muted">Loading admins…</p>
+      </div>
+    } @else if (adminUsers().length === 0) {
+      <div class="alert alert-info">
+        No sub-admins found. Use the <strong>Grant / Invite Admin</strong> tab
+        to add one.
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Permissions</th>
+              <th style="width: 180px">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of adminUsers(); track user.id) {
+              <tr>
+                <td>{{ user.firstName }} {{ user.lastName }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <div class="d-flex flex-wrap gap-2">
+                    @for (perm of allPermissions; track perm.value) {
+                      <div class="form-check form-check-inline mb-0">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          [id]="'perm-' + user.id + '-' + perm.value"
+                          [checked]="hasPermission(user, perm.value)"
+                          (change)="
+                            togglePermission(
+                              user,
+                              perm.value,
+                              $any($event.target).checked
+                            )
+                          "
+                        />
+                        <label
+                          class="form-check-label small"
+                          [for]="'perm-' + user.id + '-' + perm.value"
+                        >
+                          {{ perm.label }}
+                        </label>
+                      </div>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <div class="d-flex gap-2">
+                    <button
+                      class="btn btn-sm btn-success"
+                      (click)="savePermissions(user)"
+                      [disabled]="savingUserId() === user.id"
+                    >
+                      @if (savingUserId() === user.id) {
+                        <span class="spinner-border spinner-border-sm"></span>
+                      } @else {
+                        <i class="bi bi-floppy me-1"></i>Save
+                      }
+                    </button>
+                    <button
+                      class="btn btn-sm btn-outline-danger"
+                      (click)="revokeAdmin(user)"
+                      [disabled]="revokingUserId() === user.id"
+                    >
+                      @if (revokingUserId() === user.id) {
+                        <span class="spinner-border spinner-border-sm"></span>
+                      } @else {
+                        <i class="bi bi-x-circle me-1"></i>Revoke
+                      }
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+
+  <!-- ══ Grant / Invite Tab ═════════════════════════════════════════════════ -->
+  @if (activeTab() === "add") {
+    <div class="row g-4">
+      <!-- Left: mode selector -->
+      <div class="col-12">
+        <div class="btn-group" role="group">
+          <button
+            type="button"
+            class="btn btn-outline-primary"
+            [class.active]="addMode() === 'search'"
+            (click)="addMode.set('search'); clearSelectedUser()"
+          >
+            <i class="bi bi-search me-1"></i>Find Existing User
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary"
+            [class.active]="addMode() === 'invite'"
+            (click)="addMode.set('invite'); clearSelectedUser()"
+          >
+            <i class="bi bi-envelope me-1"></i>Invite by Email
+          </button>
+        </div>
+      </div>
+
+      <!-- Search mode -->
+      @if (addMode() === "search") {
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><strong>Search Users</strong></div>
+            <div class="card-body">
+              <div class="input-group mb-2">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Name or email…"
+                  [value]="searchQuery()"
+                  (input)="searchQuery.set($any($event.target).value)"
+                  (keyup.enter)="searchUsers()"
+                />
+                <button
+                  class="btn btn-outline-secondary"
+                  (click)="searchUsers()"
+                  [disabled]="isSearching()"
+                >
+                  @if (isSearching()) {
+                    <span class="spinner-border spinner-border-sm"></span>
+                  } @else {
+                    <i class="bi bi-search"></i>
+                  }
+                </button>
+              </div>
+
+              @if (searchResults().length > 0) {
+                <ul class="list-group">
+                  @for (result of searchResults(); track result.id) {
+                    <li
+                      class="list-group-item list-group-item-action"
+                      (click)="selectUser(result)"
+                      style="cursor: pointer"
+                    >
+                      <strong
+                        >{{ result.firstName }} {{ result.lastName }}</strong
+                      >
+                      <small class="text-muted ms-2">{{ result.email }}</small>
+                    </li>
+                  }
+                </ul>
+              }
+
+              @if (selectedUser()) {
+                <div class="alert alert-success mt-2 mb-0 small">
+                  <i class="bi bi-person-check me-1"></i>Selected:
+                  <strong>{{ selectedUser()!.email }}</strong>
+                  <button
+                    class="btn btn-sm btn-link p-0 ms-2"
+                    (click)="clearSelectedUser()"
+                  >
+                    Clear
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Invite mode -->
+      @if (addMode() === "invite") {
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><strong>Invite by Email</strong></div>
+            <div class="card-body">
+              <label class="form-label">Email Address</label>
+              <input
+                type="email"
+                class="form-control"
+                placeholder="admin@example.com"
+                [value]="inviteEmail()"
+                (input)="inviteEmail.set($any($event.target).value)"
+              />
+              <small class="text-muted"
+                >If this user doesn't have an account, they'll receive a setup
+                link.</small
+              >
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Permissions selector (shared) -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header"><strong>Permissions to Grant</strong></div>
+          <div class="card-body">
+            @for (perm of allPermissions; track perm.value) {
+              <div class="form-check mb-2">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  [id]="'new-perm-' + perm.value"
+                  [checked]="newPermissions()[perm.value]"
+                  (change)="
+                    toggleNewPermission(perm.value, $any($event.target).checked)
+                  "
+                />
+                <label
+                  class="form-check-label"
+                  [for]="'new-perm-' + perm.value"
+                  >{{ perm.label }}</label
+                >
+              </div>
+            }
+
+            <div class="mt-3">
+              @if (addMode() === "search") {
+                <button
+                  class="btn btn-primary"
+                  (click)="grantAdmin()"
+                  [disabled]="!selectedUser() || isSubmitting()"
+                >
+                  @if (isSubmitting()) {
+                    <span class="spinner-border spinner-border-sm me-1"></span
+                    >Granting…
+                  } @else {
+                    <i class="bi bi-shield-check me-1"></i>Grant Admin Access
+                  }
+                </button>
+              } @else {
+                <button
+                  class="btn btn-primary"
+                  (click)="inviteAdmin()"
+                  [disabled]="!inviteEmail().trim() || isSubmitting()"
+                >
+                  @if (isSubmitting()) {
+                    <span class="spinner-border spinner-border-sm me-1"></span
+                    >Sending…
+                  } @else {
+                    <i class="bi bi-envelope-check me-1"></i>Send Invitation
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

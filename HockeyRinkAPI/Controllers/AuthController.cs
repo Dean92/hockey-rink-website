@@ -54,6 +54,12 @@ public class AuthController : ControllerBase
                 Position = model.Position,
                 EmergencyContactName = model.EmergencyContactName,
                 EmergencyContactPhone = model.EmergencyContactPhone,
+                Phone = model.Phone,
+                Address = model.Address,
+                City = model.City,
+                State = model.State,
+                ZipCode = model.ZipCode,
+                DateOfBirth = model.DateOfBirth,
                 EmailConfirmed = true
             };
 
@@ -299,6 +305,12 @@ public class RegisterModel
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string? Address { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? ZipCode { get; set; }
+    public DateTime? DateOfBirth { get; set; }
     public string? Position { get; set; }
     public string? EmergencyContactName { get; set; }
     public string? EmergencyContactPhone { get; set; }

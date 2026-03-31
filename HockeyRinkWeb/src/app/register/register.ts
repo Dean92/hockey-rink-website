@@ -26,6 +26,15 @@ export class Register {
   errorMessage = signal<string>('');
   isLoading = signal<boolean>(false);
 
+  private readonly phoneValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const digits = String(control.value ?? '').replace(/\D/g, '');
+    if (digits.length === 0) return { required: true };
+    if (digits.length !== 10) return { pattern: true };
+    return null;
+  };
+
   constructor(
     private authService: AuthService,
     private router: Router,
@@ -37,14 +46,17 @@ export class Register {
         firstName: ['', [Validators.required]],
         lastName: ['', [Validators.required]],
         email: ['', [Validators.required, Validators.email]],
+        phone: ['', [Validators.required, this.phoneValidator]],
+        dateOfBirth: ['', [Validators.required]],
+        address: ['', [Validators.required]],
+        city: ['', [Validators.required]],
+        state: ['', [Validators.required]],
+        zipCode: ['', [Validators.required]],
         password: ['', [Validators.required, Validators.minLength(8)]],
         confirmPassword: ['', [Validators.required]],
         position: ['', [Validators.required]],
         emergencyContactName: ['', [Validators.required]],
-        emergencyContactPhone: [
-          '',
-          [Validators.required, Validators.pattern(/^[\d\s()+-]+$/)],
-        ],
+        emergencyContactPhone: ['', [Validators.required, this.phoneValidator]],
       },
       { validators: this.passwordMatchValidator },
     );
@@ -90,6 +102,12 @@ export class Register {
       firstName,
       lastName,
       email,
+      phone,
+      dateOfBirth,
+      address,
+      city,
+      state,
+      zipCode,
       password,
       position,
       emergencyContactName,
@@ -101,6 +119,12 @@ export class Register {
         firstName,
         lastName,
         email,
+        phone,
+        dateOfBirth,
+        address,
+        city,
+        state,
+        zipCode,
         password,
         position,
         emergencyContactName,

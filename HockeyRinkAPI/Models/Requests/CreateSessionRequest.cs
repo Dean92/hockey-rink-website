@@ -19,4 +19,5 @@ public class CreateSessionModel
     public TimeSpan? StartTime { get; set; }
     public TimeSpan? EndTime { get; set; }
     public int? RegularSeasonGames { get; set; }
+    public decimal? GoaliePrice { get; set; }
 }

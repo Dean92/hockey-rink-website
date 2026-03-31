@@ -87,6 +87,9 @@
               <a routerLink="/admin/rink-calendar" class="btn btn-outline-warning">
                 <i class="bi bi-calendar3 me-2"></i>Rink Calendar
               </a>
+              <a routerLink="/admin/user-management" class="btn btn-outline-secondary">
+                <i class="bi bi-shield-lock me-2"></i>Admin Access
+              </a>
             </div>
           </div>
         </div>
@@ -260,6 +263,14 @@
             </h5>
           </div>
           <div class="card-body">
+            <div class="mb-3 pb-3 border-bottom">
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">Today's Revenue</span>
+                <h4 class="mb-0 text-primary">
+                  {{ dashboardData()!.todayRevenue | currency }}
+                </h4>
+              </div>
+            </div>
             <div class="mb-3 pb-3 border-bottom">
               <div class="d-flex justify-content-between align-items-center">
                 <span class="text-muted"

@@ -11,6 +11,7 @@ export interface AdminDashboardData {
   yearRevenue: number;
   revenueYear: number;
   monthRevenue: number;
+  todayRevenue: number;
   activeSessions: ActiveSessionSummary[];
   upcomingSessions: UpcomingSession[];
   recentRegistrations: RecentRegistration[];
@@ -85,6 +86,10 @@ export interface AdminSession {
   registrationCount: number;
   createdAt: Date;
   regularSeasonGames?: number;
+  regularPrice?: number;
+  earlyBirdPrice?: number;
+  earlyBirdEndDate?: string;
+  goaliePrice?: number;
 }
 
 export interface AdminRegistration {
@@ -109,6 +114,10 @@ export interface CreateSessionRequest {
   isActive: boolean;
   leagueId?: number;
   regularSeasonGames?: number;
+  regularPrice?: number;
+  earlyBirdPrice?: number;
+  earlyBirdEndDate?: string;
+  goaliePrice?: number;
 }
 
 // ── Rink Management ──────────────────────────────────────────────────────────
@@ -299,6 +308,36 @@ export interface ConfirmGameItem {
   gameType: string;
 }
 
+// ── Admin User Management ─────────────────────────────────────────────────────
+
+export interface AdminUserSummary {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  isFullAdmin: boolean;
+  isSubAdmin: boolean;
+  permissions: string[];
+  createdAt: string;
+  lastLoginAt?: string;
+}
+
+export interface UserSearchResult {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  createdAt: string;
+}
+
+export const ALL_PERMISSIONS = [
+  { value: 'manage-schedule', label: 'Manage Schedule' },
+  { value: 'manage-registrations', label: 'Manage Registrations' },
+  { value: 'manage-leagues', label: 'Manage Leagues' },
+  { value: 'manage-rinks', label: 'Manage Rinks' },
+  { value: 'view-reports', label: 'View Reports' },
+];
+
 @Injectable({
   providedIn: 'root',
 })
@@ -481,5 +520,39 @@ export class AdminService {
   confirmSchedule(request: ConfirmScheduleRequest): Observable<{ message: string; count: number }> {
     const headers = this.authService.getAuthHeaders();
     return this.http.post<{ message: string; count: number }>(`${this.apiUrl}/schedule/confirm`, request, { headers, withCredentials: true });
+  }
+
+  // ── Admin User Management ─────────────────────────────────────────────────────
+
+  getAdminUsers(): Observable<AdminUserSummary[]> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.get<AdminUserSummary[]>(`${this.apiUrl}/user-management/admins`, { headers, withCredentials: true });
+  }
+
+  getAllUsersForSearch(search?: string): Observable<UserSearchResult[]> {
+    const headers = this.authService.getAuthHeaders();
+    const params: Record<string, string> = {};
+    if (search) params['search'] = search;
+    return this.http.get<UserSearchResult[]>(`${this.apiUrl}/user-management/all-users`, { headers, withCredentials: true, params });
+  }
+
+  grantAdmin(userId: string, permissions: string[]): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.post(`${this.apiUrl}/user-management/users/${userId}/grant-admin`, { permissions }, { headers, withCredentials: true });
+  }
+
+  updateAdminPermissions(userId: string, permissions: string[]): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put(`${this.apiUrl}/user-management/users/${userId}/permissions`, { permissions }, { headers, withCredentials: true });
+  }
+
+  revokeAdmin(userId: string): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.delete(`${this.apiUrl}/user-management/users/${userId}/revoke-admin`, { headers, withCredentials: true });
+  }
+
+  inviteAdmin(email: string, permissions: string[]): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.post(`${this.apiUrl}/user-management/invite`, { email, permissions }, { headers, withCredentials: true });
   }
 }

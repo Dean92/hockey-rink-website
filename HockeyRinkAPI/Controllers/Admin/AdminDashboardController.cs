@@ -65,6 +65,7 @@ public class AdminDashboardController : AdminControllerBase
 
             var thisMonthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
             var monthRevenue = await _registrationRepository.GetRevenueFromDateAsync(thisMonthStart);
+            var todayRevenue = await _registrationRepository.GetRevenueFromDateAsync(today);
 
             var nextWeek = DateTime.UtcNow.AddDays(7);
             var upcomingSessionEntities = await _sessionRepository.GetUpcomingAsync(DateTime.UtcNow, nextWeek);
@@ -89,6 +90,7 @@ public class AdminDashboardController : AdminControllerBase
                 yearRevenue,
                 revenueYear = currentYear,
                 monthRevenue,
+                todayRevenue,
                 activeSessions,
                 upcomingSessions,
                 recentRegistrations = todaysRegistrations

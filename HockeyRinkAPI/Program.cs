@@ -102,6 +102,7 @@ public class Program
         builder.Services.AddScoped<IPaymentService, MockPaymentService>();
         builder.Services.AddScoped<ITokenService, TokenService>();
         builder.Services.AddScoped<ISessionActivationService, SessionActivationService>();
+        builder.Services.AddScoped<IRegistrationPricingService, RegistrationPricingService>();
         builder.Services.AddScoped<ISessionRepository, SessionRepository>();
         builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
         builder.Services.AddScoped<ILeagueRepository, LeagueRepository>();
@@ -111,6 +112,7 @@ public class Program
         builder.Services.AddScoped<IGameRepository, GameRepository>();
         builder.Services.AddScoped<IScheduleGeneratorService, ScheduleGeneratorService>();
         builder.Services.AddScoped<IPlayoffSchedulerService, PlayoffSchedulerService>();
+        builder.Services.AddScoped<IAdminUserManagementService, AdminUserManagementService>();
         builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
         // Configure Swagger

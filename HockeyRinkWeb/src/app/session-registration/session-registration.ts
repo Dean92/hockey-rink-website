@@ -77,12 +77,12 @@ export class SessionRegistration implements OnInit {
       sessionId: ['', Validators.required],
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.pattern(/^[\d\s()+-]+$/)]],
+      phone: ['', [Validators.required, this.emergencyPhoneValidator]],
       dateOfBirth: ['', Validators.required],
-      address: [''],
-      city: [''],
-      state: [''],
-      zipCode: [''],
+      address: ['', [Validators.required]],
+      city: ['', [Validators.required]],
+      state: ['', [Validators.required]],
+      zipCode: ['', [Validators.required]],
       position: [''],
       emergencyContactName: ['', Validators.required],
       emergencyContactPhone: ['', [this.emergencyPhoneValidator]],
@@ -199,8 +199,13 @@ export class SessionRegistration implements OnInit {
     }
   }
 
-  getSessionPrice(session: Session | null): number {
+  getSessionPrice(session: Session | null, position?: string): number {
     if (!session) return 0;
+
+    // Goalie flat rate overrides all other pricing when configured
+    if (position === 'Goalie' && session.goaliePrice != null) {
+      return session.goaliePrice;
+    }
 
     const now = new Date();
     if (session.earlyBirdPrice && session.earlyBirdEndDate) {
@@ -210,6 +215,13 @@ export class SessionRegistration implements OnInit {
       }
     }
     return session.regularPrice || session.fee;
+  }
+
+  get currentDisplayPrice(): number {
+    return this.getSessionPrice(
+      this.selectedSession(),
+      this.registrationForm.get('position')?.value,
+    );
   }
 
   nextStep() {

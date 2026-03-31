@@ -21,6 +21,7 @@ public class SessionsController : ControllerBase
     private readonly IRegistrationRepository _registrationRepository;
     private readonly IPaymentRepository _paymentRepository;
     private readonly IPaymentService _paymentService;
+    private readonly IRegistrationPricingService _pricingService;
     private readonly ILogger<SessionsController> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
@@ -31,6 +32,7 @@ public class SessionsController : ControllerBase
         IRegistrationRepository registrationRepository,
         IPaymentRepository paymentRepository,
         IPaymentService paymentService,
+        IRegistrationPricingService pricingService,
         ILogger<SessionsController> logger,
         UserManager<ApplicationUser> userManager,
         ITokenService tokenService,
@@ -41,6 +43,7 @@ public class SessionsController : ControllerBase
         _registrationRepository = registrationRepository ?? throw new ArgumentNullException(nameof(registrationRepository));
         _paymentRepository = paymentRepository ?? throw new ArgumentNullException(nameof(paymentRepository));
         _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
+        _pricingService = pricingService ?? throw new ArgumentNullException(nameof(pricingService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
@@ -88,6 +91,7 @@ public class SessionsController : ControllerBase
                 s.EarlyBirdPrice,
                 s.EarlyBirdEndDate,
                 s.RegularPrice,
+                s.GoaliePrice,
                 s.CreatedAt,
                 s.LeagueId,
                 League = s.League == null ? null : new
@@ -234,17 +238,9 @@ public class SessionsController : ControllerBase
                 return BadRequest(new { message = "You are already registered for this session" });
             }
 
-            // Calculate the amount to charge based on early bird pricing
+            // Delegate price calculation to IRegistrationPricingService (SRP)
             var registrationDate = DateTime.UtcNow;
-            decimal amountToCharge = session.RegularPrice ?? session.Fee;
-
-            if (session.EarlyBirdPrice.HasValue &&
-                session.EarlyBirdEndDate.HasValue &&
-                registrationDate <= session.EarlyBirdEndDate.Value)
-            {
-                amountToCharge = session.EarlyBirdPrice.Value;
-                _logger.LogInformation("Applying early bird price: {EarlyBirdPrice}", amountToCharge);
-            }
+            var amountToCharge = _pricingService.CalculatePrice(session, model.Position, registrationDate);
 
             // Update user profile with registration information
             user.Address = model.Address;

@@ -50,6 +50,9 @@ public partial class Session
     /// <summary>Target total games per team for the regular season.</summary>
     public int? RegularSeasonGames { get; set; }
 
+    /// <summary>Flat price for goalies (overrides regular/early-bird when set and player position is Goalie).</summary>
+    public decimal? GoaliePrice { get; set; }
+
     public virtual League? League { get; set; }
 
     public virtual Rink? Rink { get; set; }
