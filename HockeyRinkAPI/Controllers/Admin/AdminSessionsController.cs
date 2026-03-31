@@ -66,6 +66,7 @@ public class AdminSessionsController : AdminControllerBase
                     s.EarlyBirdPrice,
                     s.EarlyBirdEndDate,
                     s.RegularPrice,
+                    s.RegularSeasonGames,
                 })
                 .OrderByDescending(s => s.CreatedAt)
                 .ToList();
@@ -155,6 +156,7 @@ public class AdminSessionsController : AdminControllerBase
                 EarlyBirdEndDate = model.EarlyBirdEndDate,
                 RegularPrice = model.RegularPrice,
                 CreatedAt = DateTime.UtcNow,
+                RegularSeasonGames = model.RegularSeasonGames,
             };
 
             await _sessionRepository.AddAsync(session);
@@ -213,6 +215,7 @@ public class AdminSessionsController : AdminControllerBase
             session.EarlyBirdEndDate = model.EarlyBirdEndDate;
             session.RegularPrice = model.RegularPrice;
             session.LastModified = DateTime.UtcNow;
+            session.RegularSeasonGames = model.RegularSeasonGames;
 
             await _sessionRepository.SaveChangesAsync();
 

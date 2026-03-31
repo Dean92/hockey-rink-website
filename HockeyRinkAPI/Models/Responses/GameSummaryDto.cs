@@ -16,4 +16,5 @@ public class GameSummaryDto
     public int? AwayScore { get; set; }
     public string Status { get; set; } = null!;
     public string? Location { get; set; }
+    public string GameType { get; set; } = "RegularSeason";
 }

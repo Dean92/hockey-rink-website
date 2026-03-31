@@ -119,6 +119,7 @@ export class AdminSessions implements OnInit {
         0,
         [Validators.required, Validators.min(0), Validators.max(1000)],
       ],
+      regularSeasonGames: [null, [Validators.min(1), Validators.max(200)]],
     });
 
     // Auto-populate fee from regular price
@@ -229,6 +230,7 @@ export class AdminSessions implements OnInit {
         ? this.formatDateTimeForInput(session.earlyBirdEndDate)
         : '',
       regularPrice: session.regularPrice,
+      regularSeasonGames: (session as any).regularSeasonGames ?? null,
     });
     this.showModal.set(true);
     this.errorMessage.set(null);
@@ -287,6 +289,7 @@ export class AdminSessions implements OnInit {
         : undefined,
       earlyBirdEndDate: formatDateTime(formData.earlyBirdEndDate),
       regularPrice: Number(formData.regularPrice) || 0,
+      regularSeasonGames: formData.regularSeasonGames ? Number(formData.regularSeasonGames) : undefined,
     };
 
     if (this.isEditMode() && this.currentSessionId) {

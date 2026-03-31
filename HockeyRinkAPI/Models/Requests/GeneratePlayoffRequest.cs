@@ -2,24 +2,23 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HockeyRinkAPI.Models.Requests;
 
-public class GenerateScheduleRequest
+public class GeneratePlayoffRequest
 {
-    [Required]
-    public int LeagueId { get; set; }
-
     [Required]
     public int SessionId { get; set; }
 
     [Required]
     public int RinkId { get; set; }
 
+    /// <summary>First date playoffs may be scheduled on.</summary>
     [Required]
     public DateTime StartDate { get; set; }
 
+    /// <summary>Last date playoffs may be scheduled on.</summary>
     [Required]
     public DateTime EndDate { get; set; }
 
-    /// <summary>Days of week to schedule games on. 0=Sun, 1=Mon … 6=Sat.</summary>
+    /// <summary>Days of week to schedule games on. 0=Sun … 6=Sat.</summary>
     [Required]
     public List<int> DaysOfWeek { get; set; } = new();
 
@@ -43,20 +42,9 @@ public class GenerateScheduleRequest
     [Range(1, 20)]
     public int GamesPerNight { get; set; } = 2;
 
-    /// <summary>How many times each pair of teams plays each other. Ignored when TotalGamesPerTeam is set.</summary>
-    [Range(1, 10)]
-    public int GamesPerMatchup { get; set; } = 1;
-
-    /// <summary>
-    /// Target total games per team. When set, overrides GamesPerMatchup —
-    /// the service calculates matchup repetitions to reach this target.
-    /// </summary>
-    [Range(1, 200)]
-    public int? TotalGamesPerTeam { get; set; }
-
     /// <summary>Exclude standard US holidays when true.</summary>
     public bool ExcludeUsHolidays { get; set; } = true;
 
-    /// <summary>Additional specific dates to exclude (ISO date strings, e.g. "2026-05-25").</summary>
+    /// <summary>Additional specific dates to exclude (ISO date strings).</summary>
     public List<string> ExcludeDates { get; set; } = new();
 }

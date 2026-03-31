@@ -43,7 +43,11 @@ public class ScheduleGeneratorService : IScheduleGeneratorService
             };
 
         // 2. Build round-robin matchup list
-        var matchups = BuildRoundRobinMatchups(teams, req.GamesPerMatchup);
+        int gamesPerMatchup = req.TotalGamesPerTeam.HasValue && teams.Count >= 2
+            ? Math.Max(1, (int)Math.Ceiling((double)req.TotalGamesPerTeam.Value / (teams.Count - 1)))
+            : req.GamesPerMatchup;
+
+        var matchups = BuildRoundRobinMatchups(teams, gamesPerMatchup);
 
         // 3. Determine excluded dates
         var excludedDates = BuildExcludedDates(req);
@@ -93,7 +97,8 @@ public class ScheduleGeneratorService : IScheduleGeneratorService
                     AwayTeamId = away.Id,
                     AwayTeamName = away.TeamName,
                     RinkId = req.RinkId,
-                    HasConflict = false
+                    HasConflict = false,
+                    GameType = "RegularSeason"
                 });
 
                 gamesThisNight[slotDate] = nightCount + 1;

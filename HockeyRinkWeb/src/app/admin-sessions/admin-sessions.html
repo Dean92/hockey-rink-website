@@ -559,6 +559,28 @@
                 </label>
               </div>
             </div>
+
+            <div class="mb-3">
+              <label for="regularSeasonGames" class="form-label">
+                Regular Season Games Per Team
+                <span class="text-muted small ms-1">(optional)</span>
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="regularSeasonGames"
+                formControlName="regularSeasonGames"
+                min="1"
+                max="200"
+                placeholder="e.g. 20"
+              />
+              <div class="form-text">
+                Total games each team plays in the regular season. Used to pre-fill the schedule generator.
+              </div>
+              @if (sessionForm.get("regularSeasonGames")?.invalid && sessionForm.get("regularSeasonGames")?.touched) {
+                <div class="text-danger small mt-1">Must be between 1 and 200.</div>
+              }
+            </div>
           </div>
           <div class="modal-footer">
             <button

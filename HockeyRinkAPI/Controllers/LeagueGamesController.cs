@@ -53,7 +53,8 @@ public class LeagueGamesController : ControllerBase
                     HomeScore = g.HomeScore,
                     AwayScore = g.AwayScore,
                     Status = g.Status,
-                    Location = g.Location
+                    Location = g.Location,
+                    GameType = g.GameType
                 })
                 .ToList();
 

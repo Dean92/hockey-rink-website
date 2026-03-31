@@ -110,6 +110,7 @@ public class Program
         builder.Services.AddScoped<IConflictDetectionService, ConflictDetectionService>();
         builder.Services.AddScoped<IGameRepository, GameRepository>();
         builder.Services.AddScoped<IScheduleGeneratorService, ScheduleGeneratorService>();
+        builder.Services.AddScoped<IPlayoffSchedulerService, PlayoffSchedulerService>();
         builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
         // Configure Swagger

@@ -84,6 +84,7 @@ export interface AdminSession {
   leagueName?: string;
   registrationCount: number;
   createdAt: Date;
+  regularSeasonGames?: number;
 }
 
 export interface AdminRegistration {
@@ -107,6 +108,7 @@ export interface CreateSessionRequest {
   fee: number;
   isActive: boolean;
   leagueId?: number;
+  regularSeasonGames?: number;
 }
 
 // ── Rink Management ──────────────────────────────────────────────────────────
@@ -197,6 +199,7 @@ export interface GameSummary {
   awayScore?: number;
   status: string;
   location?: string;
+  gameType: string;
 }
 
 export interface UpdateGameRequest {
@@ -226,6 +229,22 @@ export interface GenerateScheduleRequest {
   bufferMinutes: number;
   gamesPerNight: number;
   gamesPerMatchup: number;
+  totalGamesPerTeam?: number;
+  excludeUsHolidays: boolean;
+  excludeDates: string[];
+}
+
+export interface GeneratePlayoffRequest {
+  sessionId: number;
+  rinkId: number;
+  startDate: string;
+  endDate: string;
+  daysOfWeek: number[];
+  dailyStartTime: string;
+  dailyEndTime: string;
+  gameLengthMinutes: number;
+  bufferMinutes: number;
+  gamesPerNight: number;
   excludeUsHolidays: boolean;
   excludeDates: string[];
 }
@@ -239,6 +258,7 @@ export interface ProposedGame {
   rinkId: number;
   hasConflict: boolean;
   conflictReason?: string;
+  gameType: string;
 }
 
 export interface SkippedDate {
@@ -272,6 +292,7 @@ export interface ConfirmGameItem {
   homeTeamId: number;
   awayTeamId: number;
   rinkId: number;
+  gameType: string;
 }
 
 @Injectable({
@@ -441,6 +462,11 @@ export class AdminService {
   generateSchedule(request: GenerateScheduleRequest): Observable<GenerateScheduleResponse> {
     const headers = this.authService.getAuthHeaders();
     return this.http.post<GenerateScheduleResponse>(`${this.apiUrl}/schedule/generate`, request, { headers, withCredentials: true });
+  }
+
+  generatePlayoffSchedule(request: GeneratePlayoffRequest): Observable<GenerateScheduleResponse> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.post<GenerateScheduleResponse>(`${this.apiUrl}/schedule/generate-playoffs`, request, { headers, withCredentials: true });
   }
 
   confirmSchedule(request: ConfirmScheduleRequest): Observable<{ message: string; count: number }> {

@@ -165,6 +165,7 @@
               </th>
               <th>Home Team</th>
               <th>Away Team</th>
+              <th>Type</th>
               <th class="sortable" (click)="sort('status')">
                 Status <i class="bi ms-1" [ngClass]="sortIcon('status')"></i>
               </th>
@@ -175,7 +176,7 @@
           <tbody>
             @if (filteredGames().length === 0) {
               <tr>
-                <td colspan="9" class="text-center py-5 text-muted">
+                <td colspan="10" class="text-center py-5 text-muted">
                   <i class="bi bi-calendar-x fs-3 d-block mb-2"></i>
                   No games match the current filters
                 </td>
@@ -196,6 +197,11 @@
                 <td>{{ game.rinkName ?? "—" }}</td>
                 <td class="fw-medium">{{ game.homeTeamName }}</td>
                 <td class="fw-medium">{{ game.awayTeamName }}</td>
+                <td>
+                  <span class="badge" [class.bg-primary]="game.gameType !== 'Playoff'" [class.bg-warning]="game.gameType === 'Playoff'" [class.text-dark]="game.gameType === 'Playoff'" title="{{ game.gameType }}">
+                    {{ game.gameType === 'Playoff' ? 'Playoff' : 'Regular' }}
+                  </span>
+                </td>
                 <td>
                   <span
                     class="badge"

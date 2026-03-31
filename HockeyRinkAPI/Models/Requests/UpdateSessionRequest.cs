@@ -18,4 +18,5 @@ public class UpdateSessionModel
     public decimal? RegularPrice { get; set; }
     public TimeSpan? StartTime { get; set; }
     public TimeSpan? EndTime { get; set; }
+    public int? RegularSeasonGames { get; set; }
 }

@@ -18,6 +18,7 @@ public class ProposedGameDto
     public int RinkId { get; set; }
     public bool HasConflict { get; set; }
     public string? ConflictReason { get; set; }
+    public string GameType { get; set; } = "RegularSeason";
 }
 
 public class SkippedDateDto

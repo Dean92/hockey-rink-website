@@ -11,6 +11,7 @@ namespace HockeyRinkAPI.Controllers.Admin;
 public class AdminScheduleController : AdminControllerBase
 {
     private readonly IScheduleGeneratorService _generatorService;
+    private readonly IPlayoffSchedulerService _playoffService;
     private readonly AppDbContext _db;
     private readonly ILogger<AdminScheduleController> _logger;
 
@@ -18,11 +19,13 @@ public class AdminScheduleController : AdminControllerBase
         ITokenService tokenService,
         UserManager<ApplicationUser> userManager,
         IScheduleGeneratorService generatorService,
+        IPlayoffSchedulerService playoffService,
         AppDbContext db,
         ILogger<AdminScheduleController> logger)
         : base(tokenService, userManager)
     {
         _generatorService = generatorService;
+        _playoffService = playoffService;
         _db = db;
         _logger = logger;
     }
@@ -81,6 +84,7 @@ public class AdminScheduleController : AdminControllerBase
                 HomeTeamId = g.HomeTeamId,
                 AwayTeamId = g.AwayTeamId,
                 RinkId = g.RinkId,
+                GameType = string.IsNullOrWhiteSpace(g.GameType) ? "RegularSeason" : g.GameType,
                 Status = "Scheduled",
                 CreatedAt = now,
                 UpdatedAt = now
@@ -94,6 +98,38 @@ public class AdminScheduleController : AdminControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error confirming schedule for session {SessionId}", request.SessionId);
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// POST /api/admin/schedule/generate-playoffs
+    /// Returns a proposed single-elimination playoff bracket preview — nothing is saved.
+    /// Teams are seeded by regular-season win-loss record.
+    /// </summary>
+    [HttpPost("generate-playoffs")]
+    public async Task<IActionResult> GeneratePlayoffs([FromBody] GeneratePlayoffRequest request)
+    {
+        try
+        {
+            if (!await IsAdminAsync()) return Forbid();
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            if (request.EndDate < request.StartDate)
+                return BadRequest(new { message = "End date must be on or after start date" });
+
+            if (request.DaysOfWeek.Count == 0)
+                return BadRequest(new { message = "At least one day of week is required" });
+
+            if (request.DailyEndTime <= request.DailyStartTime)
+                return BadRequest(new { message = "Daily end time must be after daily start time" });
+
+            var result = await _playoffService.GenerateAsync(request);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating playoffs for session {SessionId}", request.SessionId);
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
     }

@@ -15,6 +15,7 @@ import {
   CreateBlockoutRequest,
   GenerateScheduleRequest,
   GenerateScheduleResponse,
+  GeneratePlayoffRequest,
   ProposedGame,
   ConfirmScheduleRequest,
 } from '../admin.service';
@@ -75,10 +76,24 @@ export class AdminRinkCalendar implements OnInit {
   removedPreviewIndices = signal<Set<number>>(new Set());
   schedulerForm: FormGroup;
 
+  // ── Playoff panel ─────────────────────────────────────────────────────────
+  playoffPreview = signal<GenerateScheduleResponse | null>(null);
+  isGeneratingPlayoffs = signal(false);
+  isConfirmingPlayoffs = signal(false);
+  removedPlayoffIndices = signal<Set<number>>(new Set());
+  playoffForm: FormGroup;
+
   previewGames = computed(() => {
     const preview = this.schedulePreview();
     if (!preview) return [];
     const removed = this.removedPreviewIndices();
+    return preview.proposedGames.filter((_, i) => !removed.has(i));
+  });
+
+  playoffGames = computed(() => {
+    const preview = this.playoffPreview();
+    if (!preview) return [];
+    const removed = this.removedPlayoffIndices();
     return preview.proposedGames.filter((_, i) => !removed.has(i));
   });
 
@@ -95,8 +110,16 @@ export class AdminRinkCalendar implements OnInit {
       hour,
       label: this.formatHourLabel(hour),
       slots: slots.filter((s) => {
-        const slotHour = new Date(s.startDateTime).getHours();
-        return slotHour === hour % 24;
+        const rowStart = new Date(s.startDateTime);
+        rowStart.setHours(hour % 24, 0, 0, 0);
+        const rowEnd = new Date(rowStart);
+        rowEnd.setHours(hour % 24, 59, 59, 999);
+
+        const slotStart = new Date(s.startDateTime);
+        const slotEnd = new Date(s.endDateTime);
+
+        // Slot overlaps this hour row if it starts before the row ends AND ends after the row starts
+        return slotStart <= rowEnd && slotEnd > rowStart;
       }),
     }));
   });
@@ -134,7 +157,28 @@ export class AdminRinkCalendar implements OnInit {
       gameLengthMinutes: [90, [Validators.required, Validators.min(30), Validators.max(240)]],
       bufferMinutes: [10, [Validators.required, Validators.min(0), Validators.max(60)]],
       gamesPerNight: [2, [Validators.required, Validators.min(1)]],
-      gamesPerMatchup: [1, [Validators.required, Validators.min(1)]],
+      totalGamesPerTeam: [null, [Validators.min(1), Validators.max(200)]],
+      excludeUsHolidays: [true],
+      excludeDates: [''],
+    });
+
+    const playoffStart = new Date(today);
+    playoffStart.setDate(playoffStart.getDate() + 60);
+    const playoffEnd = new Date(playoffStart);
+    playoffEnd.setDate(playoffEnd.getDate() + 30);
+
+    this.playoffForm = this.fb.group({
+      startDate: [this.toISODateStatic(playoffStart), Validators.required],
+      endDate: [this.toISODateStatic(playoffEnd), Validators.required],
+      daysOfWeek: this.fb.group({
+        sun: [false], mon: [false], tue: [false], wed: [false],
+        thu: [false], fri: [false], sat: [false],
+      }),
+      dailyStartTime: ['18:00', Validators.required],
+      dailyEndTime: ['22:00', Validators.required],
+      gameLengthMinutes: [90, [Validators.required, Validators.min(30), Validators.max(240)]],
+      bufferMinutes: [10, [Validators.required, Validators.min(0), Validators.max(60)]],
+      gamesPerNight: [2, [Validators.required, Validators.min(1)]],
       excludeUsHolidays: [true],
       excludeDates: [''],
     });
@@ -405,6 +449,14 @@ export class AdminRinkCalendar implements OnInit {
     });
   }
 
+  onSchedulerSessionChange(event: Event): void {
+    const sessionId = +(event.target as HTMLSelectElement).value;
+    const session = this.schedulerSessions().find((s: any) => s.id === sessionId);
+    if (session?.regularSeasonGames) {
+      this.schedulerForm.patchValue({ totalGamesPerTeam: session.regularSeasonGames });
+    }
+  }
+
   generatePreview(): void {
     if (this.schedulerForm.invalid) { this.schedulerForm.markAllAsTouched(); return; }
     const v = this.schedulerForm.value;
@@ -435,7 +487,8 @@ export class AdminRinkCalendar implements OnInit {
       gameLengthMinutes: +v.gameLengthMinutes,
       bufferMinutes: +v.bufferMinutes,
       gamesPerNight: +v.gamesPerNight,
-      gamesPerMatchup: +v.gamesPerMatchup,
+      gamesPerMatchup: 1, // fallback; overridden by totalGamesPerTeam
+      totalGamesPerTeam: v.totalGamesPerTeam ? +v.totalGamesPerTeam : undefined,
       excludeUsHolidays: v.excludeUsHolidays,
       excludeDates: excludeDatesArr,
     };
@@ -473,6 +526,7 @@ export class AdminRinkCalendar implements OnInit {
       homeTeamId: g.homeTeamId,
       awayTeamId: g.awayTeamId,
       rinkId,
+      gameType: g.gameType ?? 'RegularSeason',
     }));
 
     if (games.length === 0) { this.errorMessage.set('No games to save'); return; }
@@ -498,6 +552,97 @@ export class AdminRinkCalendar implements OnInit {
 
   formatScheduleDate(dateStr: string): string {
     return new Date(dateStr).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  // ── Playoff methods ───────────────────────────────────────────────────────
+
+  generatePlayoffPreview(): void {
+    if (this.playoffForm.invalid) { this.playoffForm.markAllAsTouched(); return; }
+    const sv = this.schedulerForm.value;
+    if (!sv.sessionId) { this.errorMessage.set('Select a session before generating playoffs'); return; }
+
+    const pv = this.playoffForm.value;
+    const dowGroup = pv.daysOfWeek;
+    const dowMap: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+    const daysOfWeek = Object.entries(dowMap).filter(([k]) => dowGroup[k]).map(([, n]) => n);
+    if (daysOfWeek.length === 0) { this.errorMessage.set('Select at least one day for playoffs'); return; }
+
+    const excludeDatesArr = (pv.excludeDates as string)
+      .split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+
+    const rinkId = this.selectedRinkId();
+    if (!rinkId) { this.errorMessage.set('Select a rink first'); return; }
+
+    const request: GeneratePlayoffRequest = {
+      sessionId: +sv.sessionId,
+      rinkId,
+      startDate: pv.startDate,
+      endDate: pv.endDate,
+      daysOfWeek,
+      dailyStartTime: pv.dailyStartTime + ':00',
+      dailyEndTime: pv.dailyEndTime + ':00',
+      gameLengthMinutes: +pv.gameLengthMinutes,
+      bufferMinutes: +pv.bufferMinutes,
+      gamesPerNight: +pv.gamesPerNight,
+      excludeUsHolidays: pv.excludeUsHolidays,
+      excludeDates: excludeDatesArr,
+    };
+
+    this.isGeneratingPlayoffs.set(true);
+    this.errorMessage.set(null);
+
+    this.adminService.generatePlayoffSchedule(request).subscribe({
+      next: result => {
+        this.playoffPreview.set(result);
+        this.removedPlayoffIndices.set(new Set());
+        this.isGeneratingPlayoffs.set(false);
+      },
+      error: err => {
+        this.errorMessage.set(err.error?.message ?? 'Failed to generate playoff schedule');
+        this.isGeneratingPlayoffs.set(false);
+      }
+    });
+  }
+
+  removePlayoffGame(index: number): void {
+    const removed = new Set(this.removedPlayoffIndices());
+    removed.add(index);
+    this.removedPlayoffIndices.set(removed);
+  }
+
+  confirmPlayoffs(): void {
+    const preview = this.playoffPreview();
+    if (!preview) return;
+
+    const sv = this.schedulerForm.value;
+    const rinkId = this.selectedRinkId()!;
+    const games = this.playoffGames().map(g => ({
+      gameDate: g.gameDate,
+      homeTeamId: g.homeTeamId,
+      awayTeamId: g.awayTeamId,
+      rinkId,
+      gameType: 'Playoff',
+    }));
+
+    if (games.length === 0) { this.errorMessage.set('No playoff games to save'); return; }
+
+    const request: ConfirmScheduleRequest = { sessionId: +sv.sessionId, rinkId, games };
+    this.isConfirmingPlayoffs.set(true);
+
+    this.adminService.confirmSchedule(request).subscribe({
+      next: res => {
+        this.successMessage.set(res.message);
+        this.isConfirmingPlayoffs.set(false);
+        this.playoffPreview.set(null);
+        this.loadMonthData();
+        this.loadDayBookings();
+        setTimeout(() => this.successMessage.set(null), 4000);
+      },
+      error: err => {
+        this.errorMessage.set(err.error?.message ?? 'Failed to save playoff schedule');
+        this.isConfirmingPlayoffs.set(false);
+      }
+    });
   }
 
   private toISODateStatic(date: Date): string {

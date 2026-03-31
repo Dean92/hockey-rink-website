@@ -47,6 +47,9 @@ public partial class Session
 
     public bool DraftPublished { get; set; }
 
+    /// <summary>Target total games per team for the regular season.</summary>
+    public int? RegularSeasonGames { get; set; }
+
     public virtual League? League { get; set; }
 
     public virtual Rink? Rink { get; set; }

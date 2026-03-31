@@ -83,6 +83,7 @@
               <th>Rink</th>
               <th>Home Team</th>
               <th>Away Team</th>
+              <th>Type</th>
               <th>Status</th>
               <th>Score</th>
             </tr>
@@ -90,7 +91,7 @@
           <tbody>
             @if (filteredGames().length === 0) {
               <tr>
-                <td colspan="7" class="text-center py-5 text-muted">
+                <td colspan="8" class="text-center py-5 text-muted">
                   <i class="bi bi-calendar-x fs-3 d-block mb-2"></i>
                   No games scheduled yet
                 </td>
@@ -103,6 +104,11 @@
                 <td>{{ game.rinkName ?? "—" }}</td>
                 <td class="fw-medium">{{ game.homeTeamName }}</td>
                 <td class="fw-medium">{{ game.awayTeamName }}</td>
+                <td>
+                  <span class="badge" [class.bg-primary]="game.gameType !== 'Playoff'" [class.bg-warning]="game.gameType === 'Playoff'" [class.text-dark]="game.gameType === 'Playoff'">
+                    {{ game.gameType === 'Playoff' ? 'Playoff' : 'Regular' }}
+                  </span>
+                </td>
                 <td>
                   <span
                     class="badge"

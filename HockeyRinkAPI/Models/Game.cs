@@ -20,6 +20,9 @@ public partial class Game
 
     public string Status { get; set; } = "Scheduled"; // Scheduled, InProgress, Completed, Cancelled
 
+    /// <summary>RegularSeason or Playoff</summary>
+    public string GameType { get; set; } = "RegularSeason";
+
     public string? Location { get; set; }
 
     public int? RinkId { get; set; }

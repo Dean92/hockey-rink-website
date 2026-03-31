@@ -24,4 +24,5 @@ public class ConfirmGameItem
     public int HomeTeamId { get; set; }
     public int AwayTeamId { get; set; }
     public int RinkId { get; set; }
+    public string GameType { get; set; } = "RegularSeason";
 }
