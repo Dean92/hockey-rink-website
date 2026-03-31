@@ -13,6 +13,7 @@ import {
   CalendarSlot,
   DayBookingsResponse,
   CreateBlockoutRequest,
+  ConflictCheckResponse,
   GenerateScheduleRequest,
   GenerateScheduleResponse,
   GeneratePlayoffRequest,
@@ -65,6 +66,26 @@ export class AdminRinkCalendar implements OnInit {
   showBlockoutForm = signal(false);
   isSubmittingBlockout = signal(false);
   blockoutForm: FormGroup;
+
+  // ── Event modal (unified: create, edit-event, edit-game, view-session) ─────
+  showEventModal = signal(false);
+  eventModalMode = signal<'create' | 'edit-event' | 'edit-game' | 'view-session'>('create');
+  editingSlot = signal<CalendarSlot | null>(null);
+  isSavingEvent = signal(false);
+  isDeletingEvent = signal(false);
+  isCheckingConflict = signal(false);
+  conflictResult = signal<ConflictCheckResponse | null>(null);
+  gameEditForm: FormGroup;
+
+  readonly eventTypes = [
+    { value: 'Blockout', label: 'Blockout' },
+    { value: 'Ice Rental', label: 'Ice Rental' },
+    { value: 'Private Party', label: 'Private Party' },
+    { value: 'League Game', label: 'League Game' },
+    { value: 'Youth Game', label: 'Youth Game' },
+    { value: 'Public Skating', label: 'Public Skating' },
+    { value: 'Other', label: 'Other' },
+  ];
 
   // ── Scheduler panel ───────────────────────────────────────────────────────
   showSchedulerPanel = signal(false);
@@ -134,9 +155,15 @@ export class AdminRinkCalendar implements OnInit {
     private fb: FormBuilder,
   ) {
     this.blockoutForm = this.fb.group({
+      eventType: ['Blockout', Validators.required],
       startDateTime: ['', Validators.required],
       endDateTime: ['', Validators.required],
       reason: [''],
+    });
+
+    this.gameEditForm = this.fb.group({
+      gameDate: ['', Validators.required],
+      gameTime: ['', Validators.required],
     });
 
     const today = new Date();
@@ -344,26 +371,85 @@ export class AdminRinkCalendar implements OnInit {
     this.selectedSlot.set(null);
   }
 
-  // ── Blockout form ──────────────────────────────────────────────────────────
+  // ── Event modal ────────────────────────────────────────────────────────────
 
-  openBlockoutForm(): void {
+  openCreateEventModal(hour?: number): void {
     const date = this.selectedDate();
     const dateStr = this.toISODate(date);
+    const startHour = hour ?? 9;
+    const endHour = Math.min(startHour + 2, 23);
+
     this.blockoutForm.reset({
-      startDateTime: `${dateStr}T09:00`,
-      endDateTime: `${dateStr}T11:00`,
+      eventType: 'Blockout',
+      startDateTime: `${dateStr}T${startHour.toString().padStart(2, '0')}:00`,
+      endDateTime: `${dateStr}T${endHour.toString().padStart(2, '0')}:00`,
       reason: '',
     });
-    this.showBlockoutForm.set(true);
+    this.editingSlot.set(null);
+    this.conflictResult.set(null);
+    this.eventModalMode.set('create');
+    this.showEventModal.set(true);
     this.errorMessage.set(null);
   }
 
-  closeBlockoutForm(): void {
-    this.showBlockoutForm.set(false);
-    this.blockoutForm.reset();
+  onRowDoubleClick(hour: number): void {
+    this.openCreateEventModal(hour);
   }
 
-  submitBlockout(): void {
+  onSlotDoubleClick(slot: CalendarSlot, event: MouseEvent): void {
+    event.stopPropagation();
+    this.closeDetail();
+    this.openSlotModal(slot);
+  }
+
+  openSlotModal(slot: CalendarSlot): void {
+    this.editingSlot.set(slot);
+    this.conflictResult.set(null);
+    this.errorMessage.set(null);
+
+    if (slot.type === 'blockout') {
+      const startDt = new Date(slot.startDateTime);
+      const endDt = new Date(slot.endDateTime);
+      this.blockoutForm.reset({
+        eventType: slot.eventType ?? 'Blockout',
+        startDateTime: this.toLocalDateTimeInput(startDt),
+        endDateTime: this.toLocalDateTimeInput(endDt),
+        reason: slot.reason ?? '',
+      });
+      this.eventModalMode.set('edit-event');
+      this.showEventModal.set(true);
+    } else if (slot.type === 'game') {
+      const gameDt = new Date(slot.startDateTime);
+      this.gameEditForm.reset({
+        gameDate: this.toISODate(gameDt),
+        gameTime: `${gameDt.getHours().toString().padStart(2, '0')}:${gameDt.getMinutes().toString().padStart(2, '0')}`,
+      });
+      this.eventModalMode.set('edit-game');
+      this.showEventModal.set(true);
+    } else {
+      this.eventModalMode.set('view-session');
+      this.showEventModal.set(true);
+    }
+  }
+
+  closeEventModal(): void {
+    this.showEventModal.set(false);
+    this.editingSlot.set(null);
+    this.conflictResult.set(null);
+    this.errorMessage.set(null);
+    this.blockoutForm.reset();
+    this.gameEditForm.reset();
+  }
+
+  saveEvent(): void {
+    if (this.eventModalMode() === 'edit-game') {
+      this.saveGameEdit();
+    } else {
+      this.saveBlockoutEvent();
+    }
+  }
+
+  private saveBlockoutEvent(): void {
     if (this.blockoutForm.invalid) {
       this.blockoutForm.markAllAsTouched();
       return;
@@ -372,59 +458,140 @@ export class AdminRinkCalendar implements OnInit {
     const rinkId = this.selectedRinkId();
     if (!rinkId) return;
 
-    const { startDateTime, endDateTime, reason } = this.blockoutForm.value;
+    const { eventType, startDateTime, endDateTime, reason } = this.blockoutForm.value;
     if (new Date(endDateTime) <= new Date(startDateTime)) {
       this.errorMessage.set('End time must be after start time');
       return;
     }
 
     const request: CreateBlockoutRequest = {
+      eventType: eventType ?? 'Blockout',
       startDateTime,
       endDateTime,
       reason: reason || undefined,
     };
-    this.isSubmittingBlockout.set(true);
 
-    this.adminService.createBlockout(rinkId, request).subscribe({
+    this.isSavingEvent.set(true);
+    const slot = this.editingSlot();
+    const obs = slot
+      ? this.adminService.updateBlockout(rinkId, slot.id, request)
+      : this.adminService.createBlockout(rinkId, request);
+
+    obs.subscribe({
       next: () => {
-        this.successMessage.set('Blockout added successfully');
-        this.isSubmittingBlockout.set(false);
-        this.closeBlockoutForm();
+        this.successMessage.set(slot ? 'Event updated successfully' : 'Event created successfully');
+        this.isSavingEvent.set(false);
+        this.closeEventModal();
         this.loadMonthData();
         this.loadDayBookings();
         setTimeout(() => this.successMessage.set(null), 3000);
       },
       error: (err) => {
-        console.error('Error creating blockout:', err);
-        this.errorMessage.set(
-          err.error?.message ?? 'Failed to create blockout',
-        );
-        this.isSubmittingBlockout.set(false);
+        console.error('Error saving event:', err);
+        this.errorMessage.set(err.error?.message ?? 'Failed to save event');
+        this.isSavingEvent.set(false);
       },
     });
   }
 
-  deleteBlockout(slot: CalendarSlot): void {
+  saveGameEdit(): void {
+    if (this.gameEditForm.invalid) {
+      this.gameEditForm.markAllAsTouched();
+      return;
+    }
+
+    const slot = this.editingSlot();
+    if (!slot || !slot.homeTeamId || !slot.awayTeamId) return;
+
+    const { gameDate, gameTime } = this.gameEditForm.value;
+    const gameDateStr = `${gameDate}T${gameTime}:00`;
+
+    this.isSavingEvent.set(true);
+    this.conflictResult.set(null);
+
+    this.adminService.checkConflict({
+      rinkId: slot.rinkId,
+      startDateTime: gameDateStr,
+      endDateTime: new Date(new Date(gameDateStr).getTime() + 90 * 60000).toISOString(),
+      excludeGameId: slot.id,
+    }).subscribe({
+      next: (result) => {
+        if (result.hasConflict) {
+          this.conflictResult.set(result);
+          this.isSavingEvent.set(false);
+          return;
+        }
+
+        this.adminService.updateGame(slot.id, {
+          gameDate: gameDateStr,
+          rinkId: slot.rinkId,
+          homeTeamId: slot.homeTeamId!,
+          awayTeamId: slot.awayTeamId!,
+          excludeGameId: slot.id,
+        }).subscribe({
+          next: () => {
+            this.successMessage.set('Game rescheduled successfully');
+            this.isSavingEvent.set(false);
+            this.closeEventModal();
+            this.loadMonthData();
+            this.loadDayBookings();
+            setTimeout(() => this.successMessage.set(null), 3000);
+          },
+          error: (err) => {
+            this.errorMessage.set(err.error?.message ?? 'Failed to reschedule game');
+            this.isSavingEvent.set(false);
+          },
+        });
+      },
+      error: (err) => {
+        this.errorMessage.set(err.error?.message ?? 'Failed to check conflicts');
+        this.isSavingEvent.set(false);
+      },
+    });
+  }
+
+  deleteEvent(): void {
+    const slot = this.editingSlot();
+    if (!slot) return;
+
     const rinkId = this.selectedRinkId();
-    if (!rinkId) return;
+    const label = slot.type === 'game' ? 'Cancel this game?' : `Remove "${slot.title}"?`;
+    if (!confirm(label)) return;
 
-    if (!confirm(`Remove blockout "${slot.title}"?`)) return;
+    this.isDeletingEvent.set(true);
 
-    this.adminService.deleteBlockout(rinkId, slot.id).subscribe({
+    const obs = slot.type === 'blockout'
+      ? this.adminService.deleteBlockout(rinkId!, slot.id)
+      : this.adminService.cancelGame(slot.id);
+
+    obs.subscribe({
       next: () => {
-        this.successMessage.set('Blockout removed');
-        this.closeDetail();
+        this.successMessage.set(slot.type === 'game' ? 'Game cancelled' : 'Event removed');
+        this.isDeletingEvent.set(false);
+        this.closeEventModal();
         this.loadMonthData();
         this.loadDayBookings();
         setTimeout(() => this.successMessage.set(null), 3000);
       },
       error: (err) => {
-        console.error('Error deleting blockout:', err);
-        this.errorMessage.set(
-          err.error?.message ?? 'Failed to remove blockout',
-        );
+        this.errorMessage.set(err.error?.message ?? 'Failed to delete event');
+        this.isDeletingEvent.set(false);
       },
     });
+  }
+
+  // ── Blockout form (kept for backward compat with popover's Remove button) ──
+
+  openBlockoutForm(): void {
+    this.openCreateEventModal();
+  }
+
+  closeBlockoutForm(): void {
+    this.closeEventModal();
+  }
+
+  submitBlockout(): void {
+    this.saveEvent();
   }
 
   // ── Scheduler panel ───────────────────────────────────────────────────────
@@ -723,6 +890,35 @@ export class AdminRinkCalendar implements OnInit {
       default:
         return 'bi-clock';
     }
+  }
+
+  private toLocalDateTimeInput(date: Date): string {
+    const y = date.getFullYear();
+    const mo = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    const h = date.getHours().toString().padStart(2, '0');
+    const mi = date.getMinutes().toString().padStart(2, '0');
+    return `${y}-${mo}-${d}T${h}:${mi}`;
+  }
+
+  // Kept for the single-click popover "Remove Blockout" button
+  deleteBlockout(slot: CalendarSlot): void {
+    const rinkId = this.selectedRinkId();
+    if (!rinkId) return;
+    if (!confirm(`Remove "${slot.title}"?`)) return;
+
+    this.adminService.deleteBlockout(rinkId, slot.id).subscribe({
+      next: () => {
+        this.successMessage.set('Blockout removed');
+        this.closeDetail();
+        this.loadMonthData();
+        this.loadDayBookings();
+        setTimeout(() => this.successMessage.set(null), 3000);
+      },
+      error: (err) => {
+        this.errorMessage.set(err.error?.message ?? 'Failed to remove blockout');
+      },
+    });
   }
 
   readonly weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

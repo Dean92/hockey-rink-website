@@ -15,6 +15,9 @@ public class CalendarSlotDto
     public string? AwayTeamName { get; set; }
     public string? Status { get; set; }
     public string? Reason { get; set; }             // For blockouts
+    public string? EventType { get; set; }           // For blockouts: Blockout, Ice Rental, etc.
+    public int? HomeTeamId { get; set; }             // For games
+    public int? AwayTeamId { get; set; }             // For games
     public int? RinkId { get; set; }
     public string? RinkName { get; set; }
 }

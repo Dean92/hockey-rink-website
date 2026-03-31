@@ -20,8 +20,8 @@
       <a routerLink="/admin" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i>Dashboard
       </a>
-      <button class="btn btn-danger btn-sm" (click)="openBlockoutForm()">
-        <i class="bi bi-slash-circle me-1"></i>+ Blockout
+      <button class="btn btn-danger btn-sm" (click)="openCreateEventModal()">
+        <i class="bi bi-slash-circle me-1"></i>+ Add Event
       </button>
       <button class="btn btn-success btn-sm" (click)="openSchedulerPanel()">
         <i class="bi bi-calendar-plus me-1"></i>Schedule League Games
@@ -129,13 +129,15 @@
               <div class="time-label">{{ row.label }}</div>
               <div class="time-content">
                 @if (row.slots.length === 0) {
-                  <div class="available-slot">Available</div>
+                  <div class="available-slot" (dblclick)="onRowDoubleClick(row.hour)" title="Double-click to add event">Available</div>
                 } @else {
                   @for (slot of row.slots; track slot.id) {
                     <div
                       class="booked-slot"
                       [ngClass]="'slot-' + slot.type"
                       (click)="showDetail(slot)"
+                      (dblclick)="onSlotDoubleClick(slot, $event)"
+                      title="Double-click to edit"
                     >
                       <i [class]="'bi ' + getSlotIcon(slot.type) + ' me-1'"></i>
                       <span class="slot-title">{{ slot.title }}</span>
@@ -234,105 +236,180 @@
   </div>
 }
 
-<!-- ── Blockout Form Modal ──────────────────────────────────────────────────── -->
-@if (showBlockoutForm()) {
+<!-- ── Unified Rink Event Modal ──────────────────────────────────────────────── -->
+@if (showEventModal()) {
   <div class="modal d-block" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="bi bi-slash-circle me-2 text-danger"></i>Add Rink Blockout
-          </h5>
-          <button
-            type="button"
-            class="btn-close"
-            (click)="closeBlockoutForm()"
-          ></button>
+          @if (eventModalMode() === 'create') {
+            <h5 class="modal-title"><i class="bi bi-plus-circle me-2 text-primary"></i>New Rink Event</h5>
+          } @else if (eventModalMode() === 'edit-event') {
+            <h5 class="modal-title"><i class="bi bi-pencil me-2 text-primary"></i>Edit Rink Event</h5>
+          } @else if (eventModalMode() === 'edit-game') {
+            <h5 class="modal-title"><i class="bi bi-trophy me-2 text-success"></i>Edit Game</h5>
+          } @else {
+            <h5 class="modal-title"><i class="bi bi-people-fill me-2 text-info"></i>Session Info</h5>
+          }
+          <button type="button" class="btn-close" (click)="closeEventModal()"></button>
         </div>
-        <form [formGroup]="blockoutForm" (ngSubmit)="submitBlockout()">
-          <div class="modal-body">
-            @if (errorMessage()) {
-              <div class="alert alert-danger py-2">{{ errorMessage() }}</div>
-            }
-            <div class="mb-3">
-              <label class="form-label"
-                >Start Date & Time <span class="text-danger">*</span></label
-              >
-              <input
-                type="datetime-local"
-                class="form-control"
-                formControlName="startDateTime"
-                [class.is-invalid]="
-                  blockoutForm.get('startDateTime')?.invalid &&
-                  blockoutForm.get('startDateTime')?.touched
-                "
-              />
-              @if (
-                blockoutForm.get("startDateTime")?.invalid &&
-                blockoutForm.get("startDateTime")?.touched
-              ) {
-                <div class="invalid-feedback">Start date/time is required</div>
+
+        <!-- Create / Edit blockout event -->
+        @if (eventModalMode() === 'create' || eventModalMode() === 'edit-event') {
+          <form [formGroup]="blockoutForm" (ngSubmit)="saveEvent()">
+            <div class="modal-body">
+              @if (errorMessage()) {
+                <div class="alert alert-danger py-2">{{ errorMessage() }}</div>
               }
-            </div>
-            <div class="mb-3">
-              <label class="form-label"
-                >End Date & Time <span class="text-danger">*</span></label
-              >
-              <input
-                type="datetime-local"
-                class="form-control"
-                formControlName="endDateTime"
-                [class.is-invalid]="
-                  blockoutForm.get('endDateTime')?.invalid &&
-                  blockoutForm.get('endDateTime')?.touched
-                "
-              />
-              @if (
-                blockoutForm.get("endDateTime")?.invalid &&
-                blockoutForm.get("endDateTime")?.touched
-              ) {
-                <div class="invalid-feedback">End date/time is required</div>
-              }
-            </div>
-            <div class="mb-3">
-              <label class="form-label"
-                >Reason <span class="text-muted">(optional)</span></label
-              >
-              <input
-                type="text"
-                class="form-control"
-                formControlName="reason"
-                placeholder="e.g. Maintenance, Holiday…"
-                maxlength="200"
-              />
-            </div>
-            @if (selectedRink()) {
-              <div class="alert alert-light py-2 mb-0">
-                <i class="bi bi-info-circle me-1"></i>
-                Blocking out <strong>{{ selectedRink()!.name }}</strong>
+              <div class="mb-3">
+                <label class="form-label">Event Type <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="eventType">
+                  @for (et of eventTypes; track et.value) {
+                    <option [value]="et.value">{{ et.label }}</option>
+                  }
+                </select>
               </div>
-            }
+              <div class="mb-3">
+                <label class="form-label">Start Date & Time <span class="text-danger">*</span></label>
+                <input
+                  type="datetime-local"
+                  class="form-control"
+                  formControlName="startDateTime"
+                  [class.is-invalid]="blockoutForm.get('startDateTime')?.invalid && blockoutForm.get('startDateTime')?.touched"
+                />
+                @if (blockoutForm.get('startDateTime')?.invalid && blockoutForm.get('startDateTime')?.touched) {
+                  <div class="invalid-feedback">Start date/time is required</div>
+                }
+              </div>
+              <div class="mb-3">
+                <label class="form-label">End Date & Time <span class="text-danger">*</span></label>
+                <input
+                  type="datetime-local"
+                  class="form-control"
+                  formControlName="endDateTime"
+                  [class.is-invalid]="blockoutForm.get('endDateTime')?.invalid && blockoutForm.get('endDateTime')?.touched"
+                />
+                @if (blockoutForm.get('endDateTime')?.invalid && blockoutForm.get('endDateTime')?.touched) {
+                  <div class="invalid-feedback">End date/time is required</div>
+                }
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+                <input type="text" class="form-control" formControlName="reason" placeholder="e.g. Maintenance, Ice Rental…" maxlength="200" />
+              </div>
+              @if (selectedRink()) {
+                <div class="alert alert-light py-2 mb-0">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Rink: <strong>{{ selectedRink()!.name }}</strong>
+                </div>
+              }
+            </div>
+            <div class="modal-footer">
+              @if (eventModalMode() === 'edit-event') {
+                <button type="button" class="btn btn-outline-danger me-auto" [disabled]="isDeletingEvent()" (click)="deleteEvent()">
+                  @if (isDeletingEvent()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                  <i class="bi bi-trash me-1"></i>Remove
+                </button>
+              }
+              <button type="button" class="btn btn-secondary" (click)="closeEventModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="isSavingEvent()">
+                @if (isSavingEvent()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                {{ eventModalMode() === 'edit-event' ? 'Update Event' : 'Add Event' }}
+              </button>
+            </div>
+          </form>
+        }
+
+        <!-- Edit game -->
+        @if (eventModalMode() === 'edit-game') {
+          <form [formGroup]="gameEditForm" (ngSubmit)="saveEvent()">
+            <div class="modal-body">
+              @if (errorMessage()) { <div class="alert alert-danger py-2">{{ errorMessage() }}</div> }
+              <div class="mb-3">
+                <label class="form-label text-muted small">Game</label>
+                <p class="fw-semibold mb-0">{{ editingSlot()?.title }}</p>
+                @if (editingSlot()?.leagueName) {
+                  <small class="text-muted">{{ editingSlot()!.leagueName }}</small>
+                }
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-7">
+                  <label class="form-label">New Date <span class="text-danger">*</span></label>
+                  <input type="date" class="form-control" formControlName="gameDate" [class.is-invalid]="gameEditForm.get('gameDate')?.invalid && gameEditForm.get('gameDate')?.touched" />
+                  @if (gameEditForm.get('gameDate')?.invalid && gameEditForm.get('gameDate')?.touched) {
+                    <div class="invalid-feedback">Date is required</div>
+                  }
+                </div>
+                <div class="col-5">
+                  <label class="form-label">New Time <span class="text-danger">*</span></label>
+                  <input type="time" class="form-control" formControlName="gameTime" [class.is-invalid]="gameEditForm.get('gameTime')?.invalid && gameEditForm.get('gameTime')?.touched" />
+                  @if (gameEditForm.get('gameTime')?.invalid && gameEditForm.get('gameTime')?.touched) {
+                    <div class="invalid-feedback">Time is required</div>
+                  }
+                </div>
+              </div>
+              @if (conflictResult()?.hasConflict) {
+                <div class="alert alert-warning py-2">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Conflict detected.</strong> Another event is already booked at this time on this rink.
+                </div>
+              }
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-danger me-auto" [disabled]="isDeletingEvent()" (click)="deleteEvent()">
+                @if (isDeletingEvent()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                <i class="bi bi-x-circle me-1"></i>Cancel Game
+              </button>
+              <button type="button" class="btn btn-secondary" (click)="closeEventModal()">Close</button>
+              <button type="submit" class="btn btn-success" [disabled]="isSavingEvent()">
+                @if (isSavingEvent()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                <i class="bi bi-calendar-check me-1"></i>Reschedule
+              </button>
+            </div>
+          </form>
+        }
+
+        <!-- View session (read-only) -->
+        @if (eventModalMode() === 'view-session') {
+          <div class="modal-body">
+            <div class="alert alert-info py-2 mb-3">
+              <i class="bi bi-info-circle me-2"></i>
+              Sessions are managed from the <a routerLink="/admin/sessions">Sessions page</a>.
+            </div>
+            <table class="table table-sm table-borderless mb-0">
+              <tbody>
+                <tr>
+                  <th class="text-muted" style="width: 100px">Session</th>
+                  <td class="fw-semibold">{{ editingSlot()?.title }}</td>
+                </tr>
+                @if (editingSlot()?.leagueName) {
+                  <tr>
+                    <th class="text-muted">League</th>
+                    <td>{{ editingSlot()!.leagueName }}</td>
+                  </tr>
+                }
+                <tr>
+                  <th class="text-muted">Start</th>
+                  <td>{{ formatTime(editingSlot()!.startDateTime) }}</td>
+                </tr>
+                <tr>
+                  <th class="text-muted">End</th>
+                  <td>{{ formatTime(editingSlot()!.endDateTime) }}</td>
+                </tr>
+                @if (editingSlot()?.status) {
+                  <tr>
+                    <th class="text-muted">Status</th>
+                    <td><span class="badge bg-secondary">{{ editingSlot()!.status }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
           <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              (click)="closeBlockoutForm()"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="btn btn-danger"
-              [disabled]="isSubmittingBlockout()"
-            >
-              @if (isSubmittingBlockout()) {
-                <span class="spinner-border spinner-border-sm me-1"></span>
-              }
-              Add Blockout
-            </button>
+            <button type="button" class="btn btn-secondary" (click)="closeEventModal()">Close</button>
           </div>
-        </form>
+        }
+
       </div>
     </div>
   </div>

@@ -134,6 +134,7 @@ export interface CreateBlockoutRequest {
   startDateTime: string;
   endDateTime: string;
   reason?: string;
+  eventType?: string;
 }
 
 // ── Rink Calendar ─────────────────────────────────────────────────────────────
@@ -149,8 +150,11 @@ export interface CalendarSlot {
   leagueName?: string;
   homeTeamName?: string;
   awayTeamName?: string;
+  homeTeamId?: number;
+  awayTeamId?: number;
   status?: string;
   reason?: string;
+  eventType?: string;
 }
 
 export interface DayBookingsResponse {
@@ -401,6 +405,11 @@ export class AdminService {
   deleteBlockout(rinkId: number, blockoutId: number): Observable<any> {
     const headers = this.authService.getAuthHeaders();
     return this.http.delete(`${this.apiUrl}/rinks/${rinkId}/blockouts/${blockoutId}`, { headers, withCredentials: true });
+  }
+
+  updateBlockout(rinkId: number, blockoutId: number, request: CreateBlockoutRequest): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put(`${this.apiUrl}/rinks/${rinkId}/blockouts/${blockoutId}`, request, { headers, withCredentials: true });
   }
 
   // ── Rink Calendar ─────────────────────────────────────────────────────────────

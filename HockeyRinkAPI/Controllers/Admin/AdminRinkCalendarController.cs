@@ -71,6 +71,8 @@ public class AdminRinkCalendarController : AdminControllerBase
                 LeagueName = g.Session?.League?.Name,
                 HomeTeamName = g.HomeTeam?.TeamName,
                 AwayTeamName = g.AwayTeam?.TeamName,
+                HomeTeamId = g.HomeTeamId,
+                AwayTeamId = g.AwayTeamId,
                 Status = g.Status,
                 RinkId = rinkId,
                 RinkName = rink.Name
@@ -80,10 +82,11 @@ public class AdminRinkCalendarController : AdminControllerBase
             {
                 Id = b.Id,
                 Type = "blockout",
-                Title = b.Reason ?? "Rink Blockout",
+                Title = b.Reason ?? b.EventType ?? "Rink Blockout",
                 StartDateTime = b.StartDateTime,
                 EndDateTime = b.EndDateTime,
                 Reason = b.Reason,
+                EventType = b.EventType,
                 RinkId = rinkId,
                 RinkName = rink.Name
             }));

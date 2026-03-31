@@ -39,6 +39,7 @@ public class AdminRinkBlockoutsController : AdminControllerBase
                 b.StartDateTime,
                 b.EndDateTime,
                 b.Reason,
+                b.EventType,
                 b.CreatedAt
             }));
         }
@@ -69,6 +70,7 @@ public class AdminRinkBlockoutsController : AdminControllerBase
                 StartDateTime = model.StartDateTime,
                 EndDateTime = model.EndDateTime,
                 Reason = model.Reason,
+                EventType = model.EventType,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -81,6 +83,38 @@ public class AdminRinkBlockoutsController : AdminControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating blockout for rink {RinkId}", rinkId);
+            return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
+        }
+    }
+
+    [HttpPut("rinks/{rinkId}/blockouts/{id}")]
+    public async Task<IActionResult> UpdateBlockout(int rinkId, int id, [FromBody] BlockoutRequest model)
+    {
+        try
+        {
+            if (!await IsAdminAsync()) return Forbid();
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            if (model.EndDateTime <= model.StartDateTime)
+                return BadRequest(new { message = "End time must be after start time" });
+
+            var blockout = await _rinkRepository.GetBlockoutByIdAsync(id);
+            if (blockout == null || blockout.RinkId != rinkId)
+                return NotFound(new { message = "Blockout not found" });
+
+            blockout.StartDateTime = model.StartDateTime;
+            blockout.EndDateTime = model.EndDateTime;
+            blockout.Reason = model.Reason;
+            blockout.EventType = model.EventType;
+
+            await _rinkRepository.SaveChangesAsync();
+
+            _logger.LogInformation("Blockout {BlockoutId} updated for rink {RinkId}", id, rinkId);
+            return Ok(new { message = "Blockout updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating blockout {BlockoutId}", id);
             return StatusCode(500, new { error = "Internal Server Error", details = ex.Message });
         }
     }
