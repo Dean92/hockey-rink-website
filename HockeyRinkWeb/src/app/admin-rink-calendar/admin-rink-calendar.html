@@ -57,6 +57,9 @@
     <span class="legend-item"
       ><span class="legend-dot blockout"></span>Blockout</span
     >
+    <span class="legend-item"
+      ><span class="legend-dot event"></span>Event</span
+    >
   </div>
 
   <!-- Main layout: mini-calendar + timeline -->
@@ -134,7 +137,7 @@
                   @for (slot of row.slots; track slot.id) {
                     <div
                       class="booked-slot"
-                      [ngClass]="'slot-' + slot.type"
+                      [ngClass]="getSlotClass(slot)"
                       (click)="showDetail(slot)"
                       (dblclick)="onSlotDoubleClick(slot, $event)"
                       title="Double-click to edit"
@@ -162,11 +165,13 @@
 @if (showSlotDetail() && selectedSlot()) {
   <div class="modal-backdrop-custom" (click)="closeDetail()"></div>
   <div class="detail-popover">
-    <div class="detail-header" [ngClass]="'slot-' + selectedSlot()!.type">
+    <div class="detail-header" [ngClass]="getSlotClass(selectedSlot()!)">
       <i [class]="'bi ' + getSlotIcon(selectedSlot()!.type) + ' me-2'"></i>
       <span class="fw-semibold">{{ selectedSlot()!.title }}</span>
       <button
-        class="btn btn-sm btn-link ms-auto text-white p-0"
+        class="btn btn-sm btn-link ms-auto p-0"
+        [class.text-white]="getSlotClass(selectedSlot()!) !== 'slot-event'"
+        [class.text-dark]="getSlotClass(selectedSlot()!) === 'slot-event'"
         (click)="closeDetail()"
       >
         <i class="bi bi-x-lg"></i>

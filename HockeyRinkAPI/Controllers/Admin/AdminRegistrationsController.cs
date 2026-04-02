@@ -41,7 +41,7 @@ public class AdminRegistrationsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             var session = await _sessionRepository.GetByIdWithRegistrationsAsync(id);
@@ -108,7 +108,7 @@ public class AdminRegistrationsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             if (!ModelState.IsValid)
@@ -215,7 +215,7 @@ public class AdminRegistrationsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             if (!ModelState.IsValid)
@@ -280,7 +280,7 @@ public class AdminRegistrationsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             var registration = await _registrationRepository.GetByIdAndSessionAsync(registrationId, sessionId);
@@ -312,7 +312,7 @@ public class AdminRegistrationsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             var registrationEntities = await _registrationRepository.GetAllWithDetailsAsync();

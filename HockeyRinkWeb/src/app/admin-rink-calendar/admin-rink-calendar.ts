@@ -892,6 +892,17 @@ export class AdminRinkCalendar implements OnInit {
     }
   }
 
+  /** Returns the CSS modifier class used for background color on calendar slots.
+   *  Only true "Blockout" event type gets red; all other event types are neutral. */
+  getSlotClass(slot: CalendarSlot): string {
+    if (slot.type === 'blockout') {
+      return slot.eventType === 'Blockout' || !slot.eventType
+        ? 'slot-blockout'
+        : 'slot-event';
+    }
+    return 'slot-' + slot.type;
+  }
+
   private toLocalDateTimeInput(date: Date): string {
     const y = date.getFullYear();
     const mo = (date.getMonth() + 1).toString().padStart(2, '0');

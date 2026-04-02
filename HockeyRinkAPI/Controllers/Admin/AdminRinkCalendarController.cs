@@ -37,7 +37,7 @@ public class AdminRinkCalendarController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageSchedule)) return Forbid();
 
             var rink = await _rinkRepository.GetByIdAsync(rinkId);
             if (rink == null) return NotFound(new { message = "Rink not found" });
@@ -114,7 +114,7 @@ public class AdminRinkCalendarController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageSchedule)) return Forbid();
 
             var rink = await _rinkRepository.GetByIdAsync(rinkId);
             if (rink == null) return NotFound(new { message = "Rink not found" });
@@ -144,7 +144,7 @@ public class AdminRinkCalendarController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageSchedule)) return Forbid();
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             if (request.EndDateTime <= request.StartDateTime)

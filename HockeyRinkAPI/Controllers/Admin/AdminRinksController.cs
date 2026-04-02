@@ -29,7 +29,7 @@ public class AdminRinksController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageRinks)) return Forbid();
 
             var rinks = await _rinkRepository.GetAllAsync();
             return Ok(rinks.Select(r => new
@@ -53,7 +53,7 @@ public class AdminRinksController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageRinks)) return Forbid();
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var rink = new Rink
@@ -82,7 +82,7 @@ public class AdminRinksController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageRinks)) return Forbid();
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var rink = await _rinkRepository.GetByIdAsync(id);
@@ -108,7 +108,7 @@ public class AdminRinksController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageRinks)) return Forbid();
 
             var rink = await _rinkRepository.GetByIdAsync(id);
             if (rink == null) return NotFound(new { message = "Rink not found" });

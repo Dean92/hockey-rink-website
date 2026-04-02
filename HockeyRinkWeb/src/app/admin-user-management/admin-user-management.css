@@ -1,0 +1,75 @@
+/* ── Tabs ───────────────────────────────────────────────────────────────── */
+
+.nav-tabs .nav-link {
+  color: #343a40 !important;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+}
+
+.nav-tabs .nav-link:hover {
+  color: #1a1a1a !important;
+  border-color: #ced4da #ced4da transparent;
+  background: #f1f3f5;
+}
+
+.nav-tabs .nav-link.active {
+  color: #1a1a1a !important;
+  font-weight: 600;
+  background: #fff;
+  border-color: #ced4da #ced4da #fff;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Revoke Confirmation Modal ──────────────────────────────────────────── */
+
+.modal-backdrop-dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1040;
+}
+
+.revoke-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1050;
+  width: 420px;
+  max-width: 95vw;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.revoke-modal-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: #fff3cd;
+  border-bottom: 1px solid #ffc107;
+  font-size: 1rem;
+}
+
+.revoke-modal-body {
+  padding: 1.25rem;
+}
+
+.revoke-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  background: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+.table-header-light th {
+  background-color: #e9ecef;
+  color: #343a40;
+  font-weight: 600;
+  border-bottom: 2px solid #ced4da;
+}

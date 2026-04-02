@@ -23,6 +23,27 @@ export class AuthService {
     return isAdmin;
   }
 
+  isSubAdmin(): boolean {
+    return localStorage.getItem('isSubAdmin') === 'true';
+  }
+
+  isAnyAdmin(): boolean {
+    return this.isAdmin() || this.isSubAdmin();
+  }
+
+  getPermissions(): string[] {
+    try {
+      return JSON.parse(localStorage.getItem('permissions') ?? '[]');
+    } catch {
+      return [];
+    }
+  }
+
+  hasPermission(permission: string): boolean {
+    if (this.isAdmin()) return true;
+    return this.getPermissions().includes(permission);
+  }
+
   getAuthHeaders() {
     const token = this.getToken();
     console.log('getAuthHeaders called, token:', token);
@@ -62,14 +83,16 @@ export class AuthService {
       .post<{
         token: string;
         isAdmin: boolean;
+        isSubAdmin: boolean;
+        permissions: string[];
       }>(`${this.apiUrl}/login`, { email, password }, { withCredentials: true })
       .pipe(
         tap((response) => console.log('Login response:', response)),
         map((response) => {
-          console.log('Storing token:', response.token);
-          console.log('User is admin:', response.isAdmin);
           localStorage.setItem('authToken', response.token);
           localStorage.setItem('isAdmin', response.isAdmin.toString());
+          localStorage.setItem('isSubAdmin', (response.isSubAdmin ?? false).toString());
+          localStorage.setItem('permissions', JSON.stringify(response.permissions ?? []));
           return response;
         }),
         catchError((err) => {
@@ -134,5 +157,7 @@ export class AuthService {
     console.log('Logging out, removing token and admin status');
     localStorage.removeItem('authToken');
     localStorage.removeItem('isAdmin');
+    localStorage.removeItem('isSubAdmin');
+    localStorage.removeItem('permissions');
   }
 }

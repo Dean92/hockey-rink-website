@@ -31,7 +31,7 @@ public class AdminUsersController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             var users = await _dbContext
@@ -83,7 +83,7 @@ public class AdminUsersController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             if (!ModelState.IsValid)
@@ -121,7 +121,7 @@ public class AdminUsersController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             if (!ModelState.IsValid)

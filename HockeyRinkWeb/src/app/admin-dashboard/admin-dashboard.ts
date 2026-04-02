@@ -1,7 +1,8 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { AdminService, AdminDashboardData } from '../admin.service';
+import { AuthService } from '../auth';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -14,10 +15,31 @@ export class AdminDashboard implements OnInit {
   dashboardData = signal<AdminDashboardData | null>(null);
   errorMessage = signal<string | null>(null);
   isLoading = signal<boolean>(true);
+  accessDenied = signal<boolean>(false);
 
-  constructor(private adminService: AdminService) {}
+  private adminService = inject(AdminService);
+  private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
+
+  isFullAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
+  canManageRegistrations(): boolean {
+    return this.authService.hasPermission('manage-registrations');
+  }
+  canManageLeagues(): boolean {
+    return this.authService.hasPermission('manage-leagues');
+  }
+  canManageSchedule(): boolean {
+    return this.authService.hasPermission('manage-schedule');
+  }
 
   ngOnInit() {
+    this.route.queryParams.subscribe((params) => {
+      if (params['accessDenied']) {
+        this.accessDenied.set(true);
+      }
+    });
     this.loadDashboard();
   }
 
@@ -31,7 +53,7 @@ export class AdminDashboard implements OnInit {
       error: (err) => {
         console.error('Error fetching admin dashboard:', err);
         this.errorMessage.set(
-          err.error?.message || 'Failed to load admin dashboard'
+          err.error?.message || 'Failed to load admin dashboard',
         );
         this.isLoading.set(false);
       },

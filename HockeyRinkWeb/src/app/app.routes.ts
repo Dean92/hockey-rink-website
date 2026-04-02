@@ -18,6 +18,7 @@ import { SetupPassword } from './setup-password/setup-password';
 import { NotFound } from './not-found/not-found';
 import { AuthGuard } from './auth.guard';
 import { AdminGuard } from './admin-guard';
+import { PermissionGuard } from './permission-guard';
 import { PublicSkate } from './public-skate/public-skate';
 import { StickAndPuck } from './stick-and-puck/stick-and-puck';
 import { AdultHockey } from './adult-hockey/adult-hockey';
@@ -34,8 +35,8 @@ export const routes: Routes = [
   { path: 'home', component: Home },
   { path: 'login', component: Login },
   { path: 'register', component: Register },
-  { path: 'leagues', component: Leagues }, // Public - no auth required
-  { path: 'sessions', component: Sessions }, // Public - no auth required
+  { path: 'leagues', component: Leagues },
+  { path: 'sessions', component: Sessions },
   { path: 'public-skate', component: PublicSkate },
   { path: 'stick-and-puck', component: StickAndPuck },
   { path: 'adult-hockey', component: AdultHockey },
@@ -50,46 +51,51 @@ export const routes: Routes = [
   { path: 'profile', component: Profile, canActivate: [AuthGuard] },
   { path: 'dashboard', component: Dashboard, canActivate: [AuthGuard] },
   { path: 'my-teams', component: PlayerDashboard, canActivate: [AuthGuard] },
+  // Admin dashboard: any admin role
   {
     path: 'admin',
     component: AdminDashboard,
     canActivate: [AuthGuard, AdminGuard],
   },
+  // Manage Registrations permission
   {
     path: 'admin/users',
     component: AdminUsers,
-    canActivate: [AuthGuard, AdminGuard],
+    canActivate: [AuthGuard, PermissionGuard('manage-registrations')],
   },
   {
     path: 'admin/sessions',
     component: AdminSessions,
-    canActivate: [AuthGuard, AdminGuard],
+    canActivate: [AuthGuard, PermissionGuard('manage-registrations')],
   },
+  // Manage Leagues permission
   {
     path: 'admin/leagues',
     component: AdminLeagues,
-    canActivate: [AuthGuard, AdminGuard],
+    canActivate: [AuthGuard, PermissionGuard('manage-leagues')],
   },
   {
     path: 'admin/sessions/:sessionId/teams',
     component: AdminTeams,
-    canActivate: [AuthGuard, AdminGuard],
+    canActivate: [AuthGuard, PermissionGuard('manage-leagues')],
   },
   {
     path: 'admin/sessions/:sessionId/draft',
     component: AdminDraft,
-    canActivate: [AuthGuard, AdminGuard],
-  },
-  {
-    path: 'admin/rink-calendar',
-    component: AdminRinkCalendar,
-    canActivate: [AuthGuard, AdminGuard],
+    canActivate: [AuthGuard, PermissionGuard('manage-leagues')],
   },
   {
     path: 'admin/leagues/:id/schedule',
     component: AdminLeagueSchedule,
-    canActivate: [AuthGuard, AdminGuard],
+    canActivate: [AuthGuard, PermissionGuard('manage-leagues')],
   },
+  // Manage Schedule permission
+  {
+    path: 'admin/rink-calendar',
+    component: AdminRinkCalendar,
+    canActivate: [AuthGuard, PermissionGuard('manage-schedule')],
+  },
+  // Full Admin only
   {
     path: 'admin/user-management',
     component: AdminUserManagement,
@@ -97,5 +103,5 @@ export const routes: Routes = [
   },
   { path: 'leagues/:id/schedule', component: LeagueSchedule },
   { path: 'setup-password/:token', component: SetupPassword },
-  { path: '**', component: NotFound }, // 404 - Wildcard route must be last
+  { path: '**', component: NotFound },
 ];

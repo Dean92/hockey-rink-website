@@ -39,7 +39,7 @@ public class AdminScheduleController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageLeagues)) return Forbid();
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             if (request.EndDate < request.StartDate)
@@ -70,7 +70,7 @@ public class AdminScheduleController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageLeagues)) return Forbid();
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             if (request.Games.Count == 0)
@@ -112,7 +112,7 @@ public class AdminScheduleController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageLeagues)) return Forbid();
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             if (request.EndDate < request.StartDate)

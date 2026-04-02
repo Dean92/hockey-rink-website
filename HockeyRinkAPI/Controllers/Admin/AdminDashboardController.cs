@@ -32,7 +32,7 @@ public class AdminDashboardController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await IsAdminOrSubAdminAsync())
                 return Forbid();
 
             var today = DateTime.UtcNow.Date;

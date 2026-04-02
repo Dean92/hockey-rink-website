@@ -43,7 +43,7 @@ public class AdminLeagueGamesController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageLeagues)) return Forbid();
 
             var games = await _gameRepository.GetLeagueGamesAsync(leagueId, teamId, status, startDate, endDate, rinkId);
             var result = games.Select(MapToDto).ToList();
@@ -65,7 +65,7 @@ public class AdminLeagueGamesController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageLeagues)) return Forbid();
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var game = await _gameRepository.GetByIdAsync(id);
@@ -115,7 +115,7 @@ public class AdminLeagueGamesController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageLeagues)) return Forbid();
 
             var game = await _gameRepository.GetByIdAsync(id);
             if (game == null) return NotFound(new { message = "Game not found" });

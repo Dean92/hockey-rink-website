@@ -29,7 +29,7 @@ public class AdminRinkBlockoutsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageSchedule)) return Forbid();
 
             var blockouts = await _rinkRepository.GetBlockoutsAsync(rinkId);
             return Ok(blockouts.Select(b => new
@@ -55,7 +55,7 @@ public class AdminRinkBlockoutsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageSchedule)) return Forbid();
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             if (model.EndDateTime <= model.StartDateTime)
@@ -92,7 +92,7 @@ public class AdminRinkBlockoutsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageSchedule)) return Forbid();
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             if (model.EndDateTime <= model.StartDateTime)
@@ -124,7 +124,7 @@ public class AdminRinkBlockoutsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync()) return Forbid();
+            if (!await HasPermissionAsync(AdminPermissions.ManageSchedule)) return Forbid();
 
             var blockout = await _rinkRepository.GetBlockoutByIdAsync(id);
             if (blockout == null || blockout.RinkId != rinkId)

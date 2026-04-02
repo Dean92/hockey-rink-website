@@ -5,7 +5,7 @@
       <i class="bi bi-arrow-left me-1"></i>Back
     </a>
     <h2 class="mb-0">
-      <i class="bi bi-shield-lock me-2 text-secondary"></i>Admin User Management
+      <i class="bi bi-shield-lock-fill me-2" style="color: #c9a227;"></i>Admin User Management
     </h2>
   </div>
 
@@ -39,7 +39,7 @@
         [class.active]="activeTab() === 'admins'"
         (click)="activeTab.set('admins')"
       >
-        <i class="bi bi-people me-1"></i>Current Admins
+        <i class="bi bi-people-fill me-1"></i>Current Admins
       </button>
     </li>
     <li class="nav-item">
@@ -48,7 +48,7 @@
         [class.active]="activeTab() === 'add'"
         (click)="activeTab.set('add')"
       >
-        <i class="bi bi-person-plus me-1"></i>Grant / Invite Admin
+        <i class="bi bi-person-plus-fill me-1"></i>Grant / Invite Admin
       </button>
     </li>
   </ul>
@@ -68,7 +68,7 @@
     } @else {
       <div class="table-responsive">
         <table class="table table-bordered align-middle">
-          <thead class="table-dark">
+          <thead class="table-header-light">
             <tr>
               <th>Name</th>
               <th>Email</th>
@@ -118,18 +118,18 @@
                       @if (savingUserId() === user.id) {
                         <span class="spinner-border spinner-border-sm"></span>
                       } @else {
-                        <i class="bi bi-floppy me-1"></i>Save
+                        <i class="bi bi-floppy-fill me-1"></i>Save
                       }
                     </button>
                     <button
                       class="btn btn-sm btn-outline-danger"
-                      (click)="revokeAdmin(user)"
+                      (click)="openRevokeModal(user)"
                       [disabled]="revokingUserId() === user.id"
                     >
                       @if (revokingUserId() === user.id) {
                         <span class="spinner-border spinner-border-sm"></span>
                       } @else {
-                        <i class="bi bi-x-circle me-1"></i>Revoke
+                        <i class="bi bi-x-circle-fill me-1"></i>Revoke
                       }
                     </button>
                   </div>
@@ -287,7 +287,7 @@
                     <span class="spinner-border spinner-border-sm me-1"></span
                     >Granting…
                   } @else {
-                    <i class="bi bi-shield-check me-1"></i>Grant Admin Access
+                    <i class="bi bi-shield-fill-check me-1"></i>Grant Admin Access
                   }
                 </button>
               } @else {
@@ -300,7 +300,7 @@
                     <span class="spinner-border spinner-border-sm me-1"></span
                     >Sending…
                   } @else {
-                    <i class="bi bi-envelope-check me-1"></i>Send Invitation
+                    <i class="bi bi-envelope-fill me-1"></i>Send Invitation
                   }
                 </button>
               }
@@ -311,3 +311,41 @@
     </div>
   }
 </div>
+
+<!-- ── Revoke Confirmation Modal ──────────────────────────────────────────── -->
+@if (showRevokeModal() && userToRevoke()) {
+  <div class="modal-backdrop-dim" (click)="cancelRevoke()"></div>
+  <div class="revoke-modal" role="dialog" aria-modal="true">
+    <div class="revoke-modal-header">
+      <i class="bi bi-shield-x-fill me-2 text-danger"></i>
+      <span class="fw-semibold">Revoke Admin Access</span>
+    </div>
+    <div class="revoke-modal-body">
+      <p class="mb-1">Are you sure you want to revoke admin permissions for:</p>
+      <p class="fw-semibold mb-1">
+        {{ userToRevoke()!.firstName }} {{ userToRevoke()!.lastName }}
+      </p>
+      <p class="text-muted small mb-3">{{ userToRevoke()!.email }}</p>
+      <p class="text-danger small mb-0">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+        This will remove all admin permissions immediately.
+      </p>
+    </div>
+    <div class="revoke-modal-footer">
+      <button class="btn btn-outline-secondary btn-sm" (click)="cancelRevoke()">
+        Cancel
+      </button>
+      <button
+        class="btn btn-danger btn-sm"
+        (click)="revokeAdmin(userToRevoke()!)"
+        [disabled]="revokingUserId() === userToRevoke()!.id"
+      >
+        @if (revokingUserId() === userToRevoke()!.id) {
+          <span class="spinner-border spinner-border-sm me-1"></span>Revoking…
+        } @else {
+          <i class="bi bi-x-circle-fill me-1"></i>Yes, Revoke
+        }
+      </button>
+    </div>
+  </div>
+}

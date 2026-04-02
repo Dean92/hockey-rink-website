@@ -58,8 +58,10 @@ export class AdminTeams implements OnInit {
     { name: 'Yellow', value: 'Yellow' },
     { name: 'Purple', value: 'Purple' },
     { name: 'Orange', value: 'Orange' },
-    { name: 'Brass', value: 'Brass' },
-    { name: 'Copper', value: 'Copper' },
+    { name: 'Grey', value: 'Grey' },
+    { name: 'Brown', value: 'Brown' },
+    { name: 'Teal', value: 'Teal' },
+    { name: 'Maroon', value: 'Maroon' },
   ];
 
   constructor(
@@ -67,7 +69,7 @@ export class AdminTeams implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private formBuilder: FormBuilder,
-    private toastService: ToastService
+    private toastService: ToastService,
   ) {
     this.teamForm = this.formBuilder.group({
       teamName: ['', [Validators.required, Validators.maxLength(100)]],
@@ -156,7 +158,7 @@ export class AdminTeams implements OnInit {
     // Set the captain dropdown value if captain exists
     if (team.captainUserId && team.captainName) {
       this.selectedCaptainValue.set(
-        team.captainUserId + '|' + team.captainName
+        team.captainUserId + '|' + team.captainName,
       );
     } else {
       this.selectedCaptainValue.set('');
@@ -202,7 +204,7 @@ export class AdminTeams implements OnInit {
             console.error('Error updating team:', err);
             this.toastService.error(
               'Error',
-              err.error?.message || 'Failed to update team'
+              err.error?.message || 'Failed to update team',
             );
             this.isSaving.set(false);
           },
@@ -220,7 +222,7 @@ export class AdminTeams implements OnInit {
           console.error('Error creating team:', err);
           this.toastService.error(
             'Error',
-            err.error?.message || 'Failed to create team'
+            err.error?.message || 'Failed to create team',
           );
           this.isSaving.set(false);
         },
@@ -254,7 +256,7 @@ export class AdminTeams implements OnInit {
         console.error('Error deleting team:', err);
         this.toastService.error(
           'Error',
-          err.error?.message || 'Failed to delete team'
+          err.error?.message || 'Failed to delete team',
         );
         this.isDeleting.set(false);
       },

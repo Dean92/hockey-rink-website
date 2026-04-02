@@ -8,6 +8,13 @@
       </div>
     </div>
   }
+  @if (accessDenied()) {
+    <div class="alert alert-warning alert-dismissible" role="alert">
+      <i class="bi bi-shield-exclamation me-2"></i>
+      <strong>Access Denied.</strong> You don't have permission to view that page.
+      <button type="button" class="btn-close" (click)="accessDenied.set(false)"></button>
+    </div>
+  }
   @if (errorMessage()) {
     <div class="alert alert-danger" role="alert">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -75,21 +82,31 @@
               <i class="bi bi-lightning-fill me-2"></i>Quick Actions
             </h5>
             <div class="d-flex gap-2 flex-wrap">
-              <a routerLink="/admin/sessions" class="btn btn-outline-primary">
-                <i class="bi bi-calendar-plus me-2"></i>Manage Sessions
-              </a>
-              <a routerLink="/admin/leagues" class="btn btn-outline-success">
-                <i class="bi bi-trophy me-2"></i>Manage Leagues
-              </a>
-              <a routerLink="/admin/users" class="btn btn-outline-info">
-                <i class="bi bi-people me-2"></i>View Users
-              </a>
-              <a routerLink="/admin/rink-calendar" class="btn btn-outline-warning">
-                <i class="bi bi-calendar3 me-2"></i>Rink Calendar
-              </a>
-              <a routerLink="/admin/user-management" class="btn btn-outline-secondary">
-                <i class="bi bi-shield-lock me-2"></i>Admin Access
-              </a>
+              @if (canManageRegistrations()) {
+                <a routerLink="/admin/sessions" class="btn btn-outline-primary">
+                  <i class="bi bi-calendar-plus me-2"></i>Manage Sessions
+                </a>
+              }
+              @if (canManageLeagues()) {
+                <a routerLink="/admin/leagues" class="btn btn-outline-success">
+                  <i class="bi bi-trophy me-2"></i>Manage Leagues
+                </a>
+              }
+              @if (canManageRegistrations()) {
+                <a routerLink="/admin/users" class="btn btn-outline-info">
+                  <i class="bi bi-people me-2"></i>View Users
+                </a>
+              }
+              @if (canManageSchedule()) {
+                <a routerLink="/admin/rink-calendar" class="btn btn-outline-warning">
+                  <i class="bi bi-calendar3 me-2"></i>Rink Calendar
+                </a>
+              }
+              @if (isFullAdmin()) {
+                <a routerLink="/admin/user-management" class="btn btn-outline-secondary">
+                  <i class="bi bi-shield-lock me-2"></i>Admin Access
+                </a>
+              }
             </div>
           </div>
         </div>

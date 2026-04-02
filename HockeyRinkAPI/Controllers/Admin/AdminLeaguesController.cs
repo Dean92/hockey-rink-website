@@ -30,7 +30,7 @@ public class AdminLeaguesController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageLeagues))
                 return Forbid();
 
             var leagueEntities = await _leagueRepository.GetAllWithTeamsAsync();
@@ -64,7 +64,7 @@ public class AdminLeaguesController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageLeagues))
                 return Forbid();
 
             if (!ModelState.IsValid)
@@ -104,7 +104,7 @@ public class AdminLeaguesController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageLeagues))
                 return Forbid();
 
             if (!ModelState.IsValid)
@@ -141,7 +141,7 @@ public class AdminLeaguesController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageLeagues))
                 return Forbid();
 
             var league = await _leagueRepository.GetByIdWithTeamsAsync(id);

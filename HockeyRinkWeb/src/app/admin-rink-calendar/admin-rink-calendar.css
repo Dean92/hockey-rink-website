@@ -46,6 +46,10 @@
 .legend-dot.blockout {
   background: #dc3545;
 }
+.legend-dot.event {
+  background: #dbeafe;
+  border: 2px solid #3b82f6;
+}
 
 /* ── Mini Calendar ──────────────────────────────────────────────────────── */
 
@@ -211,6 +215,11 @@
 .booked-slot.slot-blockout {
   background: #dc3545;
 }
+.booked-slot.slot-event {
+  background: #dbeafe;
+  color: #1e3a5f;
+  border: 2px solid #3b82f6;
+}
 
 .slot-title {
   flex: 1;
@@ -261,6 +270,11 @@
 }
 .detail-header.slot-blockout {
   background: #dc3545;
+}
+.detail-header.slot-event {
+  background: #dbeafe;
+  color: #1e3a5f;
+  border-bottom: 3px solid #3b82f6;
 }
 
 /* ── Scheduler Slide-in Panel ──────────────────────────────────────────── */

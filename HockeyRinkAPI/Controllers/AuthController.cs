@@ -127,8 +127,20 @@ public class AuthController : ControllerBase
             // Check if user is admin
             var roles = await _userManager.GetRolesAsync(user);
             var isAdmin = roles.Contains("Admin");
+            var isSubAdmin = roles.Contains("SubAdmin");
 
-            _logger.LogInformation("User logged in successfully: {Email}, IsAdmin: {IsAdmin}", model.Email, isAdmin);
+            // Include permission claims for sub-admins
+            List<string> permissions = [];
+            if (isSubAdmin && !isAdmin)
+            {
+                var claims = await _userManager.GetClaimsAsync(user);
+                permissions = claims
+                    .Where(c => c.Type == AdminPermissions.ClaimType)
+                    .Select(c => c.Value)
+                    .ToList();
+            }
+
+            _logger.LogInformation("User logged in successfully: {Email}, IsAdmin: {IsAdmin}, IsSubAdmin: {IsSubAdmin}", model.Email, isAdmin, isSubAdmin);
 
             return Ok(new
             {
@@ -136,7 +148,9 @@ public class AuthController : ControllerBase
                 message = "Login successful",
                 userId = user.Id,
                 email = user.Email,
-                isAdmin = isAdmin
+                isAdmin = isAdmin,
+                isSubAdmin = isSubAdmin,
+                permissions = permissions
             });
         }
         catch (Exception ex)

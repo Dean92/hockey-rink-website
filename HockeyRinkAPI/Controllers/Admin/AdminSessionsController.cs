@@ -33,7 +33,7 @@ public class AdminSessionsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             var sessions = await _sessionRepository.GetAllWithDetailsAsync();
@@ -86,7 +86,7 @@ public class AdminSessionsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             var session = await _sessionRepository.GetByIdWithLeagueAsync(id);
@@ -117,7 +117,7 @@ public class AdminSessionsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             if (!ModelState.IsValid)
@@ -186,7 +186,7 @@ public class AdminSessionsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             if (!ModelState.IsValid)
@@ -237,7 +237,7 @@ public class AdminSessionsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             var session = await _sessionRepository.GetByIdWithRegistrationsAsync(id);
@@ -272,7 +272,7 @@ public class AdminSessionsController : AdminControllerBase
     {
         try
         {
-            if (!await IsAdminAsync())
+            if (!await HasPermissionAsync(AdminPermissions.ManageRegistrations))
                 return Forbid();
 
             var session = await _sessionRepository.GetByIdAsync(sessionId);

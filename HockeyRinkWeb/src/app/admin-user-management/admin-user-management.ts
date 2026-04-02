@@ -101,16 +101,30 @@ export class AdminUserManagement implements OnInit {
       });
   }
 
-  revokeAdmin(user: AdminUserSummary): void {
-    if (!confirm(`Revoke admin access for ${user.email}?`)) return;
+  // ── Revoke confirmation modal ──────────────────────────────────────────────
+  showRevokeModal = signal(false);
+  userToRevoke = signal<AdminUserSummary | null>(null);
 
+  openRevokeModal(user: AdminUserSummary): void {
+    this.userToRevoke.set(user);
+    this.showRevokeModal.set(true);
+  }
+
+  cancelRevoke(): void {
+    this.showRevokeModal.set(false);
+    this.userToRevoke.set(null);
+  }
+
+  revokeAdmin(user: AdminUserSummary): void {
     this.revokingUserId.set(user.id);
+    this.showRevokeModal.set(false);
     this.errorMessage.set(null);
 
     this.adminService.revokeAdmin(user.id).subscribe({
       next: () => {
         this.successMessage.set(`Admin access revoked for ${user.email}`);
         this.revokingUserId.set(null);
+        this.userToRevoke.set(null);
         this.loadAdmins();
         setTimeout(() => this.successMessage.set(null), 3000);
       },
@@ -119,6 +133,7 @@ export class AdminUserManagement implements OnInit {
           err.error?.message ?? 'Failed to revoke admin access',
         );
         this.revokingUserId.set(null);
+        this.userToRevoke.set(null);
       },
     });
   }
